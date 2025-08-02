@@ -1,6 +1,41 @@
 @page "/"
+@using HospitalManagementSystem.WebApp.Services
+@inject IPatientService PatientService
 
-<h1>Hospital Management System</h1>
+<MudGrid Spacing="3" Class="pa-4">
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="pa-4">
+            <MudText Typo="Typo.h6">Patients</MudText>
+            <MudText Typo="Typo.h4">@patientCount</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="pa-4">
+            <MudText Typo="Typo.h6">Appointments</MudText>
+            <MudText Typo="Typo.h4">0</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="pa-4">
+            <MudText Typo="Typo.h6">Doctors</MudText>
+            <MudText Typo="Typo.h4">0</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="pa-4">
+            <MudText Typo="Typo.h6">Rooms</MudText>
+            <MudText Typo="Typo.h4">0</MudText>
+        </MudCard>
+    </MudItem>
+</MudGrid>
 
-<p>Select an option from the menu to begin.</p>
+@code {
+    private int patientCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var patients = await PatientService.GetAllPatientsAsync();
+        patientCount = patients.Count();
+    }
+}
 
