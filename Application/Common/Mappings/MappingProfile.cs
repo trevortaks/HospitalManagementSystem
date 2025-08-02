@@ -4,6 +4,8 @@ using HospitalManagementSystem.Application.Features.Appointments.Commands.Create
 using HospitalManagementSystem.Application.Features.MedicalRecords.Commands;
 using HospitalManagementSystem.Application.Features.Patients.Commands.Create;
 using HospitalManagementSystem.Application.Features.Patients.Commands.Update;
+using HospitalManagementSystem.Application.Features.Doctors.Commands.Create;
+using HospitalManagementSystem.Application.Features.Doctors.Commands.Update;
 using HospitalManagementSystem.Domain.Entities;
 
 namespace HospitalManagementSystem.Application.Common.Mappings;
@@ -37,6 +39,13 @@ public class MappingProfile : Profile
         // Doctor mappings
         CreateMap<Doctor, DoctorDto>()
             .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FirstName + " " + src.LastName));
+        CreateMap<CreateDoctorCommand, Doctor>();
+        CreateMap<UpdateDoctorCommand, Doctor>();
+
+        // Additional entity mappings
+        CreateMap<Department, DepartmentDto>();
+        CreateMap<Room, RoomDto>();
+        CreateMap<Staff, StaffDto>();
 
         // Billing mappings
         CreateMap<Billing, BillingDto>();
