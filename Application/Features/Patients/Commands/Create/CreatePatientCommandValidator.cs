@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+using System;
+using System.Linq;
+using FluentValidation;
 using HospitalManagementSystem.Application.Features.Patients.Commands.Create;
 
 namespace HospitalManagementSystem.Application.Features.Patients.Commands.Create;
@@ -40,3 +42,4 @@ public class CreatePatientCommandValidator : AbstractValidator<CreatePatientComm
             .MaximumLength(100).WithMessage("Emergency contact must not exceed 100 characters.");
     }
 }
+
