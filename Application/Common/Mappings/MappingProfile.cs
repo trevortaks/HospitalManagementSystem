@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HospitalManagementSystem.Application.DTOs;
 using HospitalManagementSystem.Application.Features.Appointments.Commands.Create;
+using HospitalManagementSystem.Application.Features.Appointments.Commands.Update;
 using HospitalManagementSystem.Application.Features.MedicalRecords.Commands;
 using HospitalManagementSystem.Application.Features.Patients.Commands.Create;
 using HospitalManagementSystem.Application.Features.Patients.Commands.Update;
@@ -41,6 +42,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.RoomNumber, opt => opt.MapFrom(src => src.Room != null ? src.Room.RoomNumber : null));
 
         CreateMap<CreateAppointmentCommand, Appointment>();
+        CreateMap<UpdateAppointmentCommand, Appointment>();
 
         // Doctor mappings
         CreateMap<Doctor, DoctorDto>()
