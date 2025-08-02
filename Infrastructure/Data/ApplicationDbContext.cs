@@ -21,23 +21,7 @@ namespace HospitalManagementSystem.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            // Apply configurations
-            modelBuilder.ApplyConfiguration(new PatientConfiguration());
-            modelBuilder.ApplyConfiguration(new DoctorConfiguration());
-            modelBuilder.ApplyConfiguration(new MedicalRecordConfiguration());
-            modelBuilder.ApplyConfiguration(new AppointmentConfiguration());
-            modelBuilder.ApplyConfiguration(new MedicationConfiguration());
-            modelBuilder.ApplyConfiguration(new PrescriptionConfiguration());
-            modelBuilder.ApplyConfiguration(new BillingConfiguration());
-            modelBuilder.ApplyConfiguration(new RoomConfiguration());
-            modelBuilder.ApplyConfiguration(new StaffConfiguration());
-            modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
-
-            // Apply soft delete filter
-            modelBuilder.Entity<Patient>().HasQueryFilter(p => p.IsActive);
-            modelBuilder.Entity<Doctor>().HasQueryFilter(d => d.Status == "Active");
-            modelBuilder.Entity<Staff>().HasQueryFilter(s => s.Status == "Active");
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
