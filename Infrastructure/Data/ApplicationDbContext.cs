@@ -1,11 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using HospitalManagementSystem.Domain.Entities;
+using HospitalManagementSystem.Application.Common.Interfaces;
 
 namespace HospitalManagementSystem.Infrastructure.Data
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        private readonly ICurrentUserService _currentUserService;
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService)
+            : base(options)
+        {
+            _currentUserService = currentUserService;
+        }
 
         public DbSet<Patient> Patients { get; set; }
         public DbSet<Doctor> Doctors { get; set; }
@@ -28,19 +35,21 @@ namespace HospitalManagementSystem.Infrastructure.Data
         {
             // Add timestamps
             var entries = ChangeTracker.Entries<BaseEntity>();
-            
+
             foreach (var entry in entries)
             {
+                var userName = _currentUserService.UserName ?? "System";
+
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.CreatedBy = "System"; // Replace with current user
+                    entry.Entity.CreatedBy = userName;
                 }
-                
+
                 if (entry.State == EntityState.Modified)
                 {
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy = "System"; // Replace with current user
+                    entry.Entity.UpdatedBy = userName;
                 }
             }
 
