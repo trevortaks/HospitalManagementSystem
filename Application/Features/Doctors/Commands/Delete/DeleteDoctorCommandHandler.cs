@@ -1,6 +1,6 @@
 using HospitalManagementSystem.Application.Common.Interfaces;
 using HospitalManagementSystem.Domain.Entities;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;

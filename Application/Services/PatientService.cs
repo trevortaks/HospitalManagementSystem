@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using HospitalManagementSystem.Application.Interfaces;
 using HospitalManagementSystem.Application.DTOs;
 using HospitalManagementSystem.Domain.Entities;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.Application.Services
 {

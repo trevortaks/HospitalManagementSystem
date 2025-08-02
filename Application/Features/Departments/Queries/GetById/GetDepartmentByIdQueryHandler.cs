@@ -1,7 +1,7 @@
 using AutoMapper;
 using HospitalManagementSystem.Application.Common.Interfaces;
 using HospitalManagementSystem.Application.DTOs;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;

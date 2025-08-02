@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.WebAPI.Middleware
 {
@@ -36,6 +36,10 @@ namespace HospitalManagementSystem.WebAPI.Middleware
             {
                 NotFoundException => new { StatusCode = 404, Message = exception.Message },
                 ValidationException => new { StatusCode = 400, Message = exception.Message },
+                BadRequestException => new { StatusCode = 400, Message = exception.Message },
+                ConflictException => new { StatusCode = 409, Message = exception.Message },
+                UnauthorizedException => new { StatusCode = 401, Message = exception.Message },
+                ForbiddenAccessException => new { StatusCode = 403, Message = exception.Message },
                 _ => new { StatusCode = 500, Message = "An internal server error occurred" }
             };
 

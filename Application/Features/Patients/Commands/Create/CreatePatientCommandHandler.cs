@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using HospitalManagementSystem.Application.Common.Interfaces;
 using HospitalManagementSystem.Application.DTOs;
 using HospitalManagementSystem.Domain.Entities;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.Application.Features.Patients.Commands.Create;
 

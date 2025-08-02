@@ -1,8 +1,10 @@
-﻿using System.Threading;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.Application.Common.Behaviors;
 
@@ -38,9 +40,11 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
                 _logger.LogWarning("Validation failed for {RequestType}. Errors: {Errors}",
                     typeof(TRequest).Name, failures);
 
-                throw new ValidationException(
-                    $"Validation failed for {typeof(TRequest).Name}",
-                    failures.Select(f => f.ErrorMessage));
+                var errorDictionary = failures
+                    .GroupBy(f => f.PropertyName, f => f.ErrorMessage)
+                    .ToDictionary(g => g.Key, g => g.ToArray());
+
+                throw new ValidationException(errorDictionary);
             }
         }
 
