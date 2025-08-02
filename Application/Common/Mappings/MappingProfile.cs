@@ -6,6 +6,12 @@ using HospitalManagementSystem.Application.Features.Patients.Commands.Create;
 using HospitalManagementSystem.Application.Features.Patients.Commands.Update;
 using HospitalManagementSystem.Application.Features.Doctors.Commands.Create;
 using HospitalManagementSystem.Application.Features.Doctors.Commands.Update;
+using HospitalManagementSystem.Application.Features.Departments.Commands.Create;
+using HospitalManagementSystem.Application.Features.Departments.Commands.Update;
+using HospitalManagementSystem.Application.Features.Rooms.Commands.Create;
+using HospitalManagementSystem.Application.Features.Rooms.Commands.Update;
+using HospitalManagementSystem.Application.Features.Staff.Commands.Create;
+using HospitalManagementSystem.Application.Features.Staff.Commands.Update;
 using HospitalManagementSystem.Domain.Entities;
 
 namespace HospitalManagementSystem.Application.Common.Mappings;
@@ -44,8 +50,16 @@ public class MappingProfile : Profile
 
         // Additional entity mappings
         CreateMap<Department, DepartmentDto>();
+        CreateMap<CreateDepartmentCommand, Department>();
+        CreateMap<UpdateDepartmentCommand, Department>();
+
         CreateMap<Room, RoomDto>();
+        CreateMap<CreateRoomCommand, Room>();
+        CreateMap<UpdateRoomCommand, Room>();
+
         CreateMap<Staff, StaffDto>();
+        CreateMap<CreateStaffCommand, Staff>();
+        CreateMap<UpdateStaffCommand, Staff>();
 
         // Billing mappings
         CreateMap<Billing, BillingDto>();
