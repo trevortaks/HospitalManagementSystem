@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Appointments.Commands.Create;
 
-public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointmentCommand, int>
+public class CreateAppointmentCommandHandler : Common.Interfaces.IRequestHandler<CreateAppointmentCommand, int>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

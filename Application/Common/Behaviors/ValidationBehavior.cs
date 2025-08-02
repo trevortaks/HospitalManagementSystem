@@ -5,6 +5,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using HospitalManagementSystem.Application.Common.Exceptions;
+using ValidationException = HospitalManagementSystem.Application.Common.Exceptions.ValidationException;
 
 namespace HospitalManagementSystem.Application.Common.Behaviors;
 

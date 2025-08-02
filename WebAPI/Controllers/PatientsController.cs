@@ -6,6 +6,11 @@ using MediatR;
 using HospitalManagementSystem.Application.Features.Patients.Commands;
 using HospitalManagementSystem.Application.Features.Patients.Queries;
 using HospitalManagementSystem.Application.DTOs;
+using HospitalManagementSystem.Application.Features.Patients.Commands.Create;
+using HospitalManagementSystem.Application.Features.Patients.Commands.Delete;
+using HospitalManagementSystem.Application.Features.Patients.Commands.Update;
+using HospitalManagementSystem.Application.Features.Patients.Queries.GetAll;
+using HospitalManagementSystem.Application.Features.Patients.Queries.GetById;
 
 namespace HospitalManagementSystem.WebAPI.Controllers
 {
@@ -32,7 +37,7 @@ namespace HospitalManagementSystem.WebAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<PatientDto>> GetPatient(int id)
         {
-            var query = new GetPatientByIdQuery { PatientId = id };
+            var query = new GetPatientByIdQuery { Id = id };
             var patient = await _mediator.Send(query);
             
             if (patient == null)

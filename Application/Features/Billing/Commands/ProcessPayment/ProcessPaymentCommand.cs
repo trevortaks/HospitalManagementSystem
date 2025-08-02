@@ -1,5 +1,6 @@
 ﻿using System;
 using HospitalManagementSystem.Application.Common.Models;
+using HospitalManagementSystem.Application.DTOs;
 
 namespace HospitalManagementSystem.Application.Features.Billing.Commands.ProcessPayment;
 

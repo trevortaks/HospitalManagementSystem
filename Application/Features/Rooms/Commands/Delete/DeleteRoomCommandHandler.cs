@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Rooms.Commands.Delete;
 
-public class DeleteRoomCommandHandler : IRequestHandler<DeleteRoomCommand>
+public class DeleteRoomCommandHandler : Common.Interfaces.IRequestHandler<DeleteRoomCommand>
 {
     private readonly IApplicationDbContext _context;
 

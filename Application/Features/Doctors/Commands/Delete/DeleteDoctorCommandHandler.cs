@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Doctors.Commands.Delete;
 
-public class DeleteDoctorCommandHandler : IRequestHandler<DeleteDoctorCommand>
+public class DeleteDoctorCommandHandler : Common.Interfaces.IRequestHandler<DeleteDoctorCommand>
 {
     private readonly IApplicationDbContext _context;
 

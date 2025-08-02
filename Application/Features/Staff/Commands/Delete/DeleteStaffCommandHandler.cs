@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Staff.Commands.Delete;
 
-public class DeleteStaffCommandHandler : IRequestHandler<DeleteStaffCommand>
+public class DeleteStaffCommandHandler : Common.Interfaces.IRequestHandler<DeleteStaffCommand>
 {
     private readonly IApplicationDbContext _context;
 

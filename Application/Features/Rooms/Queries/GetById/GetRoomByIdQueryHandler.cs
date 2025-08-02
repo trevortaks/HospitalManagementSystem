@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Rooms.Queries.GetById;
 
-public class GetRoomByIdQueryHandler : IRequestHandler<GetRoomByIdQuery, RoomDto>
+public class GetRoomByIdQueryHandler : Common.Interfaces.IRequestHandler<GetRoomByIdQuery, RoomDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

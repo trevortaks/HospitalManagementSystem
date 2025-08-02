@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Departments.Commands.Create;
 
-public class CreateDepartmentCommandHandler : IRequestHandler<CreateDepartmentCommand, int>
+public class CreateDepartmentCommandHandler : Common.Interfaces.IRequestHandler<CreateDepartmentCommand, int>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

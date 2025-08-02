@@ -6,6 +6,9 @@ using MediatR;
 using HospitalManagementSystem.Application.Features.Billing.Commands;
 using HospitalManagementSystem.Application.Features.Billing.Queries;
 using HospitalManagementSystem.Application.DTOs;
+using HospitalManagementSystem.Application.Features.Billing.Commands.ProcessPayment;
+using HospitalManagementSystem.Application.Features.Billing.Queries.GetAll;
+using HospitalManagementSystem.Application.Features.Billing.Queries.GetById;
 
 namespace HospitalManagementSystem.WebAPI.Controllers
 {

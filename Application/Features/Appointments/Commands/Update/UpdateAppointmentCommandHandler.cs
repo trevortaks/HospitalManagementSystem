@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HospitalManagementSystem.Application.Features.Appointments.Commands.Update;
 
-public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointmentCommand>
+public class UpdateAppointmentCommandHandler : Common.Interfaces.IRequestHandler<UpdateAppointmentCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

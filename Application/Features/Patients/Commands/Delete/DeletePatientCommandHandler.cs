@@ -7,7 +7,7 @@ using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.Application.Features.Patients.Commands.Delete;
 
-public class DeletePatientCommandHandler : IRequestHandler<DeletePatientCommand>
+public class DeletePatientCommandHandler : Common.Interfaces.IRequestHandler<DeletePatientCommand>
 {
     private readonly IApplicationDbContext _context;
 

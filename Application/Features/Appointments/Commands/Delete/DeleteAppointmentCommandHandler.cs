@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HospitalManagementSystem.Application.Features.Appointments.Commands.Delete;
 
-public class DeleteAppointmentCommandHandler : IRequestHandler<DeleteAppointmentCommand>
+public class DeleteAppointmentCommandHandler : Common.Interfaces.IRequestHandler<DeleteAppointmentCommand>
 {
     private readonly IApplicationDbContext _context;
 

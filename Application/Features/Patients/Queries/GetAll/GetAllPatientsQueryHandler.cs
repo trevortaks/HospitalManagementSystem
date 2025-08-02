@@ -10,7 +10,7 @@ using HospitalManagementSystem.Application.DTOs;
 
 namespace HospitalManagementSystem.Application.Features.Patients.Queries.GetAll;
 
-public class GetAllPatientsQueryHandler : IRequestHandler<GetAllPatientsQuery, IEnumerable<PatientDto>>
+public class GetAllPatientsQueryHandler : Common.Interfaces.IRequestHandler<GetAllPatientsQuery, IEnumerable<PatientDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
@@ -47,8 +47,4 @@ public class GetAllPatientsQueryHandler : IRequestHandler<GetAllPatientsQuery, I
 
         return _mapper.Map<IEnumerable<PatientDto>>(patients);
     }
-}
-public class GetAllPatientsQueryHandler
-{
-    
 }

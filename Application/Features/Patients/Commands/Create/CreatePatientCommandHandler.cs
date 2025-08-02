@@ -10,7 +10,7 @@ using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.Application.Features.Patients.Commands.Create;
 
-public class CreatePatientCommandHandler : IRequestHandler<CreatePatientCommand, int>
+public class CreatePatientCommandHandler : Common.Interfaces.IRequestHandler<CreatePatientCommand, int>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

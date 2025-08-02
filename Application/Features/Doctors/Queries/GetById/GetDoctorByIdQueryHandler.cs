@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Doctors.Queries.GetById;
 
-public class GetDoctorByIdQueryHandler : IRequestHandler<GetDoctorByIdQuery, DoctorDto>
+public class GetDoctorByIdQueryHandler : Common.Interfaces.IRequestHandler<GetDoctorByIdQuery, DoctorDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

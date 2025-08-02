@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Departments.Queries.GetById;
 
-public class GetDepartmentByIdQueryHandler : IRequestHandler<GetDepartmentByIdQuery, DepartmentDto>
+public class GetDepartmentByIdQueryHandler : Common.Interfaces.IRequestHandler<GetDepartmentByIdQuery, DepartmentDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

@@ -9,7 +9,7 @@ using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.Application.Features.Patients.Queries.GetById;
 
-public class GetPatientByIdQueryHandler : IRequestHandler<GetPatientByIdQuery, PatientDto>
+public class GetPatientByIdQueryHandler : Common.Interfaces.IRequestHandler<GetPatientByIdQuery, PatientDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

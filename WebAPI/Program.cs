@@ -4,11 +4,17 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Text;
+using HospitalManagementSystem.Application.Common.Behaviors;
+using HospitalManagementSystem.Application.Common.Extensions;
 using HospitalManagementSystem.Infrastructure.Data;
 using HospitalManagementSystem.Infrastructure.Identity;
 using HospitalManagementSystem.WebAPI.Middleware;
 using HospitalManagementSystem.Application.Common.Interfaces;
+using HospitalManagementSystem.Domain.Interfaces;
 using HospitalManagementSystem.WebAPI.Services;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,22 +106,22 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Pr
 builder.Services.AddAutoMapper(typeof(Program));
 
 // Infrastructure Services
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IPatientRepository, PatientRepository>();
-builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
-builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
-builder.Services.AddScoped<IMedicationRepository, MedicationRepository>();
-builder.Services.AddScoped<IBillingRepository, BillingRepository>();
-builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+//builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+//builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+//builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
+//builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+//builder.Services.AddScoped<IMedicationRepository, MedicationRepository>();
+//builder.Services.AddScoped<IBillingRepository, BillingRepository>();
+//builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
-// Application Services
-builder.Services.AddScoped<IPatientService, PatientService>();
-builder.Services.AddScoped<IDoctorService, DoctorService>();
-builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
-builder.Services.AddScoped<IMedicationService, MedicationService>();
-builder.Services.AddScoped<IBillingService, BillingService>();
-builder.Services.AddScoped<IAppointmentService, AppointmentService>();
-builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+//// Application Services
+//builder.Services.AddScoped<IPatientService, PatientService>();
+//builder.Services.AddScoped<IDoctorService, DoctorService>();
+//builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+//builder.Services.AddScoped<IMedicationService, MedicationService>();
+//builder.Services.AddScoped<IBillingService, BillingService>();
+//builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+//builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -155,7 +161,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<HospitalHub>("/hospitalHub");
+//app.MapHub<HospitalHub>("/hospitalHub");
 
 // Initialize database
 using (var scope = app.Services.CreateScope())
