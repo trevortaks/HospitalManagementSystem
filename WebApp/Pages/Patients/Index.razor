@@ -1,0 +1,134 @@
+﻿@page "/patients"
+@using HospitalManagementSystem.WebApp.Models
+@using HospitalManagementSystem.WebApp.Services
+@inject IPatientService PatientService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Patient Management</h2>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" 
+                   OnClick="() => NavigationManager.NavigateTo("/patients/create")">
+            Add New Patient
+        </MudButton>
+    </div>
+
+    <MudCard>
+        <MudCardContent>
+            <MudTextField @bind-Value="searchString" Label="Search patients" Placeholder="Search by name, email, or phone..." 
+                         Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
+            
+            @if (patients == null)
+            {
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (!patients.Any())
+            {
+                <MudAlert Severity="Severity.Info" Class="my-4">
+                    No patients found. Create your first patient to get started.
+                </MudAlert>
+            }
+            else
+            {
+                <MudTable Items="@filteredPatients" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Patient ID</MudTh>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Age</MudTh>
+                        <MudTh>Gender</MudTh>
+                        <MudTh>Contact</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Patient ID">@context.PatientId</MudTd>
+                        <MudTd DataLabel="Name">@context.FirstName @context.LastName</MudTd>
+                        <MudTd DataLabel="Age">@context.Age</MudTd>
+                        <MudTd DataLabel="Gender">@context.Gender</MudTd>
+                        <MudTd DataLabel="Contact">@context.ContactNumber</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip Color="@GetStatusColor(context.IsActive)" Size="Size.Small">
+                                @(context.IsActive ? "Active" : "Inactive")
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" 
+                                          OnClick="() => EditPatient(context.PatientId)" Title="Edit" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" 
+                                          OnClick="() => ViewPatient(context.PatientId)" Title="View Details" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" 
+                                          OnClick="() => DeletePatient(context.PatientId)" Title="Delete" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudCardContent>
+    </MudCard>
+</div>
+
+@code {
+    private List<PatientModel> patients = new();
+    private string searchString = "";
+
+    private List<PatientModel> filteredPatients => patients
+        .Where(p => string.IsNullOrWhiteSpace(searchString) || 
+                   p.FirstName.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                   p.LastName.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                   p.ContactNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                   p.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPatients();
+    }
+
+    private async Task LoadPatients()
+    {
+        try
+        {
+            patients = (await PatientService.GetAllPatientsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            // Handle error (show snackbar or alert)
+            Console.WriteLine($"Error loading patients: {ex.Message}");
+        }
+    }
+
+    private void EditPatient(int patientId)
+    {
+        NavigationManager.NavigateTo($"/patients/edit/{patientId}");
+    }
+
+    private void ViewPatient(int patientId)
+    {
+        NavigationManager.NavigateTo($"/patients/details/{patientId}");
+    }
+
+    private async Task DeletePatient(int patientId)
+    {
+        // Show confirmation dialog
+        var confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this patient?");
+        
+        if (confirmed)
+        {
+            try
+            {
+                await PatientService.DeletePatientAsync(patientId);
+                await LoadPatients();
+                // Show success message
+            }
+            catch (Exception ex)
+            {
+                // Handle error
+                Console.WriteLine($"Error deleting patient: {ex.Message}");
+            }
+        }
+    }
+
+    private Color GetStatusColor(bool isActive)
+    {
+        return isActive ? Color.Success : Color.Error;
+    }
+}

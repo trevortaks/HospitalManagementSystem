@@ -1,0 +1,51 @@
+﻿@page "/"
+@inject IDashboardService DashboardService
+
+<div class="dashboard">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Patients</h5>
+                    <h2>@dashboardData.TotalPatients</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Today's Appointments</h5>
+                    <h2>@dashboardData.TodayAppointments</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Available Beds</h5>
+                    <h2>@dashboardData.AvailableBeds</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Low Stock Items</h5>
+                    <h2>@dashboardData.LowStockItems</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DashboardDto dashboardData = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        dashboardData = await DashboardService.GetDashboardDataAsync();
+    }
+}
