@@ -11,10 +11,12 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // Register HTTP client for API calls
-builder.Services.AddHttpClient<IPatientService, PatientService>(client =>
+builder.Services.AddScoped(sp => new HttpClient
 {
-    client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7123/");
+    BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7123/")
 });
+builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
