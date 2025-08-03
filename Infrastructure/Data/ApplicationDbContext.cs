@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using HospitalManagementSystem.Domain.Entities;
 using HospitalManagementSystem.Application.Common.Interfaces;
+using HospitalManagementSystem.Infrastructure.Identity;
 
 namespace HospitalManagementSystem.Infrastructure.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
     {
         private readonly ICurrentUserService _currentUserService;
 
