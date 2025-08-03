@@ -7,6 +7,8 @@ using HospitalManagementSystem.Domain.Entities;
 using HospitalManagementSystem.Application.Common.Exceptions;
 using HospitalManagementSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace HospitalManagementSystem.UnitTests;
 
@@ -16,7 +18,7 @@ public class CreatePatientCommandHandlerTests
 
     public CreatePatientCommandHandlerTests()
     {
-        var configuration = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+        var configuration = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), new LoggerFactory());
         _mapper = configuration.CreateMapper();
     }
 
@@ -26,7 +28,10 @@ public class CreatePatientCommandHandlerTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        return new TestApplicationDbContext(options);
+        var mockCurrentUserService = new Mock<ICurrentUserService>();
+        mockCurrentUserService.Setup(x => x.UserName).Returns("test-user-id");
+
+        return new TestApplicationDbContext(options, mockCurrentUserService.Object);
     }
 
     [Fact]
@@ -88,7 +93,7 @@ public class CreatePatientCommandHandlerTests
 
     private class TestApplicationDbContext : ApplicationDbContext, IApplicationDbContext
     {
-        public TestApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public TestApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUserService) : base(options, currentUserService) { }
 
         public void MarkAsModified<TEntity>(TEntity entity) where TEntity : class =>
             Entry(entity).State = EntityState.Modified;
