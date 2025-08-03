@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Rooms.Commands.Create;
 
-public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, int>
+public class CreateRoomCommandHandler : Common.Interfaces.IRequestHandler<CreateRoomCommand, int>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

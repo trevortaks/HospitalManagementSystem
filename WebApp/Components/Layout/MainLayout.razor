@@ -1,17 +1,23 @@
 ﻿@inherits LayoutComponentBase
 
-<MudLayout>
-    <MudAppBar Elevation="0">
-        <MudText Typo="Typo.h6" Color="Color.Inherit">Hospital Management System</MudText>
-    </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent>
-        @Body
-    </MudMainContent>
-</MudLayout>
+<MudThemeProvider Theme="@_theme">
+    <MudLayout>
+        <MudAppBar Elevation="0" Color="Color.Primary">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+            <MudText Typo="Typo.h6" Class="ml-2">Hospital Management System</MudText>
+        </MudAppBar>
+        <MudDrawer @bind-Open="_drawerOpen" Variant="DrawerVariant.Mini" Color="Color.Default" Elevation="1">
+            <NavMenu />
+        </MudDrawer>
+        <MudMainContent>
+            @Body
+        </MudMainContent>
+    </MudLayout>
+</MudThemeProvider>
 
 @code {
     private bool _drawerOpen = true;
+    private MudTheme _theme = new MudTheme() { PaletteDark = new PaletteDark() };
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 }

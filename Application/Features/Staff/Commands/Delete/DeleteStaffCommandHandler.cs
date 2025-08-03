@@ -1,5 +1,5 @@
 using HospitalManagementSystem.Application.Common.Interfaces;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Staff.Commands.Delete;
 
-public class DeleteStaffCommandHandler : IRequestHandler<DeleteStaffCommand>
+public class DeleteStaffCommandHandler : Common.Interfaces.IRequestHandler<DeleteStaffCommand>
 {
     private readonly IApplicationDbContext _context;
 

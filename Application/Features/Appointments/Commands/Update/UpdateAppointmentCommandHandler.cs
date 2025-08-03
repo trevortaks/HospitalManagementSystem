@@ -1,12 +1,12 @@
 using AutoMapper;
 using HospitalManagementSystem.Application.Common.Interfaces;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace HospitalManagementSystem.Application.Features.Appointments.Commands.Update;
 
-public class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppointmentCommand>
+public class UpdateAppointmentCommandHandler : Common.Interfaces.IRequestHandler<UpdateAppointmentCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

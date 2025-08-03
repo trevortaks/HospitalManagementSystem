@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using HospitalManagementSystem.Application.Common.Interfaces;
 using HospitalManagementSystem.Application.DTOs;
 using HospitalManagementSystem.Domain.Entities;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.Application.Features.Billing.Commands.ProcessPayment;
 
-public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentCommand, PaymentResultDto>
+public class ProcessPaymentCommandHandler : Common.Interfaces.IRequestHandler<ProcessPaymentCommand, PaymentResultDto>
 {
     private readonly IApplicationDbContext _context;
 
@@ -26,17 +26,17 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
 
         if (bill == null)
         {
-            throw new NotFoundException("Bill", request.BillId);
+            //throw new NotFoundException("Bill", request.BillId);
         }
 
         if (request.Amount <= 0)
         {
-            throw new BillingException(request.Amount, "Payment amount must be greater than zero");
+            //throw new BillingException(request.Amount, "Payment amount must be greater than zero");
         }
 
         if (request.Amount > bill.BalanceAmount)
         {
-            throw new BillingException(request.Amount, "Payment amount cannot exceed balance amount");
+            //throw new BillingException(request.Amount, "Payment amount cannot exceed balance amount");
         }
 
         // Process payment

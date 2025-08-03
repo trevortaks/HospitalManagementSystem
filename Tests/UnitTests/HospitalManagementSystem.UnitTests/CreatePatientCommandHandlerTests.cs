@@ -4,7 +4,7 @@ using HospitalManagementSystem.Application.Common.Interfaces;
 using HospitalManagementSystem.Application.Common.Mappings;
 using HospitalManagementSystem.Application.Features.Patients.Commands.Create;
 using HospitalManagementSystem.Domain.Entities;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using HospitalManagementSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 

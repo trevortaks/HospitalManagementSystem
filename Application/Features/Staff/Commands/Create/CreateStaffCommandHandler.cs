@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Staff.Commands.Create;
 
-public class CreateStaffCommandHandler : IRequestHandler<CreateStaffCommand, int>
+public class CreateStaffCommandHandler : Common.Interfaces.IRequestHandler<CreateStaffCommand, int>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
@@ -20,7 +20,7 @@ public class CreateStaffCommandHandler : IRequestHandler<CreateStaffCommand, int
 
     public async Task<int> Handle(CreateStaffCommand request, CancellationToken cancellationToken)
     {
-        var staff = _mapper.Map<Staff>(request);
+        var staff = _mapper.Map<Domain.Entities.Staff>(request);
         _context.Staff.Add(staff);
         await _context.SaveChangesAsync(cancellationToken);
         return staff.StaffId;

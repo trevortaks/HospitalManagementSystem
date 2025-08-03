@@ -1,11 +1,11 @@
 using HospitalManagementSystem.Application.Common.Interfaces;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace HospitalManagementSystem.Application.Features.Appointments.Commands.Delete;
 
-public class DeleteAppointmentCommandHandler : IRequestHandler<DeleteAppointmentCommand>
+public class DeleteAppointmentCommandHandler : Common.Interfaces.IRequestHandler<DeleteAppointmentCommand>
 {
     private readonly IApplicationDbContext _context;
 

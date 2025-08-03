@@ -6,6 +6,11 @@ using MediatR;
 using HospitalManagementSystem.Application.Features.Doctors.Commands;
 using HospitalManagementSystem.Application.Features.Doctors.Queries;
 using HospitalManagementSystem.Application.DTOs;
+using HospitalManagementSystem.Application.Features.Doctors.Commands.Create;
+using HospitalManagementSystem.Application.Features.Doctors.Commands.Delete;
+using HospitalManagementSystem.Application.Features.Doctors.Commands.Update;
+using HospitalManagementSystem.Application.Features.Doctors.Queries.GetAll;
+using HospitalManagementSystem.Application.Features.Doctors.Queries.GetById;
 
 namespace HospitalManagementSystem.WebAPI.Controllers
 {

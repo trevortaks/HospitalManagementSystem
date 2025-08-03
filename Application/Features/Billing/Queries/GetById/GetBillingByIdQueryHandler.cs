@@ -1,7 +1,7 @@
 using AutoMapper;
 using HospitalManagementSystem.Application.Common.Interfaces;
 using HospitalManagementSystem.Application.DTOs;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Billing.Queries.GetById;
 
-public class GetBillingByIdQueryHandler : IRequestHandler<GetBillingByIdQuery, BillingDto>
+public class GetBillingByIdQueryHandler : Common.Interfaces.IRequestHandler<GetBillingByIdQuery, BillingDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
@@ -23,8 +23,8 @@ public class GetBillingByIdQueryHandler : IRequestHandler<GetBillingByIdQuery, B
     public async Task<BillingDto> Handle(GetBillingByIdQuery request, CancellationToken cancellationToken)
     {
         var bill = await _context.Bills.AsNoTracking()
-            .Include(b => b.Items)
-            .FirstOrDefaultAsync(b => b.BillingId == request.BillingId, cancellationToken);
+            .Include(b => b.BillingItems)
+            .FirstOrDefaultAsync(b => b.BillId == request.BillingId, cancellationToken);
 
         if (bill == null)
         {

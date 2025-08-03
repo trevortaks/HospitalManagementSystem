@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Billing.Queries.GetAll;
 
-public class GetAllBillingsQueryHandler : IRequestHandler<GetAllBillingsQuery, List<BillingDto>>
+public class GetAllBillingsQueryHandler : Common.Interfaces.IRequestHandler<GetAllBillingsQuery, List<BillingDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
@@ -23,7 +23,7 @@ public class GetAllBillingsQueryHandler : IRequestHandler<GetAllBillingsQuery, L
     public async Task<List<BillingDto>> Handle(GetAllBillingsQuery request, CancellationToken cancellationToken)
     {
         var bills = await _context.Bills.AsNoTracking()
-            .Include(b => b.Items)
+            .Include(b => b.BillingItems)
             .ToListAsync(cancellationToken);
         return _mapper.Map<List<BillingDto>>(bills);
     }

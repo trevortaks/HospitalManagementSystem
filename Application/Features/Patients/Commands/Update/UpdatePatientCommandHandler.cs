@@ -4,11 +4,11 @@ using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using HospitalManagementSystem.Application.Common.Interfaces;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 
 namespace HospitalManagementSystem.Application.Features.Patients.Commands.Update;
 
-public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand>
+public class UpdatePatientCommandHandler : Common.Interfaces.IRequestHandler<UpdatePatientCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

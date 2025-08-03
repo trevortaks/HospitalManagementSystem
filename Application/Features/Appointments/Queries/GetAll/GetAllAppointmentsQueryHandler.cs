@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Appointments.Queries.GetAll;
 
-public class GetAllAppointmentsQueryHandler : IRequestHandler<GetAllAppointmentsQuery, List<AppointmentDto>>
+public class GetAllAppointmentsQueryHandler : Common.Interfaces.IRequestHandler<GetAllAppointmentsQuery, List<AppointmentDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

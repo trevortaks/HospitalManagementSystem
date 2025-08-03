@@ -6,6 +6,9 @@ using MediatR;
 using HospitalManagementSystem.Application.Features.Appointments.Commands;
 using HospitalManagementSystem.Application.Features.Appointments.Queries;
 using HospitalManagementSystem.Application.DTOs;
+using HospitalManagementSystem.Application.Features.Appointments.Commands.Create;
+using HospitalManagementSystem.Application.Features.Appointments.Queries.GetAll;
+using HospitalManagementSystem.Application.Features.Appointments.Queries.GetById;
 
 namespace HospitalManagementSystem.WebAPI.Controllers
 {

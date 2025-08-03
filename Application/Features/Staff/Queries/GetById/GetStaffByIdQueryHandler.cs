@@ -1,7 +1,7 @@
 using AutoMapper;
 using HospitalManagementSystem.Application.Common.Interfaces;
 using HospitalManagementSystem.Application.DTOs;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Staff.Queries.GetById;
 
-public class GetStaffByIdQueryHandler : IRequestHandler<GetStaffByIdQuery, StaffDto>
+public class GetStaffByIdQueryHandler : Common.Interfaces.IRequestHandler<GetStaffByIdQuery, StaffDto>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;

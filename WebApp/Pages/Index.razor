@@ -1,51 +1,41 @@
-﻿@page "/"
-@inject IDashboardService DashboardService
+@page "/"
+@using HospitalManagementSystem.WebApp.Services
+@inject IPatientService PatientService
 
-<div class="dashboard">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Total Patients</h5>
-                    <h2>@dashboardData.TotalPatients</h2>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Today's Appointments</h5>
-                    <h2>@dashboardData.TodayAppointments</h2>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Available Beds</h5>
-                    <h2>@dashboardData.AvailableBeds</h2>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Low Stock Items</h5>
-                    <h2>@dashboardData.LowStockItems</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<MudGrid Spacing="3" Class="pa-4">
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="pa-4">
+            <MudText Typo="Typo.h6">Patients</MudText>
+            <MudText Typo="Typo.h4">@patientCount</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="pa-4">
+            <MudText Typo="Typo.h6">Appointments</MudText>
+            <MudText Typo="Typo.h4">0</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="pa-4">
+            <MudText Typo="Typo.h6">Doctors</MudText>
+            <MudText Typo="Typo.h4">0</MudText>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="pa-4">
+            <MudText Typo="Typo.h6">Rooms</MudText>
+            <MudText Typo="Typo.h4">0</MudText>
+        </MudCard>
+    </MudItem>
+</MudGrid>
 
 @code {
-    private DashboardDto dashboardData = new();
-    
+    private int patientCount;
+
     protected override async Task OnInitializedAsync()
     {
-        dashboardData = await DashboardService.GetDashboardDataAsync();
+        var patients = await PatientService.GetAllPatientsAsync();
+        patientCount = patients.Count();
     }
 }
+

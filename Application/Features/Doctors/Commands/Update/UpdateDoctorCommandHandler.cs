@@ -1,6 +1,6 @@
 using AutoMapper;
 using HospitalManagementSystem.Application.Common.Interfaces;
-using HospitalManagementSystem.Domain.Exceptions;
+using HospitalManagementSystem.Application.Common.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HospitalManagementSystem.Application.Features.Doctors.Commands.Update;
 
-public class UpdateDoctorCommandHandler : IRequestHandler<UpdateDoctorCommand>
+public class UpdateDoctorCommandHandler : Common.Interfaces.IRequestHandler<UpdateDoctorCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly IMapper _mapper;
