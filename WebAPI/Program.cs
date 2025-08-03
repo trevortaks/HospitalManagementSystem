@@ -173,6 +173,10 @@ using (var scope = app.Services.CreateScope())
     context.Database.Migrate();
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
+    if (app.Environment.IsDevelopment())
+    {
+        await initializer.SeedDevelopmentDataAsync();
+    }
 }
 
 await app.RunAsync();
