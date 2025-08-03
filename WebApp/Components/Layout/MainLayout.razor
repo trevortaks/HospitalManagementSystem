@@ -1,6 +1,5 @@
 ﻿@inherits LayoutComponentBase
-@inject MudThemeProvider MudThemeProvider
-
+<MudThemeProvider @ref="_themeProvider" />
 <MudLayout>
 	<MudAppBar Elevation="0" Color="Color.Primary">
 		<MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
@@ -15,7 +14,8 @@
 </MudLayout>
 
 @code {
-	private bool _drawerOpen = true;
+        private MudThemeProvider? _themeProvider;
+        private bool _drawerOpen = true;
 	// private MudTheme _theme = new MudTheme()
 	// {
 	// 	PaletteDark = new PaletteDark()
@@ -30,6 +30,6 @@
 	protected override async Task OnInitializedAsync()
 	{
 		// Apply your theme
-		// MudThemeProvider.Theme = _theme;
-	}
+                // _themeProvider!.Theme = _theme;
+        }
 }
