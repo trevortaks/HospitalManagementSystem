@@ -1,0 +1,110 @@
+@page "/departments"
+@inject IDepartmentService DepartmentService
+
+<h3>Departments</h3>
+
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Total Departments</MudText>
+                <MudText Typo="Typo.h4">@departments?.Count()</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12">
+        <MudStack Row AlignItems="center" Justify="space-between" Class="mb-4">
+            <MudText Typo="Typo.h6">Departments List</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAdd">Add Department</MudButton>
+        </MudStack>
+        <MudTable Items="departments" Hover="true">
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Location</MudTh>
+                <MudTh>Active</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.DepartmentId</MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Location">@context.Location</MudTd>
+                <MudTd DataLabel="Active">@(context.IsActive ? "Yes" : "No")</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="() => StartEdit(context)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteDepartment(context.DepartmentId)" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@if (showForm)
+{
+    <MudPaper Class="pa-4 mt-4">
+        <EditForm Model="currentDepartment" OnValidSubmit="SaveDepartment">
+            <MudTextField @bind-Value="currentDepartment.Name" Label="Name" Required="true" />
+            <MudTextField @bind-Value="currentDepartment.Description" Label="Description" />
+            <MudTextField @bind-Value="currentDepartment.Location" Label="Location" Required="true" />
+            <MudTextField @bind-Value="currentDepartment.HeadDoctorId" Label="Head Doctor Id" />
+            <MudCheckBox @bind-Checked="currentDepartment.IsActive" Label="Active" />
+            <MudStack Row Class="mt-4" Spacing="2">
+                <MudButton Type="Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">Cancel</MudButton>
+            </MudStack>
+        </EditForm>
+    </MudPaper>
+}
+
+@code {
+    private List<DepartmentModel>? departments;
+    private bool showForm;
+    private DepartmentModel currentDepartment = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        departments = (await DepartmentService.GetAllDepartmentsAsync()).ToList();
+    }
+
+    private void StartAdd()
+    {
+        currentDepartment = new DepartmentModel();
+        showForm = true;
+    }
+
+    private void StartEdit(DepartmentModel department)
+    {
+        currentDepartment = new DepartmentModel
+        {
+            DepartmentId = department.DepartmentId,
+            Name = department.Name,
+            Description = department.Description,
+            Location = department.Location,
+            HeadDoctorId = department.HeadDoctorId,
+            IsActive = department.IsActive
+        };
+        showForm = true;
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+    }
+
+    private async Task SaveDepartment()
+    {
+        if (currentDepartment.DepartmentId == 0)
+            await DepartmentService.CreateDepartmentAsync(currentDepartment);
+        else
+            await DepartmentService.UpdateDepartmentAsync(currentDepartment);
+
+        departments = (await DepartmentService.GetAllDepartmentsAsync()).ToList();
+        showForm = false;
+    }
+
+    private async Task DeleteDepartment(int id)
+    {
+        await DepartmentService.DeleteDepartmentAsync(id);
+        departments = (await DepartmentService.GetAllDepartmentsAsync()).ToList();
+    }
+}

@@ -1,0 +1,115 @@
+@page "/doctors"
+@inject IDoctorService DoctorService
+
+<h3>Doctors</h3>
+
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Total Doctors</MudText>
+                <MudText Typo="Typo.h4">@doctors?.Count()</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12">
+        <MudStack Row AlignItems="center" Justify="space-between" Class="mb-4">
+            <MudText Typo="Typo.h6">Doctors List</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAdd">Add Doctor</MudButton>
+        </MudStack>
+        <MudTable Items="doctors" Hover="true">
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Specialization</MudTh>
+                <MudTh>Department</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.DoctorId</MudTd>
+                <MudTd DataLabel="Name">@context.FirstName @context.LastName</MudTd>
+                <MudTd DataLabel="Specialization">@context.Specialization</MudTd>
+                <MudTd DataLabel="Department">@context.DepartmentId</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="() => StartEdit(context)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteDoctor(context.DoctorId)" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@if (showForm)
+{
+    <MudPaper Class="pa-4 mt-4">
+        <EditForm Model="currentDoctor" OnValidSubmit="SaveDoctor">
+            <MudTextField @bind-Value="currentDoctor.FirstName" Label="First Name" Required="true" />
+            <MudTextField @bind-Value="currentDoctor.LastName" Label="Last Name" Required="true" />
+            <MudTextField @bind-Value="currentDoctor.Specialization" Label="Specialization" Required="true" />
+            <MudTextField @bind-Value="currentDoctor.LicenseNumber" Label="License Number" Required="true" />
+            <MudTextField @bind-Value="currentDoctor.ContactNumber" Label="Contact Number" />
+            <MudTextField @bind-Value="currentDoctor.Email" Label="Email" />
+            <MudTextField @bind-Value="currentDoctor.DepartmentId" Label="Department Id" Required="true" />
+            <MudStack Row Class="mt-4" Spacing="2">
+                <MudButton Type="Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">Cancel</MudButton>
+            </MudStack>
+        </EditForm>
+    </MudPaper>
+}
+
+@code {
+    private List<DoctorModel>? doctors;
+    private bool showForm;
+    private DoctorModel currentDoctor = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        doctors = (await DoctorService.GetAllDoctorsAsync()).ToList();
+    }
+
+    private void StartAdd()
+    {
+        currentDoctor = new DoctorModel();
+        showForm = true;
+    }
+
+    private void StartEdit(DoctorModel doctor)
+    {
+        currentDoctor = new DoctorModel
+        {
+            DoctorId = doctor.DoctorId,
+            FirstName = doctor.FirstName,
+            LastName = doctor.LastName,
+            Specialization = doctor.Specialization,
+            LicenseNumber = doctor.LicenseNumber,
+            ContactNumber = doctor.ContactNumber,
+            Email = doctor.Email,
+            DepartmentId = doctor.DepartmentId,
+            Status = doctor.Status
+        };
+        showForm = true;
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+    }
+
+    private async Task SaveDoctor()
+    {
+        if (currentDoctor.DoctorId == 0)
+            await DoctorService.CreateDoctorAsync(currentDoctor);
+        else
+            await DoctorService.UpdateDoctorAsync(currentDoctor);
+
+        doctors = (await DoctorService.GetAllDoctorsAsync()).ToList();
+        showForm = false;
+    }
+
+    private async Task DeleteDoctor(int id)
+    {
+        await DoctorService.DeleteDoctorAsync(id);
+        doctors = (await DoctorService.GetAllDoctorsAsync()).ToList();
+    }
+}
