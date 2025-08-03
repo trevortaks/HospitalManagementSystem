@@ -1,0 +1,33 @@
+@page "/login"
+@using HospitalManagementSystem.WebApp.Models
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<h3>Login</h3>
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-3">
+        <label>Username</label>
+        <InputText @bind-Value="loginModel.Username" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@code {
+    private LoginModel loginModel = new();
+
+    private async Task HandleLogin()
+    {
+        var success = await AuthService.LoginAsync(loginModel.Username!, loginModel.Password!);
+        if (success)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+}

@@ -23,6 +23,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<DatabaseInitializer>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -169,11 +171,10 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.Migrate();
-    
-    //var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
-    //await initializer.InitializeAsync();
+    var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+    await initializer.InitializeAsync();
 }
 
-app.Run();
+await app.RunAsync();
 
 
