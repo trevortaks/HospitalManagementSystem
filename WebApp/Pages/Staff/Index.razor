@@ -1,0 +1,114 @@
+@page "/staff"
+@inject IStaffService StaffService
+
+<h3>Staff</h3>
+
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Total Staff</MudText>
+                <MudText Typo="Typo.h4">@staffMembers?.Count()</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12">
+        <MudStack Row AlignItems="center" Justify="space-between" Class="mb-4">
+            <MudText Typo="Typo.h6">Staff List</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAdd">Add Staff</MudButton>
+        </MudStack>
+        <MudTable Items="staffMembers" Hover="true">
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Position</MudTh>
+                <MudTh>Department</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.StaffId</MudTd>
+                <MudTd DataLabel="Name">@context.FirstName @context.LastName</MudTd>
+                <MudTd DataLabel="Position">@context.Position</MudTd>
+                <MudTd DataLabel="Department">@context.DepartmentId</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="() => StartEdit(context)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteStaff(context.StaffId)" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@if (showForm)
+{
+    <MudPaper Class="pa-4 mt-4">
+        <EditForm Model="currentStaff" OnValidSubmit="SaveStaff">
+            <MudTextField @bind-Value="currentStaff.FirstName" Label="First Name" Required="true" />
+            <MudTextField @bind-Value="currentStaff.LastName" Label="Last Name" Required="true" />
+            <MudTextField @bind-Value="currentStaff.Position" Label="Position" Required="true" />
+            <MudTextField @bind-Value="currentStaff.DepartmentId" Label="Department Id" Required="true" />
+            <MudTextField @bind-Value="currentStaff.ContactNumber" Label="Contact Number" />
+            <MudTextField @bind-Value="currentStaff.Email" Label="Email" />
+            <MudTextField @bind-Value="currentStaff.Status" Label="Status" />
+            <MudStack Row Class="mt-4" Spacing="2">
+                <MudButton Type="Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">Cancel</MudButton>
+            </MudStack>
+        </EditForm>
+    </MudPaper>
+}
+
+@code {
+    private List<StaffModel>? staffMembers;
+    private bool showForm;
+    private StaffModel currentStaff = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        staffMembers = (await StaffService.GetAllStaffAsync()).ToList();
+    }
+
+    private void StartAdd()
+    {
+        currentStaff = new StaffModel();
+        showForm = true;
+    }
+
+    private void StartEdit(StaffModel staff)
+    {
+        currentStaff = new StaffModel
+        {
+            StaffId = staff.StaffId,
+            FirstName = staff.FirstName,
+            LastName = staff.LastName,
+            Position = staff.Position,
+            DepartmentId = staff.DepartmentId,
+            ContactNumber = staff.ContactNumber,
+            Email = staff.Email,
+            Status = staff.Status
+        };
+        showForm = true;
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+    }
+
+    private async Task SaveStaff()
+    {
+        if (currentStaff.StaffId == 0)
+            await StaffService.CreateStaffAsync(currentStaff);
+        else
+            await StaffService.UpdateStaffAsync(currentStaff);
+
+        staffMembers = (await StaffService.GetAllStaffAsync()).ToList();
+        showForm = false;
+    }
+
+    private async Task DeleteStaff(int id)
+    {
+        await StaffService.DeleteStaffAsync(id);
+        staffMembers = (await StaffService.GetAllStaffAsync()).ToList();
+    }
+}
