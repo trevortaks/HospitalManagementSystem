@@ -1,0 +1,112 @@
+@page "/rooms"
+@inject IRoomService RoomService
+
+<h3>Rooms</h3>
+
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Total Rooms</MudText>
+                <MudText Typo="Typo.h4">@rooms?.Count()</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12">
+        <MudStack Row AlignItems="center" Justify="space-between" Class="mb-4">
+            <MudText Typo="Typo.h6">Rooms List</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAdd">Add Room</MudButton>
+        </MudStack>
+        <MudTable Items="rooms" Hover="true">
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Number</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Capacity</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.RoomId</MudTd>
+                <MudTd DataLabel="Number">@context.RoomNumber</MudTd>
+                <MudTd DataLabel="Status">@context.Status</MudTd>
+                <MudTd DataLabel="Capacity">@context.Capacity</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" OnClick="() => StartEdit(context)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteRoom(context.RoomId)" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+
+@if (showForm)
+{
+    <MudPaper Class="pa-4 mt-4">
+        <EditForm Model="currentRoom" OnValidSubmit="SaveRoom">
+            <MudTextField @bind-Value="currentRoom.RoomNumber" Label="Room Number" Required="true" />
+            <MudTextField @bind-Value="currentRoom.RoomTypeId" Label="Room Type Id" Required="true" />
+            <MudTextField @bind-Value="currentRoom.Status" Label="Status" />
+            <MudTextField @bind-Value="currentRoom.Capacity" Label="Capacity" Required="true" />
+            <MudTextField @bind-Value="currentRoom.DepartmentId" Label="Department Id" Required="true" />
+            <MudTextField @bind-Value="currentRoom.FloorNumber" Label="Floor Number" />
+            <MudStack Row Class="mt-4" Spacing="2">
+                <MudButton Type="Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="CancelForm">Cancel</MudButton>
+            </MudStack>
+        </EditForm>
+    </MudPaper>
+}
+
+@code {
+    private List<RoomModel>? rooms;
+    private bool showForm;
+    private RoomModel currentRoom = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        rooms = (await RoomService.GetAllRoomsAsync()).ToList();
+    }
+
+    private void StartAdd()
+    {
+        currentRoom = new RoomModel();
+        showForm = true;
+    }
+
+    private void StartEdit(RoomModel room)
+    {
+        currentRoom = new RoomModel
+        {
+            RoomId = room.RoomId,
+            RoomNumber = room.RoomNumber,
+            RoomTypeId = room.RoomTypeId,
+            Status = room.Status,
+            Capacity = room.Capacity,
+            DepartmentId = room.DepartmentId,
+            FloorNumber = room.FloorNumber
+        };
+        showForm = true;
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+    }
+
+    private async Task SaveRoom()
+    {
+        if (currentRoom.RoomId == 0)
+            await RoomService.CreateRoomAsync(currentRoom);
+        else
+            await RoomService.UpdateRoomAsync(currentRoom);
+
+        rooms = (await RoomService.GetAllRoomsAsync()).ToList();
+        showForm = false;
+    }
+
+    private async Task DeleteRoom(int id)
+    {
+        await RoomService.DeleteRoomAsync(id);
+        rooms = (await RoomService.GetAllRoomsAsync()).ToList();
+    }
+}
