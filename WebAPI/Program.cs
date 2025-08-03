@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Text;
 using HospitalManagementSystem.Application.Common.Behaviors;
@@ -15,6 +14,8 @@ using HospitalManagementSystem.WebAPI.Services;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -169,8 +170,8 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.Migrate();
     
-    var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
-    await initializer.InitializeAsync();
+    //var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+    //await initializer.InitializeAsync();
 }
 
 app.Run();

@@ -6,6 +6,8 @@ using MediatR;
 using HospitalManagementSystem.Application.Features.MedicalRecords.Commands;
 using HospitalManagementSystem.Application.Features.MedicalRecords.Queries;
 using HospitalManagementSystem.Application.DTOs;
+using HospitalManagementSystem.Application.Features.MedicalRecords.Queries.GetAll;
+using HospitalManagementSystem.Application.Features.MedicalRecords.Queries.GetById;
 
 namespace HospitalManagementSystem.WebAPI.Controllers
 {
