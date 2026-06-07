@@ -1,0 +1,156 @@
+@model HospitalMS.Business.Models.PortalProfileResponse?
+@{
+    ViewData["Title"] = "My Profile";
+    ViewData["ActivePage"] = "Portal";
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Index" class="pf-breadcrumb-link">My Health Portal</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">My Profile</span>
+        </div>
+        <h1 class="page-header-title">My Profile</h1>
+    </div>
+    <a asp-action="Index" class="pf-back-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Portal Home
+    </a>
+</div>
+
+@if (ViewBag.NoLinkedPatient == true || Model is null)
+{
+    <div class="dash-card" style="text-align:center;padding:3rem 2rem">
+        <h3 class="patients-empty-title">No patient record linked</h3>
+        <p class="patients-empty-text">Contact your care team to link your account to a patient record.</p>
+    </div>
+    return;
+}
+
+@if (TempData["SuccessMessage"] is string msg)
+{
+    <div class="alert alert-success py-2 small mb-4">@msg</div>
+}
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-4">
+        <!-- Read-only identity card -->
+        <div class="dash-card">
+            <div class="pf-section-header">
+                <div class="pf-section-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="pf-section-title">Identity</div>
+                    <div class="pf-section-subtitle">Read-only — managed by care team</div>
+                </div>
+            </div>
+            <div class="pf-body">
+                <div class="pf-field mb-3">
+                    <div class="pf-label">Full Name</div>
+                    <div class="pt-fullname">@Model.FirstName @Model.LastName</div>
+                </div>
+                <div class="pf-field mb-3">
+                    <div class="pf-label">MRN</div>
+                    <div><span class="pt-mrn-badge">@Model.MedicalRecordNumber</span></div>
+                </div>
+                <div class="pf-field mb-3">
+                    <div class="pf-label">Date of Birth</div>
+                    <div class="pt-fullname">@Model.DateOfBirth.ToString("MMMM d, yyyy")</div>
+                </div>
+                <div class="pf-field">
+                    <div class="pf-label">Email</div>
+                    <div class="pt-mrn-sub">@(Model.Email ?? "—")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- Editable contact & demographics -->
+        <form asp-action="Profile" method="post" novalidate>
+            <div class="dash-card">
+                <div class="pf-section-header">
+                    <div class="pf-section-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="pf-section-title">Contact &amp; Demographics</div>
+                        <div class="pf-section-subtitle">Update your contact information.</div>
+                    </div>
+                </div>
+
+                <div class="pf-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4" role="alert"></div>
+
+                    <div class="pf-grid-2 mb-4">
+                        <div class="pf-field">
+                            <label for="PhoneNumber" class="pf-label">Phone Number</label>
+                            <input id="PhoneNumber" name="PhoneNumber" class="pf-input" value="@Model.PhoneNumber" placeholder="+1 555 000 0000" />
+                        </div>
+                        <div class="pf-field">
+                            <label for="Gender" class="pf-label">Gender</label>
+                            <input id="Gender" name="Gender" class="pf-input" value="@Model.Gender" placeholder="e.g. Male, Female, Non-binary" />
+                        </div>
+                    </div>
+
+                    <div class="pf-grid-2 mb-4">
+                        <div class="pf-field">
+                            <label for="BloodGroup" class="pf-label">Blood Group</label>
+                            <input id="BloodGroup" name="BloodGroup" class="pf-input" value="@Model.BloodGroup" placeholder="e.g. A+, O-" maxlength="5" />
+                        </div>
+                        <div class="pf-field">
+                            <label for="AddressLine1" class="pf-label">Address</label>
+                            <input id="AddressLine1" name="AddressLine1" class="pf-input" value="@Model.AddressLine1" placeholder="Street address" />
+                        </div>
+                    </div>
+
+                    <div class="pf-grid-2 mb-4">
+                        <div class="pf-field">
+                            <label for="City" class="pf-label">City</label>
+                            <input id="City" name="City" class="pf-input" value="@Model.City" />
+                        </div>
+                        <div class="pf-field">
+                            <label for="PostalCode" class="pf-label">Postal Code</label>
+                            <input id="PostalCode" name="PostalCode" class="pf-input" value="@Model.PostalCode" />
+                        </div>
+                    </div>
+
+                    <div class="pf-field mb-4">
+                        <label for="Country" class="pf-label">Country</label>
+                        <input id="Country" name="Country" class="pf-input" value="@Model.Country" />
+                    </div>
+
+                    <div class="pf-grid-2 mb-2">
+                        <div class="pf-field">
+                            <label for="EmergencyContactName" class="pf-label">Emergency Contact Name</label>
+                            <input id="EmergencyContactName" name="EmergencyContactName" class="pf-input" value="@Model.EmergencyContactName" />
+                        </div>
+                        <div class="pf-field">
+                            <label for="EmergencyContactPhone" class="pf-label">Emergency Contact Phone</label>
+                            <input id="EmergencyContactPhone" name="EmergencyContactPhone" class="pf-input" value="@Model.EmergencyContactPhone" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pf-footer">
+                    <button type="submit" class="btn-primary-dash">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

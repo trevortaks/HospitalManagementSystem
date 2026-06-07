@@ -7,6 +7,7 @@ using AppointmentType = HospitalMS.Data.Persistence.Entities.AppointmentType;
 using EncounterType = HospitalMS.Data.Persistence.Entities.EncounterType;
 using MedicationForm = HospitalMS.Data.Persistence.Entities.MedicationForm;
 using PrescriptionStatus = HospitalMS.Data.Persistence.Entities.PrescriptionStatus;
+using PatientPortalSession = HospitalMS.Data.Persistence.Entities.PatientPortalSession;
 
 namespace HospitalMS.Tests;
 
@@ -130,6 +131,23 @@ public static class TestFixtures
             DurationDays = 7,
             Status = status,
             PrescribedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static PatientPortalSession CreatePortalSession(
+        Guid? id = null,
+        Guid? userId = null,
+        Guid? patientId = null,
+        string? ipAddress = "127.0.0.1")
+    {
+        return new PatientPortalSession
+        {
+            Id = id ?? Guid.NewGuid(),
+            UserId = userId ?? Guid.NewGuid(),
+            PatientId = patientId ?? Guid.NewGuid(),
+            IpAddress = ipAddress,
+            LoginAtUtc = DateTime.UtcNow,
+            LastActivityAtUtc = DateTime.UtcNow
         };
     }
 

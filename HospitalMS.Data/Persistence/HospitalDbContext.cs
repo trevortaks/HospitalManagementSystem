@@ -13,6 +13,7 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<VitalSigns> VitalSigns => Set<VitalSigns>();
     public DbSet<Medication> Medications => Set<Medication>();
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
+    public DbSet<PatientPortalSession> PatientPortalSessions => Set<PatientPortalSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,6 +46,11 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
             entity.Property(u => u.Role).HasMaxLength(100).IsRequired();
             entity.Property(u => u.PasswordHash).HasMaxLength(100).IsRequired();
             entity.HasIndex(u => u.Username).IsUnique();
+
+            entity.HasOne(u => u.LinkedPatient)
+                .WithMany()
+                .HasForeignKey(u => u.LinkedPatientId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Appointment>(entity =>
@@ -185,6 +191,26 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
             entity.HasIndex(p => p.PatientId);
             entity.HasIndex(p => p.EncounterId);
             entity.HasIndex(p => p.Status);
+        });
+
+        modelBuilder.Entity<PatientPortalSession>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.IpAddress).HasMaxLength(50);
+            entity.Property(s => s.UserAgent).HasMaxLength(500);
+
+            entity.HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(s => s.Patient)
+                .WithMany()
+                .HasForeignKey(s => s.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(s => s.UserId);
+            entity.HasIndex(s => s.PatientId);
         });
     }
 }

@@ -1,0 +1,86 @@
+@model IReadOnlyList<HospitalMS.Business.Models.PortalAppointmentResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = "My Appointments";
+    ViewData["ActivePage"] = "Portal";
+
+    string StatusClass(string s) => s switch {
+        AppointmentStatus.Completed  => "appt-badge--completed",
+        AppointmentStatus.Cancelled  => "appt-badge--cancelled",
+        AppointmentStatus.NoShow     => "appt-badge--noshow",
+        AppointmentStatus.Confirmed  => "appt-badge--confirmed",
+        AppointmentStatus.InProgress => "appt-badge--inprogress",
+        _                             => "appt-badge--scheduled"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Index" class="pf-breadcrumb-link">My Health Portal</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">My Appointments</span>
+        </div>
+        <h1 class="page-header-title">My Appointments</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <a asp-action="Index" class="pf-back-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Portal Home
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <div class="patients-empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            </div>
+            <h3 class="patients-empty-title">No appointments</h3>
+            <p class="patients-empty-text">You have no appointment records.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Date &amp; Time</th>
+                        <th>Doctor</th>
+                        <th>Type</th>
+                        <th>Reason</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="pt-fullname">@a.ScheduledAtUtc.ToString("MMM d, yyyy")</div>
+                                <div class="pt-mrn-sub">@a.ScheduledAtUtc.ToString("HH:mm")</div>
+                            </td>
+                            <td>@a.DoctorName</td>
+                            <td><span class="pt-mrn-badge">@a.Type</span></td>
+                            <td>@(a.Reason ?? "—")</td>
+                            <td>@a.DurationMinutes min</td>
+                            <td><span class="appt-status-badge @StatusClass(a.Status)">@a.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> appointment@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>

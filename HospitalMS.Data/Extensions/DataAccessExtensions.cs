@@ -223,6 +223,46 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260607000002_Phase2_Medications', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // Phase 3 — Patient Self-Service Portal
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "LinkedPatientId" uuid""",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'FK_Users_LinkedPatient'
+            ) THEN
+                ALTER TABLE "Users"
+                ADD CONSTRAINT "FK_Users_LinkedPatient"
+                FOREIGN KEY ("LinkedPatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT;
+            END IF;
+        END $$
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_Users_LinkedPatientId" ON "Users" ("LinkedPatientId") WHERE "LinkedPatientId" IS NOT NULL""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "PatientPortalSessions" (
+            "Id" uuid NOT NULL,
+            "UserId" uuid NOT NULL,
+            "PatientId" uuid NOT NULL,
+            "IpAddress" character varying(50),
+            "UserAgent" character varying(500),
+            "LoginAtUtc" timestamp with time zone NOT NULL,
+            "LastActivityAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_PatientPortalSessions" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_PatientPortalSessions_Users" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_PatientPortalSessions_Patients" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_PatientPortalSessions_UserId" ON "PatientPortalSessions" ("UserId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_PatientPortalSessions_PatientId" ON "PatientPortalSessions" ("PatientId")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260607000003_Phase3_PatientPortal', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

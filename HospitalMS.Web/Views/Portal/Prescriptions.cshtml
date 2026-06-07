@@ -1,0 +1,102 @@
+@model IReadOnlyList<HospitalMS.Business.Models.PortalPrescriptionResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = "My Prescriptions";
+    ViewData["ActivePage"] = "Portal";
+
+    string StatusClass(string s) => s switch {
+        PrescriptionStatus.Dispensed => "appt-badge--completed",
+        PrescriptionStatus.Cancelled => "appt-badge--cancelled",
+        PrescriptionStatus.Expired   => "appt-badge--noshow",
+        _                             => "appt-badge--confirmed"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Index" class="pf-breadcrumb-link">My Health Portal</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">My Prescriptions</span>
+        </div>
+        <h1 class="page-header-title">My Prescriptions</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <a asp-action="Index" class="pf-back-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Portal Home
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <div class="patients-empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+            </div>
+            <h3 class="patients-empty-title">No prescriptions</h3>
+            <p class="patients-empty-text">You have no prescription history.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Medication</th>
+                        <th>Dose / Frequency</th>
+                        <th>Duration</th>
+                        <th>Route</th>
+                        <th>Prescribed</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rx in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="pt-fullname">
+                                    @rx.MedicationGenericName
+                                    @if (rx.IsControlled)
+                                    {
+                                        <span class="appt-status-badge" style="background:#fef3c7;color:#b45309;font-size:.68rem;margin-left:.3rem">Ctrl</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(rx.MedicationBrandName))
+                                {
+                                    <div class="pt-mrn-sub">@rx.MedicationBrandName</div>
+                                }
+                                <span class="pt-mrn-badge">@rx.MedicationForm@(rx.Strength is not null ? $" {rx.Strength}" : "")</span>
+                            </td>
+                            <td>
+                                <div class="pt-fullname">@rx.Dose</div>
+                                <div class="pt-mrn-sub">@rx.Frequency</div>
+                            </td>
+                            <td>@(rx.DurationDays.HasValue ? $"{rx.DurationDays} days" : "—")</td>
+                            <td>@(rx.RouteOfAdministration ?? "—")</td>
+                            <td>
+                                <div class="pt-fullname">@rx.PrescribedAtUtc.ToString("MMM d, yyyy")</div>
+                                @if (rx.DispensedAtUtc.HasValue)
+                                {
+                                    <div class="pt-mrn-sub">Dispensed @rx.DispensedAtUtc.Value.ToString("MMM d")</div>
+                                }
+                            </td>
+                            <td><span class="appt-status-badge @StatusClass(rx.Status)">@rx.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> prescription@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>

@@ -9,4 +9,8 @@ public sealed class User
     public string PasswordHash { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    // Phase 3 — links a Patient-role user to their patient record
+    public Guid? LinkedPatientId { get; set; }
+    public Patient? LinkedPatient { get; set; }
 }
