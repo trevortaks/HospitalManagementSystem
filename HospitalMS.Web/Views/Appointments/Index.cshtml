@@ -1,0 +1,281 @@
+@model IReadOnlyList<HospitalMS.Business.Models.AppointmentResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = "Appointments";
+    ViewData["ActivePage"] = "Appointments";
+
+    string[] palette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626","#0e7490","#9333ea"];
+    string AvatarColor(string name)
+    {
+        int h = 0;
+        foreach (char c in name) h = c + ((h << 5) - h);
+        return palette[Math.Abs(h) % palette.Length];
+    }
+
+    string StatusClass(string s) => s switch {
+        AppointmentStatus.Completed  => "appt-badge--completed",
+        AppointmentStatus.Confirmed  => "appt-badge--confirmed",
+        AppointmentStatus.InProgress => "appt-badge--inprogress",
+        AppointmentStatus.Cancelled  => "appt-badge--cancelled",
+        AppointmentStatus.NoShow     => "appt-badge--noshow",
+        _                             => "appt-badge--scheduled"
+    };
+
+    var statusFilter = ViewBag.StatusFilter as string;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Appointments</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <a asp-action="Create" class="btn-primary-dash">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Appointment
+    </a>
+</div>
+
+<!-- Toolbar -->
+<div class="patients-toolbar">
+    <div class="patients-search-wrap">
+        <svg class="patients-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="apptSearch" class="patients-search-input" placeholder="Search by patient or doctor…" autocomplete="off" />
+        <button type="button" class="patients-search-clear d-none" id="searchClear" aria-label="Clear search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <select id="statusFilter" class="form-select form-select-sm" style="width:auto;border-radius:8px;font-size:.85rem">
+            <option value="">All Statuses</option>
+            @foreach (var s in AppointmentStatus.All)
+            {
+                @if (statusFilter == s)
+                {
+                    <option value="@s" selected>@s</option>
+                }
+                else
+                {
+                    <option value="@s">@s</option>
+                }
+            }
+        </select>
+    </div>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <div class="patients-empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            </div>
+            <h3 class="patients-empty-title">No appointments yet</h3>
+            <p class="patients-empty-text">Book the first appointment to get started.</p>
+            <a asp-action="Create" class="btn-primary-dash">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Appointment
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table" id="apptTable">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Date &amp; Time</th>
+                        <th>Duration</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody id="apptBody">
+                    @foreach (var a in Model)
+                    {
+                        var initials = a.PatientName.Split(' ') is { Length: >= 2 } p
+                            ? $"{p[0][0]}{p[1][0]}".ToUpper()
+                            : a.PatientName[..Math.Min(2, a.PatientName.Length)].ToUpper();
+                        var color = AvatarColor(a.PatientName);
+                        <tr class="patient-row appt-row"
+                            data-patient="@a.PatientName.ToLower()"
+                            data-doctor="@a.DoctorName.ToLower()"
+                            data-status="@a.Status.ToLower()">
+                            <td>
+                                <div class="pt-name-cell">
+                                    <div class="pt-avatar" style="background:@color">@initials</div>
+                                    <div>
+                                        <div class="pt-fullname">@a.PatientName</div>
+                                        <div class="pt-mrn-sub">@a.PatientMrn</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="pt-fullname">@a.DoctorName</div>
+                            </td>
+                            <td>
+                                <div class="pt-fullname">@a.ScheduledAtUtc.ToString("MMM d, yyyy")</div>
+                                <div class="pt-mrn-sub">@a.ScheduledAtUtc.ToString("h:mm tt") UTC</div>
+                            </td>
+                            <td>@a.DurationMinutes min</td>
+                            <td><span class="pt-mrn-badge">@a.Type</span></td>
+                            <td><span class="appt-status-badge @StatusClass(a.Status)">@a.Status</span></td>
+                            <td class="col-actions">
+                                <div class="dropdown">
+                                    <button class="pt-actions-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                                        </svg>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end pt-dropdown shadow-sm">
+                                        <li>
+                                            <a class="dropdown-item pt-dropdown-item" asp-action="Edit" asp-route-id="@a.Id">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                </svg>
+                                                Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item pt-dropdown-item"
+                                               asp-controller="Encounters" asp-action="Create"
+                                               asp-route-patientId="@a.PatientId" asp-route-appointmentId="@a.Id">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                                                </svg>
+                                                Open Encounter
+                                            </a>
+                                        </li>
+                                        @if (a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.Completed)
+                                        {
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li>
+                                                <button type="button" class="dropdown-item pt-dropdown-item pt-dropdown-danger"
+                                                        onclick="confirmCancel('@a.Id', '@a.PatientName')">
+                                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                                                    </svg>
+                                                    Cancel
+                                                </button>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div id="noResults" class="patients-no-results d-none">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <p>No appointments match <strong id="noResultsTerm"></strong></p>
+        </div>
+        <div class="patients-table-footer">
+            <span id="footerCount">Showing <strong>@Model.Count</strong> appointment@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>
+
+<!-- Cancel confirmation modal -->
+<form id="cancelForm" method="post" style="display:none">@Html.AntiForgeryToken()</form>
+
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
+        <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden">
+            <div class="modal-body p-4 text-center">
+                <div class="delete-modal-icon" style="background:#fff3cd;color:#d97706">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <h5 class="mt-3 mb-1" style="font-weight:700;color:#1e293b">Cancel Appointment</h5>
+                <p class="text-muted mb-3" style="font-size:.875rem">
+                    Cancel appointment for <strong id="cancelPatientName"></strong>?
+                </p>
+                <div class="mb-3 text-start">
+                    <label class="pf-label">Reason (optional)</label>
+                    <textarea id="cancelReason" class="pf-input" rows="2" placeholder="e.g. Patient request…"></textarea>
+                </div>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4" style="border-radius:8px;font-weight:600" data-bs-dismiss="modal">Keep</button>
+                    <button type="button" id="confirmCancelBtn" class="btn btn-warning px-4" style="border-radius:8px;font-weight:600;color:#fff">Cancel Appt.</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const rows  = document.querySelectorAll('.appt-row');
+        const total = rows.length;
+        const searchInput = document.getElementById('apptSearch');
+        const searchClear = document.getElementById('searchClear');
+        const noResults   = document.getElementById('noResults');
+        const noResultsTerm = document.getElementById('noResultsTerm');
+        const footerCount = document.getElementById('footerCount');
+        const statusSel   = document.getElementById('statusFilter');
+
+        function filterTable() {
+            const q = (searchInput?.value ?? '').trim().toLowerCase();
+            const s = statusSel?.value.toLowerCase() ?? '';
+            if (searchClear) searchClear.classList.toggle('d-none', q === '');
+            let visible = 0;
+            rows.forEach(row => {
+                const matchQ = !q || row.dataset.patient.includes(q) || row.dataset.doctor.includes(q);
+                const matchS = !s || row.dataset.status === s;
+                const show = matchQ && matchS;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            if (noResults) noResults.classList.toggle('d-none', visible > 0);
+            if (noResultsTerm) noResultsTerm.textContent = `"${searchInput?.value.trim()}"`;
+            if (footerCount) footerCount.innerHTML = `Showing <strong>${visible}</strong> appointment${visible === 1 ? '' : 's'}`;
+        }
+
+        searchInput?.addEventListener('input', filterTable);
+        searchClear?.addEventListener('click', () => { if (searchInput) { searchInput.value = ''; filterTable(); searchInput.focus(); } });
+        statusSel?.addEventListener('change', filterTable);
+
+        // Cancel modal
+        let pendingCancelId = null;
+        const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+
+        function confirmCancel(id, name) {
+            pendingCancelId = id;
+            document.getElementById('cancelPatientName').textContent = name;
+            cancelModal.show();
+        }
+
+        document.getElementById('confirmCancelBtn')?.addEventListener('click', () => {
+            if (!pendingCancelId) return;
+            const form = document.getElementById('cancelForm');
+            const reason = document.getElementById('cancelReason').value;
+            form.action = `/appointments/${pendingCancelId}/cancel`;
+
+            const input = document.createElement('input');
+            input.type = 'hidden'; input.name = 'reason'; input.value = reason;
+            form.appendChild(input);
+
+            cancelModal.hide();
+            form.submit();
+        });
+    </script>
+}

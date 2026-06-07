@@ -1,0 +1,135 @@
+@model HospitalMS.Business.Models.UpdateEncounterRequest
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = "Edit Encounter";
+    ViewData["ActivePage"] = "Encounters";
+
+    var encounter = ViewBag.Encounter as HospitalMS.Business.Models.EncounterResponse;
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Index" asp-route-patientId="@encounter?.PatientId" class="pf-breadcrumb-link">Encounters</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            @if (encounter is not null)
+            {
+                <a asp-action="Detail" asp-route-id="@encounter.Id" class="pf-breadcrumb-link">Detail</a>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            }
+            <span class="pf-breadcrumb-current">Edit</span>
+        </div>
+        <h1 class="page-header-title">Edit Encounter</h1>
+        @if (encounter is not null)
+        {
+            <div class="page-header-subtitle">@encounter.PatientName &bull; @encounter.PatientMrn</div>
+        }
+    </div>
+    @if (encounter is not null)
+    {
+        <a asp-action="Detail" asp-route-id="@encounter.Id" class="pf-back-btn">Back to Detail</a>
+    }
+</div>
+
+<form asp-action="Edit" method="post" novalidate>
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-8">
+            <div class="dash-card">
+                <div class="pf-section-header">
+                    <div class="pf-section-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="pf-section-title">SOAP Notes</div>
+                        <div class="pf-section-subtitle">Update clinical documentation.</div>
+                    </div>
+                </div>
+
+                <div class="pf-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4" role="alert"></div>
+
+                    <div class="pf-field mb-4">
+                        <label asp-for="EncounterType" class="pf-label">Encounter Type</label>
+                        <select asp-for="EncounterType" class="pf-input">
+                            @foreach (var t in EncounterType.All)
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="pf-field mb-4">
+                        <label asp-for="ChiefComplaint" class="pf-label">Chief Complaint</label>
+                        <textarea asp-for="ChiefComplaint" class="pf-input" rows="2"></textarea>
+                    </div>
+
+                    <div class="pf-field mb-4">
+                        <label asp-for="HistoryOfPresentIllness" class="pf-label">History of Present Illness</label>
+                        <textarea asp-for="HistoryOfPresentIllness" class="pf-input" rows="3"></textarea>
+                    </div>
+
+                    <div class="pf-grid-2 mb-4">
+                        <div class="pf-field">
+                            <label asp-for="Examination" class="pf-label">Examination</label>
+                            <textarea asp-for="Examination" class="pf-input" rows="3"></textarea>
+                        </div>
+                        <div class="pf-field">
+                            <label asp-for="Assessment" class="pf-label">Assessment</label>
+                            <textarea asp-for="Assessment" class="pf-input" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="pf-field mb-4">
+                        <label asp-for="Plan" class="pf-label">Plan</label>
+                        <textarea asp-for="Plan" class="pf-input" rows="3"></textarea>
+                    </div>
+
+                    <div class="pf-field">
+                        <label asp-for="FollowUpNotes" class="pf-label">Follow-up Notes</label>
+                        <textarea asp-for="FollowUpNotes" class="pf-input" rows="2" placeholder="Follow-up instructions, referrals…"></textarea>
+                    </div>
+                </div>
+
+                <div class="pf-footer">
+                    @if (encounter is not null)
+                    {
+                        <a asp-action="Detail" asp-route-id="@encounter.Id" class="pf-btn-cancel">Cancel</a>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" class="pf-btn-cancel">Cancel</a>
+                    }
+                    <button type="submit" class="btn-primary-dash">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="dash-card pf-tips-card">
+                <div class="pf-tips-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Reminder
+                </div>
+                <ul class="pf-tips-list">
+                    <li>Patient and doctor cannot be changed after creation.</li>
+                    <li>Diagnoses and vitals are managed from the <strong>encounter detail</strong> page.</li>
+                    <li>Close the encounter from the detail page when documentation is complete.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

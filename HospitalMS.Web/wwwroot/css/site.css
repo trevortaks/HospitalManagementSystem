@@ -1,0 +1,313 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body:not(.auth-body):not(.dash-body) {
+  margin-bottom: 60px;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}
+
+/* ─── Auth Pages ─────────────────────────────────────────────────────────── */
+
+.auth-body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.auth-wrapper {
+    display: flex;
+    height: 100vh;
+}
+
+/* Left cover */
+.auth-cover {
+    flex: 0 0 48%;
+    max-width: 48%;
+    background: linear-gradient(150deg, #1a2b6d 0%, #2e37a4 50%, #0e9fd4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-cover-deco {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+}
+
+.auth-cover-deco--tl {
+    width: 380px;
+    height: 380px;
+    top: -140px;
+    left: -140px;
+}
+
+.auth-cover-deco--br {
+    width: 300px;
+    height: 300px;
+    bottom: -110px;
+    right: -110px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-cover-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: 1;
+}
+
+.auth-illustration {
+    filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.25));
+}
+
+.auth-cover-brand .auth-cover-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+}
+
+.auth-cover-brand h2 {
+    color: white;
+    font-size: 1.65rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 0.75rem;
+    max-width: 360px;
+}
+
+.auth-cover-brand p {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    max-width: 340px;
+    margin: 0;
+}
+
+/* Right form panel */
+.auth-form-panel {
+    flex: 1;
+    background: #f7f9fc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 2rem;
+    overflow-y: auto;
+}
+
+.auth-form-container {
+    width: 100%;
+    max-width: 400px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 2.5rem 2.25rem;
+    box-shadow: 0 4px 24px rgba(30, 40, 100, 0.09);
+}
+
+/* Logo mark badge */
+.auth-logo-mark {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #2e37a4 0%, #0e9fd4 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(46, 55, 164, 0.35);
+}
+
+.auth-heading {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: #1a2b6d;
+    margin-bottom: 0.3rem;
+}
+
+.auth-subtitle {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin-bottom: 1.75rem;
+}
+
+/* Form controls */
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.35rem;
+}
+
+.auth-input {
+    border: 1.5px solid #d1d9e6;
+    border-radius: 9px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background: #f8fafc;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    height: auto;
+}
+
+.auth-input::placeholder {
+    color: #a0aec0;
+}
+
+.auth-input:focus {
+    border-color: #2e37a4;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(46, 55, 164, 0.13);
+    outline: none;
+}
+
+/* Password toggle */
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper .auth-input {
+    padding-right: 2.6rem;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+}
+
+.password-toggle:hover {
+    color: #2e37a4;
+}
+
+/* Submit button */
+.btn-auth {
+    background: linear-gradient(135deg, #2e37a4 0%, #0e9fd4 100%);
+    border: none;
+    border-radius: 9px;
+    padding: 0.72rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+    transition: opacity 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+    box-shadow: 0 4px 14px rgba(46, 55, 164, 0.3);
+}
+
+.btn-auth:hover {
+    color: #ffffff;
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(46, 55, 164, 0.38);
+}
+
+.btn-auth:active {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Register link */
+.auth-register-link {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 1.5rem;
+}
+
+.auth-register-link a {
+    color: #2e37a4;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-register-link a:hover {
+    text-decoration: underline;
+}
+
+/* Footer copy */
+.auth-footer-copy {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #a0aec0;
+    margin-top: 2rem;
+    margin-bottom: 0;
+}
+
+/* Mobile: hide left panel */
+@media (max-width: 767.98px) {
+    .auth-cover {
+        display: none;
+    }
+
+    .auth-form-panel {
+        flex: 0 0 100%;
+        max-width: 100%;
+        background: #ffffff;
+        padding: 1.5rem;
+    }
+
+    .auth-form-container {
+        box-shadow: none;
+        padding: 1.5rem 1rem;
+    }
+}
+
+@media (max-width: 991.98px) and (min-width: 768px) {
+    .auth-cover {
+        flex: 0 0 42%;
+        max-width: 42%;
+    }
+
+    .auth-cover-brand h2 {
+        font-size: 1.35rem;
+    }
+
+    .auth-illustration svg {
+        width: 170px;
+        height: 170px;
+    }
+}

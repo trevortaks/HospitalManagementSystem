@@ -1,0 +1,117 @@
+@model IReadOnlyList<HospitalMS.Business.Models.EncounterResponse>
+@{
+    ViewData["Title"] = "Clinical Encounters";
+    ViewData["ActivePage"] = "Encounters";
+
+    var patient = ViewBag.Patient as HospitalMS.Business.Models.PatientResponse;
+
+    string[] palette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626","#0e7490","#9333ea"];
+    string AvatarColor(string name)
+    {
+        int h = 0;
+        foreach (char c in name) h = c + ((h << 5) - h);
+        return palette[Math.Abs(h) % palette.Length];
+    }
+}
+
+<div class="page-header">
+    <div>
+        @if (patient is not null)
+        {
+            <div class="pf-breadcrumb">
+                <a asp-controller="Patients" asp-action="Index" class="pf-breadcrumb-link">Patients</a>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                <span class="pf-breadcrumb-current">Encounters — @patient.FirstName @patient.LastName</span>
+            </div>
+        }
+        <h1 class="page-header-title">Clinical Encounters</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <a asp-action="Create" asp-route-patientId="@patient?.Id" class="btn-primary-dash">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Encounter
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <div class="patients-empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+            </div>
+            <h3 class="patients-empty-title">No encounters yet</h3>
+            <p class="patients-empty-text">Open the first clinical encounter to start documenting care.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Type</th>
+                        <th>Started</th>
+                        <th>Chief Complaint</th>
+                        <th>Status</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model)
+                    {
+                        var initials = e.PatientName.Split(' ') is { Length: >= 2 } p2
+                            ? $"{p2[0][0]}{p2[1][0]}".ToUpper()
+                            : e.PatientName[..Math.Min(2, e.PatientName.Length)].ToUpper();
+                        var color = AvatarColor(e.PatientName);
+                        <tr>
+                            <td>
+                                <div class="pt-name-cell">
+                                    <div class="pt-avatar" style="background:@color">@initials</div>
+                                    <div>
+                                        <div class="pt-fullname">@e.PatientName</div>
+                                        <div class="pt-mrn-sub">@e.PatientMrn</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@e.AttendingDoctorName</td>
+                            <td><span class="pt-mrn-badge">@e.EncounterType</span></td>
+                            <td>
+                                <div class="pt-fullname">@e.StartedAtUtc.ToString("MMM d, yyyy")</div>
+                                <div class="pt-mrn-sub">@e.StartedAtUtc.ToString("h:mm tt") UTC</div>
+                            </td>
+                            <td class="text-truncate" style="max-width:200px">
+                                @(string.IsNullOrEmpty(e.ChiefComplaint) ? "—" : e.ChiefComplaint)
+                            </td>
+                            <td>
+                                @if (e.IsClosed)
+                                {
+                                    <span class="appt-status-badge appt-badge--completed">Closed</span>
+                                }
+                                else
+                                {
+                                    <span class="appt-status-badge appt-badge--inprogress">Open</span>
+                                }
+                            </td>
+                            <td class="col-actions">
+                                <a asp-action="Detail" asp-route-id="@e.Id"
+                                   class="btn btn-sm" style="border-radius:7px;font-size:.8rem;font-weight:600;color:#2e37a4;background:#eff1fc;border:none;padding:.3rem .75rem">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> encounter@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>

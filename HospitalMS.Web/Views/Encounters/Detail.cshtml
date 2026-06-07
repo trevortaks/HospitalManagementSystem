@@ -1,0 +1,199 @@
+@model HospitalMS.Business.Models.EncounterResponse
+@{
+    ViewData["Title"] = "Encounter Detail";
+    ViewData["ActivePage"] = "Encounters";
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Index" asp-route-patientId="@Model.PatientId" class="pf-breadcrumb-link">Encounters</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">Detail</span>
+        </div>
+        <h1 class="page-header-title">Clinical Encounter</h1>
+        <div class="page-header-subtitle">@Model.PatientName &bull; @Model.PatientMrn</div>
+    </div>
+    <div class="d-flex gap-2">
+        @if (!Model.IsClosed)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="pf-back-btn">Edit</a>
+            <form asp-action="Close" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-primary-dash" style="background:linear-gradient(135deg,#16a34a,#0891b2)"
+                        onclick="return confirm('Close this encounter? This cannot be undone.')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Close Encounter
+                </button>
+            </form>
+        }
+        else
+        {
+            <span class="appt-status-badge appt-badge--completed" style="font-size:.9rem;padding:.4rem .9rem">Closed</span>
+        }
+    </div>
+</div>
+
+<!-- Summary bar -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card" style="padding:1rem 1.25rem">
+            <div class="stat-label">Type</div>
+            <div class="stat-value" style="font-size:1.1rem">@Model.EncounterType</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card" style="padding:1rem 1.25rem">
+            <div class="stat-label">Doctor</div>
+            <div class="stat-value" style="font-size:1.1rem">@Model.AttendingDoctorName</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card" style="padding:1rem 1.25rem">
+            <div class="stat-label">Started</div>
+            <div class="stat-value" style="font-size:1.1rem">@Model.StartedAtUtc.ToString("MMM d, yyyy h:mm tt")</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card" style="padding:1rem 1.25rem">
+            <div class="stat-label">Diagnoses</div>
+            <div class="stat-value" style="font-size:1.1rem">@Model.Diagnoses.Count</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 align-items-start">
+    <!-- SOAP notes -->
+    <div class="col-lg-8">
+        <div class="dash-card mb-4">
+            <div class="pf-section-header">
+                <div class="pf-section-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="pf-section-title">SOAP Notes</div>
+                    <div class="pf-section-subtitle">Subjective, Objective, Assessment and Plan.</div>
+                </div>
+            </div>
+            <div class="pf-body">
+                @{
+                    void SoapSection(string label, string? content) {
+                        <div class="mb-4">
+                            <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:.35rem">@label</div>
+                            <div style="color:#1e293b;font-size:.9rem;line-height:1.65;white-space:pre-wrap">@(string.IsNullOrWhiteSpace(content) ? "—" : content)</div>
+                        </div>
+                    }
+                    SoapSection("Chief Complaint", Model.ChiefComplaint);
+                    SoapSection("History of Present Illness", Model.HistoryOfPresentIllness);
+                    SoapSection("Examination", Model.Examination);
+                    SoapSection("Assessment", Model.Assessment);
+                    SoapSection("Plan", Model.Plan);
+                    if (!string.IsNullOrWhiteSpace(Model.FollowUpNotes))
+                    {
+                        SoapSection("Follow-up Notes", Model.FollowUpNotes);
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Vital Signs -->
+        <div class="dash-card">
+            <div class="pf-section-header">
+                <div class="pf-section-icon" style="background:#fef9c3;color:#ca8a04">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="pf-section-title">Vital Signs (@Model.VitalSigns.Count)</div>
+                    <div class="pf-section-subtitle">Recorded measurements for this encounter.</div>
+                </div>
+            </div>
+            <div class="pf-body">
+                @if (!Model.VitalSigns.Any())
+                {
+                    <div class="text-muted small">No vitals recorded yet.</div>
+                }
+                else
+                {
+                    foreach (var v in Model.VitalSigns)
+                    {
+                        <div class="mb-3 p-3" style="background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span style="font-size:.8rem;font-weight:600;color:#64748b">
+                                    @v.RecordedAtUtc.ToString("MMM d, yyyy h:mm tt") — @v.RecordedByName
+                                </span>
+                            </div>
+                            <div class="row g-2">
+                                @{
+                                    void Vital(string label, string? value) {
+                                        if (value is not null) {
+                                            <div class="col-6 col-sm-4">
+                                                <div style="font-size:.75rem;color:#94a3b8">@label</div>
+                                                <div style="font-weight:600;font-size:.9rem;color:#1e293b">@value</div>
+                                            </div>
+                                        }
+                                    }
+                                    Vital("Height", v.HeightCm.HasValue ? $"{v.HeightCm} cm" : null);
+                                    Vital("Weight", v.WeightKg.HasValue ? $"{v.WeightKg} kg" : null);
+                                    Vital("Temp.", v.TemperatureCelsius.HasValue ? $"{v.TemperatureCelsius}°C" : null);
+                                    Vital("BP", v.BloodPressureSystolic.HasValue && v.BloodPressureDiastolic.HasValue ? $"{v.BloodPressureSystolic}/{v.BloodPressureDiastolic} mmHg" : null);
+                                    Vital("HR", v.HeartRateBpm.HasValue ? $"{v.HeartRateBpm} bpm" : null);
+                                    Vital("RR", v.RespiratoryRate.HasValue ? $"{v.RespiratoryRate} /min" : null);
+                                    Vital("SpO₂", v.OxygenSaturationPct.HasValue ? $"{v.OxygenSaturationPct}%" : null);
+                                }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(v.Notes))
+                            {
+                                <div class="mt-2" style="font-size:.8rem;color:#64748b">@v.Notes</div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnoses sidebar -->
+    <div class="col-lg-4">
+        <div class="dash-card">
+            <div class="pf-section-header">
+                <div class="pf-section-icon" style="background:#fee2e2;color:#dc2626">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="pf-section-title">Diagnoses (@Model.Diagnoses.Count)</div>
+                </div>
+            </div>
+            <div class="pf-body">
+                @if (!Model.Diagnoses.Any())
+                {
+                    <div class="text-muted small">No diagnoses recorded yet.</div>
+                }
+                else
+                {
+                    foreach (var d in Model.Diagnoses)
+                    {
+                        <div class="mb-3 p-3" style="background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div style="font-weight:700;font-size:.9rem;color:#1e293b">@d.IcdCode</div>
+                                    <div style="font-size:.85rem;color:#475569">@d.Description</div>
+                                </div>
+                                <span class="pt-mrn-badge" style="white-space:nowrap">@d.DiagnosisType</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
