@@ -1,0 +1,178 @@
+@model HospitalMS.Business.Models.CreatePrescriptionRequest
+@{
+    ViewData["Title"] = "New Prescription";
+    ViewData["ActivePage"] = "Prescriptions";
+
+    var meds    = ViewBag.Medications as IReadOnlyList<HospitalMS.Business.Models.MedicationResponse> ?? [];
+    var doctors = ViewBag.Doctors     as IReadOnlyList<HospitalMS.Business.Models.UserSummary>       ?? [];
+    var preEncounterId = ViewBag.PreselectedEncounterId as Guid?;
+    var prePatientId   = ViewBag.PreselectedPatientId   as Guid?;
+    var patients = ViewBag.Patients as IReadOnlyList<HospitalMS.Business.Models.PatientResponse> ?? [];
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-controller="Dashboard" asp-action="Index" class="pf-breadcrumb-link">Dashboard</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <a asp-action="Index" class="pf-breadcrumb-link">Prescriptions</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">New Prescription</span>
+        </div>
+        <h1 class="page-header-title">New Prescription</h1>
+    </div>
+    <a asp-action="Index" class="pf-back-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Back
+    </a>
+</div>
+
+<form asp-action="Create" method="post" novalidate>
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-8">
+            <div class="dash-card">
+                <div class="pf-section-header">
+                    <div class="pf-section-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="pf-section-title">Prescription Details</div>
+                        <div class="pf-section-subtitle">Select patient, medication, and dosing information.</div>
+                    </div>
+                </div>
+
+                <div class="pf-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4" role="alert"></div>
+
+                    <div class="pf-grid-2 mb-4">
+                        <div class="pf-field">
+                            <label asp-for="PatientId" class="pf-label">Patient <span class="pf-required">*</span></label>
+                            <select asp-for="PatientId" class="pf-input">
+                                <option value="">— Select patient —</option>
+                                @foreach (var p in patients)
+                                {
+                                    if (prePatientId == p.Id)
+                                    {
+                                        <option value="@p.Id" selected>@p.FirstName @p.LastName (@p.MedicalRecordNumber)</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@p.Id">@p.FirstName @p.LastName (@p.MedicalRecordNumber)</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="PatientId" class="pf-error"></span>
+                        </div>
+                        <div class="pf-field">
+                            <label asp-for="PrescribedByUserId" class="pf-label">Prescribing Doctor <span class="pf-required">*</span></label>
+                            <select asp-for="PrescribedByUserId" class="pf-input">
+                                <option value="">— Select doctor —</option>
+                                @foreach (var d in doctors)
+                                {
+                                    <option value="@d.Id">@d.Username (@d.Role)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="PrescribedByUserId" class="pf-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="pf-grid-2 mb-4">
+                        <div class="pf-field">
+                            <label asp-for="EncounterId" class="pf-label">Encounter ID <span class="pf-required">*</span></label>
+                            <input asp-for="EncounterId" class="pf-input" placeholder="Encounter UUID"
+                                   value="@(preEncounterId?.ToString() ?? "")" />
+                            <span asp-validation-for="EncounterId" class="pf-error"></span>
+                            <span class="pf-hint">The encounter this prescription belongs to.</span>
+                        </div>
+                        <div class="pf-field">
+                            <label asp-for="MedicationId" class="pf-label">Medication <span class="pf-required">*</span></label>
+                            <select asp-for="MedicationId" class="pf-input" id="medSelect">
+                                <option value="">— Select medication —</option>
+                                @foreach (var m in meds)
+                                {
+                                    <option value="@m.Id" data-controlled="@m.IsControlled.ToString().ToLower()">
+                                        @m.GenericName@(m.BrandName is not null ? $" ({m.BrandName})" : "") — @m.Form@(m.Strength is not null ? $" {m.Strength}" : "")
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="MedicationId" class="pf-error"></span>
+                        </div>
+                    </div>
+
+                    <div id="controlledAlert" class="alert alert-warning py-2 small mb-4 d-none" role="alert">
+                        <strong>Controlled substance</strong> — ensure special prescribing authority requirements are met.
+                    </div>
+
+                    <div class="pf-grid-2 mb-4">
+                        <div class="pf-field">
+                            <label asp-for="Dose" class="pf-label">Dose <span class="pf-required">*</span></label>
+                            <input asp-for="Dose" class="pf-input" placeholder="e.g. 500 mg" />
+                            <span asp-validation-for="Dose" class="pf-error"></span>
+                        </div>
+                        <div class="pf-field">
+                            <label asp-for="Frequency" class="pf-label">Frequency <span class="pf-required">*</span></label>
+                            <input asp-for="Frequency" class="pf-input" placeholder="e.g. TDS, BD, Once daily" />
+                            <span asp-validation-for="Frequency" class="pf-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="pf-grid-2 mb-4">
+                        <div class="pf-field">
+                            <label asp-for="DurationDays" class="pf-label">Duration (days)</label>
+                            <input asp-for="DurationDays" type="number" class="pf-input" min="1" placeholder="e.g. 7" />
+                        </div>
+                    </div>
+
+                    <div class="pf-field">
+                        <label asp-for="Instructions" class="pf-label">Instructions</label>
+                        <textarea asp-for="Instructions" class="pf-input" rows="2"
+                                  placeholder="e.g. Take with food. Avoid alcohol."></textarea>
+                    </div>
+                </div>
+
+                <div class="pf-footer">
+                    <a asp-action="Index" class="pf-btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-primary-dash">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Issue Prescription
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="dash-card pf-tips-card">
+                <div class="pf-tips-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Tips
+                </div>
+                <ul class="pf-tips-list">
+                    <li>Only <strong>active</strong> medications appear in the dropdown.</li>
+                    <li>Prescriptions enter <strong>Active</strong> status and await pharmacist dispensing.</li>
+                    <li>Common frequency codes: <code>OD</code> (once daily), <code>BD</code> (twice), <code>TDS</code> (three times), <code>QDS</code> (four times), <code>PRN</code> (as needed).</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script>
+        const medSelect = document.getElementById('medSelect');
+        const alert     = document.getElementById('controlledAlert');
+        medSelect?.addEventListener('change', () => {
+            const opt = medSelect.selectedOptions[0];
+            alert.classList.toggle('d-none', opt?.dataset.controlled !== 'true');
+        });
+    </script>
+}

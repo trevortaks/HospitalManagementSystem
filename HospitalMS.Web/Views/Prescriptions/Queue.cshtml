@@ -1,0 +1,154 @@
+@model IReadOnlyList<HospitalMS.Business.Models.PrescriptionResponse>
+@{
+    ViewData["Title"] = "Dispense Queue";
+    ViewData["ActivePage"] = "Prescriptions";
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-controller="Dashboard" asp-action="Index" class="pf-breadcrumb-link">Dashboard</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <a asp-action="Index" class="pf-breadcrumb-link">Prescriptions</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">Dispense Queue</span>
+        </div>
+        <h1 class="page-header-title">Dispense Queue</h1>
+        <div class="page-header-subtitle">Active prescriptions awaiting dispensing — <strong>@Model.Count</strong></div>
+    </div>
+    <a asp-action="Index" class="pf-back-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        All Prescriptions
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <div class="patients-empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+            <h3 class="patients-empty-title">Queue is empty</h3>
+            <p class="patients-empty-text">No active prescriptions are waiting to be dispensed.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Medication</th>
+                        <th>Dose / Frequency</th>
+                        <th>Duration</th>
+                        <th>Prescribed By</th>
+                        <th>Prescribed</th>
+                        <th>Dispense</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rx in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="pt-fullname">@rx.PatientName</div>
+                                <div class="pt-mrn-sub">@rx.PatientMrn</div>
+                            </td>
+                            <td>
+                                <div class="pt-fullname">
+                                    @rx.MedicationGenericName
+                                    @if (rx.IsControlled)
+                                    {
+                                        <span class="appt-status-badge" style="background:#fef3c7;color:#b45309;font-size:.68rem;margin-left:.3rem">Ctrl</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(rx.MedicationBrandName))
+                                {
+                                    <div class="pt-mrn-sub">@rx.MedicationBrandName</div>
+                                }
+                                <span class="pt-mrn-badge">@rx.MedicationForm@(rx.Strength is not null ? $" {rx.Strength}" : "")</span>
+                            </td>
+                            <td>
+                                <div class="pt-fullname">@rx.Dose</div>
+                                <div class="pt-mrn-sub">@rx.Frequency</div>
+                            </td>
+                            <td>@(rx.DurationDays.HasValue ? $"{rx.DurationDays} days" : "—")</td>
+                            <td>@rx.PrescribedByName</td>
+                            <td>@rx.PrescribedAtUtc.ToString("MMM d, yyyy HH:mm")</td>
+                            <td>
+                                <button type="button" class="btn-primary-dash btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#dispenseModal"
+                                        data-rx-id="@rx.Id"
+                                        data-rx-label="@rx.MedicationGenericName@(rx.MedicationBrandName is not null ? $" ({rx.MedicationBrandName})" : "") — @rx.Dose @rx.Frequency"
+                                        data-patient="@rx.PatientName">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    Dispense
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> pending prescription@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>
+
+<!-- Dispense modal -->
+<div class="modal fade" id="dispenseModal" tabindex="-1" aria-labelledby="dispenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dispenseModalLabel">Dispense Prescription</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="dispenseForm" asp-action="Dispense" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="modalRxId" name="id" value="" />
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                        Patient: <strong id="modalPatient"></strong><br />
+                        Medication: <strong id="modalMedLabel"></strong>
+                    </p>
+                    <div class="pf-field">
+                        <label for="QuantityDispensed" class="pf-label">Quantity Dispensed <span class="pf-required">*</span></label>
+                        <input type="number" id="QuantityDispensed" name="QuantityDispensed" class="pf-input" min="1" required placeholder="e.g. 30" />
+                    </div>
+                    <div class="pf-field mt-3">
+                        <label for="DispensedByUserId" class="pf-label">Dispensed By (User ID) <span class="pf-required">*</span></label>
+                        <input type="text" id="DispensedByUserId" name="DispensedByUserId" class="pf-input" required placeholder="Pharmacist UUID" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="pf-btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-primary-dash">Confirm Dispense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const dispenseModal = document.getElementById('dispenseModal');
+        dispenseModal?.addEventListener('show.bs.modal', e => {
+            const btn = e.relatedTarget;
+            document.getElementById('modalRxId').value      = btn.dataset.rxId;
+            document.getElementById('modalMedLabel').textContent = btn.dataset.rxLabel;
+            document.getElementById('modalPatient').textContent  = btn.dataset.patient;
+            document.getElementById('dispenseForm').action  =
+                '/Prescriptions/Dispense/' + btn.dataset.rxId;
+        });
+    </script>
+}

@@ -46,6 +46,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
         services.AddScoped<IEncounterService, EncounterService>();
+        services.AddScoped<IMedicationService, MedicationService>();
+        services.AddScoped<IPrescriptionService, PrescriptionService>();
 
         services.AddHealthChecks()
             .AddCheck<HospitalDatabaseHealthCheck>("postgres", tags: ["ready"]);

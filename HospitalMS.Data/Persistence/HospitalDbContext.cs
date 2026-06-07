@@ -11,6 +11,8 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<ClinicalEncounter> ClinicalEncounters => Set<ClinicalEncounter>();
     public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
     public DbSet<VitalSigns> VitalSigns => Set<VitalSigns>();
+    public DbSet<Medication> Medications => Set<Medication>();
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -134,6 +136,55 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(v => v.EncounterId);
+        });
+
+        modelBuilder.Entity<Medication>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.GenericName).HasMaxLength(200).IsRequired();
+            entity.Property(m => m.BrandName).HasMaxLength(200);
+            entity.Property(m => m.Form).HasMaxLength(50).IsRequired();
+            entity.Property(m => m.Strength).HasMaxLength(50);
+            entity.Property(m => m.RouteOfAdministration).HasMaxLength(50);
+            entity.HasIndex(m => m.GenericName);
+        });
+
+        modelBuilder.Entity<Prescription>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Dose).HasMaxLength(100).IsRequired();
+            entity.Property(p => p.Frequency).HasMaxLength(100).IsRequired();
+            entity.Property(p => p.Instructions).HasMaxLength(1000);
+            entity.Property(p => p.Status).HasMaxLength(30).IsRequired();
+
+            entity.HasOne(p => p.Encounter)
+                .WithMany()
+                .HasForeignKey(p => p.EncounterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(p => p.Patient)
+                .WithMany()
+                .HasForeignKey(p => p.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(p => p.Medication)
+                .WithMany()
+                .HasForeignKey(p => p.MedicationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(p => p.PrescribedByUser)
+                .WithMany()
+                .HasForeignKey(p => p.PrescribedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(p => p.DispensedByUser)
+                .WithMany()
+                .HasForeignKey(p => p.DispensedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(p => p.PatientId);
+            entity.HasIndex(p => p.EncounterId);
+            entity.HasIndex(p => p.Status);
         });
     }
 }

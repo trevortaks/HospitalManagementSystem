@@ -171,6 +171,58 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260607000001_Phase1_AppointmentsAndEHR', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // Phase 2 — Medications catalogue
+        """
+        CREATE TABLE IF NOT EXISTS "Medications" (
+            "Id" uuid NOT NULL,
+            "GenericName" character varying(200) NOT NULL,
+            "BrandName" character varying(200),
+            "Form" character varying(50) NOT NULL,
+            "Strength" character varying(50),
+            "RouteOfAdministration" character varying(50),
+            "IsControlled" boolean NOT NULL DEFAULT false,
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Medications" PRIMARY KEY ("Id")
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_Medications_GenericName" ON "Medications" ("GenericName")""",
+
+        // Phase 2 — Prescriptions
+        """
+        CREATE TABLE IF NOT EXISTS "Prescriptions" (
+            "Id" uuid NOT NULL,
+            "EncounterId" uuid NOT NULL,
+            "PatientId" uuid NOT NULL,
+            "PrescribedByUserId" uuid NOT NULL,
+            "MedicationId" uuid NOT NULL,
+            "Dose" character varying(100) NOT NULL,
+            "Frequency" character varying(100) NOT NULL,
+            "DurationDays" integer,
+            "QuantityDispensed" integer,
+            "Instructions" character varying(1000),
+            "Status" character varying(30) NOT NULL DEFAULT 'Active',
+            "PrescribedAtUtc" timestamp with time zone NOT NULL,
+            "DispensedAtUtc" timestamp with time zone,
+            "DispensedByUserId" uuid,
+            CONSTRAINT "PK_Prescriptions" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_Prescriptions_ClinicalEncounters" FOREIGN KEY ("EncounterId") REFERENCES "ClinicalEncounters" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_Prescriptions_Patients" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_Prescriptions_Medications" FOREIGN KEY ("MedicationId") REFERENCES "Medications" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_Prescriptions_PrescribedBy" FOREIGN KEY ("PrescribedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_Prescriptions_DispensedBy" FOREIGN KEY ("DispensedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_Prescriptions_PatientId" ON "Prescriptions" ("PatientId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_Prescriptions_EncounterId" ON "Prescriptions" ("EncounterId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_Prescriptions_Status" ON "Prescriptions" ("Status")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260607000002_Phase2_Medications', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

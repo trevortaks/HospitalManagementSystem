@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using AppointmentStatus = HospitalMS.Data.Persistence.Entities.AppointmentStatus;
 using AppointmentType = HospitalMS.Data.Persistence.Entities.AppointmentType;
 using EncounterType = HospitalMS.Data.Persistence.Entities.EncounterType;
+using MedicationForm = HospitalMS.Data.Persistence.Entities.MedicationForm;
+using PrescriptionStatus = HospitalMS.Data.Persistence.Entities.PrescriptionStatus;
 
 namespace HospitalMS.Tests;
 
@@ -83,6 +85,51 @@ public static class TestFixtures
             IsClosed = isClosed,
             StartedAtUtc = DateTime.UtcNow,
             CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static Medication CreateMedication(
+        Guid? id = null,
+        string genericName = "Amoxicillin",
+        string form = "Tablet",
+        string? brandName = "Amoxil",
+        string? strength = "500 mg",
+        bool isControlled = false,
+        bool isActive = true)
+    {
+        return new Medication
+        {
+            Id = id ?? Guid.NewGuid(),
+            GenericName = genericName,
+            BrandName = brandName,
+            Form = form,
+            Strength = strength,
+            IsControlled = isControlled,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static Prescription CreatePrescription(
+        Guid? id = null,
+        Guid? encounterId = null,
+        Guid? patientId = null,
+        Guid? prescribedByUserId = null,
+        Guid? medicationId = null,
+        string status = "Active")
+    {
+        return new Prescription
+        {
+            Id = id ?? Guid.NewGuid(),
+            EncounterId = encounterId ?? Guid.NewGuid(),
+            PatientId = patientId ?? Guid.NewGuid(),
+            PrescribedByUserId = prescribedByUserId ?? Guid.NewGuid(),
+            MedicationId = medicationId ?? Guid.NewGuid(),
+            Dose = "500 mg",
+            Frequency = "TDS",
+            DurationDays = 7,
+            Status = status,
+            PrescribedAtUtc = DateTime.UtcNow
         };
     }
 

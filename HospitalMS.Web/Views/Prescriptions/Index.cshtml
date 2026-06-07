@@ -1,0 +1,144 @@
+@model IReadOnlyList<HospitalMS.Business.Models.PrescriptionResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = "Prescriptions";
+    ViewData["ActivePage"] = "Prescriptions";
+
+    var patient = ViewBag.Patient as HospitalMS.Business.Models.PatientResponse;
+    var patientId = ViewBag.PatientId as Guid?;
+
+    string StatusClass(string s) => s switch {
+        PrescriptionStatus.Dispensed  => "appt-badge--completed",
+        PrescriptionStatus.Cancelled  => "appt-badge--cancelled",
+        PrescriptionStatus.Expired    => "appt-badge--noshow",
+        _                              => "appt-badge--confirmed"   // Active
+    };
+}
+
+<div class="page-header">
+    <div>
+        @if (patient is not null)
+        {
+            <div class="pf-breadcrumb">
+                <a asp-controller="Patients" asp-action="Index" class="pf-breadcrumb-link">Patients</a>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                <span class="pf-breadcrumb-current">Prescriptions — @patient.FirstName @patient.LastName</span>
+            </div>
+        }
+        <h1 class="page-header-title">Prescriptions</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Queue" class="pf-back-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Dispense Queue
+        </a>
+        <a asp-action="Create" asp-route-patientId="@patientId" class="btn-primary-dash">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New Prescription
+        </a>
+    </div>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <div class="patients-empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+            </div>
+            <h3 class="patients-empty-title">No prescriptions</h3>
+            <p class="patients-empty-text">No prescriptions have been issued yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Medication</th>
+                        <th>Dose / Frequency</th>
+                        <th>Duration</th>
+                        <th>Prescribed By</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rx in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="pt-fullname">@rx.PatientName</div>
+                                <div class="pt-mrn-sub">@rx.PatientMrn</div>
+                            </td>
+                            <td>
+                                <div class="pt-fullname">
+                                    @rx.MedicationGenericName
+                                    @if (rx.IsControlled)
+                                    {
+                                        <span class="appt-status-badge" style="background:#fef3c7;color:#b45309;font-size:.68rem;margin-left:.3rem">Ctrl</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(rx.MedicationBrandName))
+                                {
+                                    <div class="pt-mrn-sub">@rx.MedicationBrandName</div>
+                                }
+                                <span class="pt-mrn-badge">@rx.MedicationForm@(rx.Strength is not null ? $" {rx.Strength}" : "")</span>
+                            </td>
+                            <td>
+                                <div class="pt-fullname">@rx.Dose</div>
+                                <div class="pt-mrn-sub">@rx.Frequency</div>
+                            </td>
+                            <td>@(rx.DurationDays.HasValue ? $"{rx.DurationDays} days" : "—")</td>
+                            <td>@rx.PrescribedByName</td>
+                            <td>@rx.PrescribedAtUtc.ToString("MMM d, yyyy")</td>
+                            <td><span class="appt-status-badge @StatusClass(rx.Status)">@rx.Status</span></td>
+                            <td class="col-actions">
+                                @if (rx.Status == PrescriptionStatus.Active)
+                                {
+                                    <div class="dropdown">
+                                        <button class="pt-actions-btn" type="button" data-bs-toggle="dropdown">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                                            </svg>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end pt-dropdown shadow-sm">
+                                            <li>
+                                                <form asp-action="Cancel" asp-route-id="@rx.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="patientId" value="@patientId" />
+                                                    <button type="submit" class="dropdown-item pt-dropdown-item pt-dropdown-danger"
+                                                            onclick="return confirm('Cancel this prescription?')">
+                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                                                        </svg>
+                                                        Cancel
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> prescription@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>
