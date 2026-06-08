@@ -58,6 +58,8 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<Equipment> Equipment => Set<Equipment>();
     public DbSet<MaintenanceRequest> MaintenanceRequests => Set<MaintenanceRequest>();
+    public DbSet<QualityIncident> QualityIncidents => Set<QualityIncident>();
+    public DbSet<PatientFeedback> PatientFeedback => Set<PatientFeedback>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -769,6 +771,56 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
 
             entity.HasIndex(m => m.Status);
             entity.HasIndex(m => m.RequestedAtUtc);
+        });
+
+        modelBuilder.Entity<QualityIncident>(entity =>
+        {
+            entity.HasKey(q => q.Id);
+            entity.Property(q => q.Title).HasMaxLength(200).IsRequired();
+            entity.Property(q => q.Description).HasMaxLength(2000).IsRequired();
+            entity.Property(q => q.IncidentType).HasMaxLength(50).IsRequired();
+            entity.Property(q => q.Severity).HasMaxLength(20).IsRequired();
+            entity.Property(q => q.Status).HasMaxLength(30).IsRequired();
+            entity.Property(q => q.Location).HasMaxLength(200);
+            entity.Property(q => q.RootCause).HasMaxLength(2000);
+            entity.Property(q => q.CorrectiveAction).HasMaxLength(2000);
+
+            entity.HasOne(q => q.ReportedByUser)
+                .WithMany()
+                .HasForeignKey(q => q.ReportedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(q => q.AssignedToUser)
+                .WithMany()
+                .HasForeignKey(q => q.AssignedToUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(q => q.Patient)
+                .WithMany()
+                .HasForeignKey(q => q.PatientId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(q => q.Status);
+            entity.HasIndex(q => q.OccurredAtUtc);
+        });
+
+        modelBuilder.Entity<PatientFeedback>(entity =>
+        {
+            entity.HasKey(f => f.Id);
+            entity.Property(f => f.Comments).HasMaxLength(2000);
+
+            entity.HasOne(f => f.Patient)
+                .WithMany()
+                .HasForeignKey(f => f.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(f => f.Appointment)
+                .WithMany()
+                .HasForeignKey(f => f.AppointmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(f => f.PatientId);
+            entity.HasIndex(f => f.SubmittedAtUtc);
         });
     }
 }

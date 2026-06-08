@@ -1,0 +1,157 @@
+@model List<HospitalMS.Business.Models.QualityIncidentResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Quality Incidents";
+    var currentStatus   = ViewData["CurrentStatus"]   as string ?? "";
+    var currentSeverity = ViewData["CurrentSeverity"] as string ?? "";
+
+    string SeverityBadge(string s) => s switch {
+        QualityIncidentSeverity.Critical => "bg-danger",
+        QualityIncidentSeverity.High     => "bg-warning text-dark",
+        QualityIncidentSeverity.Moderate => "bg-info text-dark",
+        _                                => "bg-secondary"
+    };
+    string StatusBadge(string s) => s switch {
+        QualityIncidentStatus.Open               => "bg-danger",
+        QualityIncidentStatus.UnderInvestigation => "bg-warning text-dark",
+        QualityIncidentStatus.Resolved           => "bg-success",
+        _                                        => "bg-secondary"
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Quality Incidents</h2>
+    <div class="d-flex gap-2">
+        <a asp-controller="Quality" asp-action="Feedback" class="btn btn-outline-info btn-sm">Patient Feedback</a>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createModal">
+            + Report Incident
+        </button>
+    </div>
+</div>
+
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a asp-action="Incidents" class="btn btn-sm @(string.IsNullOrEmpty(currentStatus) ? "btn-dark" : "btn-outline-dark")">All</a>
+    @foreach (var s in new[] { QualityIncidentStatus.Open, QualityIncidentStatus.UnderInvestigation, QualityIncidentStatus.Resolved, QualityIncidentStatus.Closed })
+    {
+        <a asp-action="Incidents" asp-route-status="@s"
+           class="btn btn-sm @(currentStatus == s ? "btn-dark" : "btn-outline-secondary")">@s</a>
+    }
+</div>
+
+<div class="card border-0 shadow-sm">
+    @if (!Model.Any())
+    {
+        <div class="card-body text-center text-muted py-5">No incidents found.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Occurred</th>
+                        <th>Reported By</th>
+                        <th>Assigned To</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inc in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@inc.Title</td>
+                            <td><span class="badge bg-light text-dark border">@inc.IncidentType</span></td>
+                            <td><span class="badge @SeverityBadge(inc.Severity)">@inc.Severity</span></td>
+                            <td><span class="badge @StatusBadge(inc.Status)">@inc.Status</span></td>
+                            <td class="small text-muted">@inc.OccurredAtUtc.ToString("dd MMM yyyy")</td>
+                            <td class="small">@inc.ReportedByUsername</td>
+                            <td class="small text-muted">@(inc.AssignedToUsername ?? "—")</td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    @if (inc.Status == QualityIncidentStatus.Open)
+                                    {
+                                        <form asp-action="Resolve" asp-route-id="@inc.Id" method="post">
+                                            <button type="submit" class="btn btn-xs btn-outline-success"
+                                                    style="font-size:11px; padding:2px 6px;">Resolve</button>
+                                        </form>
+                                    }
+                                    @if (inc.Status != QualityIncidentStatus.Closed)
+                                    {
+                                        <form asp-action="Close" asp-route-id="@inc.Id" method="post">
+                                            <button type="submit" class="btn btn-xs btn-outline-secondary"
+                                                    style="font-size:11px; padding:2px 6px;">Close</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small">@Model.Count incident(s)</div>
+    }
+</div>
+
+<!-- Create Incident Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form asp-action="CreateIncident" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">Report Quality Incident</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="ReportedByUserId" value="@ViewBag.UserId" />
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Title *</label>
+                            <input name="Title" class="form-control" required maxlength="200" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Description *</label>
+                            <textarea name="Description" class="form-control" rows="3" required maxlength="2000"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Type *</label>
+                            <select name="IncidentType" class="form-select">
+                                @foreach (var t in QualityIncidentType.All)
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Severity *</label>
+                            <select name="Severity" class="form-select">
+                                @foreach (var s in new[] { QualityIncidentSeverity.Low, QualityIncidentSeverity.Moderate,
+                                                            QualityIncidentSeverity.High, QualityIncidentSeverity.Critical })
+                                {
+                                    <option value="@s">@s</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Location</label>
+                            <input name="Location" class="form-control" maxlength="200" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Occurred At</label>
+                            <input name="OccurredAtUtc" type="datetime-local" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Report</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

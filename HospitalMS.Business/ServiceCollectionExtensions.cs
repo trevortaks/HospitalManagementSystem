@@ -60,6 +60,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IFacilitiesService, FacilitiesService>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<IQualityService, QualityService>();
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         services.AddHealthChecks()

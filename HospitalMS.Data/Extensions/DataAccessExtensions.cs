@@ -803,6 +803,56 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260608000011_Phase11_FacilitiesManagement', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // ── Phase 13: Quality Monitoring ──────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS "QualityIncidents" (
+            "Id" uuid NOT NULL,
+            "Title" character varying(200) NOT NULL,
+            "Description" character varying(2000) NOT NULL,
+            "IncidentType" character varying(50) NOT NULL DEFAULT 'AdverseEvent',
+            "Severity" character varying(20) NOT NULL DEFAULT 'Moderate',
+            "Status" character varying(30) NOT NULL DEFAULT 'Open',
+            "ReportedByUserId" uuid NOT NULL,
+            "AssignedToUserId" uuid,
+            "PatientId" uuid,
+            "Location" character varying(200),
+            "RootCause" character varying(2000),
+            "CorrectiveAction" character varying(2000),
+            "OccurredAtUtc" timestamp with time zone NOT NULL,
+            "ReportedAtUtc" timestamp with time zone NOT NULL,
+            "ResolvedAtUtc" timestamp with time zone,
+            CONSTRAINT "PK_QualityIncidents" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_QualityIncidents_ReportedBy" FOREIGN KEY ("ReportedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_QualityIncidents_AssignedTo" FOREIGN KEY ("AssignedToUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_QualityIncidents_Patient" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE SET NULL
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_QualityIncidents_Status" ON "QualityIncidents" ("Status")""",
+        """CREATE INDEX IF NOT EXISTS "IX_QualityIncidents_OccurredAtUtc" ON "QualityIncidents" ("OccurredAtUtc" DESC)""",
+        """
+        CREATE TABLE IF NOT EXISTS "PatientFeedback" (
+            "Id" uuid NOT NULL,
+            "PatientId" uuid NOT NULL,
+            "AppointmentId" uuid,
+            "OverallRating" integer NOT NULL,
+            "StaffRating" integer,
+            "FacilityRating" integer,
+            "Comments" character varying(2000),
+            "SubmittedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_PatientFeedback" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_PatientFeedback_Patient" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_PatientFeedback_Appointment" FOREIGN KEY ("AppointmentId") REFERENCES "Appointments" ("Id") ON DELETE SET NULL
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_PatientFeedback_PatientId" ON "PatientFeedback" ("PatientId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_PatientFeedback_SubmittedAtUtc" ON "PatientFeedback" ("SubmittedAtUtc" DESC)""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260608000013_Phase13_QualityMonitoring', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

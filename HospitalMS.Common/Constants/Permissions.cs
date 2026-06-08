@@ -22,6 +22,7 @@ public static class Permissions
     public const string InsuranceManage = "insurance.manage";
     public const string InventoryManage    = "inventory.manage";
     public const string FacilitiesManage   = "facilities.manage";
+    public const string QualityManage      = "quality.manage";
     public const string HRManage           = "hr.manage";
     public const string AuditLogsRead = "auditlogs.read";
     public const string SystemAdmin = "system.admin";
@@ -45,6 +46,7 @@ public static class Permissions
         InsuranceManage,
         InventoryManage,
         FacilitiesManage,
+        QualityManage,
         HRManage,
         AuditLogsRead,
         SystemAdmin,
@@ -66,6 +68,7 @@ public static class Permissions
                     EncountersClose,
                     PrescriptionsManage,
                     LabResultsManage,
+                    QualityManage,
                     SelfService
                 ],
                 [UserRoles.Nurse] =

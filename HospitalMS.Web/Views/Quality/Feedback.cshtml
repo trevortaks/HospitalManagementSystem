@@ -1,0 +1,157 @@
+@model List<HospitalMS.Business.Models.PatientFeedbackResponse>
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Patient Feedback";
+    var summary = ViewData["Summary"] as QualitySummary;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Patient Feedback</h2>
+    <div class="d-flex gap-2">
+        <a asp-controller="Quality" asp-action="Incidents" class="btn btn-outline-secondary btn-sm">&larr; Incidents</a>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+            + Submit Feedback
+        </button>
+    </div>
+</div>
+
+@if (summary is not null)
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Total Responses</div>
+                    <div class="fs-2 fw-bold">@summary.TotalFeedback</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Avg. Overall Rating</div>
+                    <div class="fs-2 fw-bold @(summary.AverageOverallRating >= 4 ? "text-success" : summary.AverageOverallRating >= 3 ? "text-warning" : "text-danger")">
+                        @summary.AverageOverallRating.ToString("0.0") / 5
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Open Incidents</div>
+                    <div class="fs-2 fw-bold @(summary.OpenIncidents > 0 ? "text-danger" : "text-success")">
+                        @summary.OpenIncidents
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Resolved This Month</div>
+                    <div class="fs-2 fw-bold text-success">@summary.ResolvedThisMonth</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="card border-0 shadow-sm">
+    @if (!Model.Any())
+    {
+        <div class="card-body text-center text-muted py-5">No feedback submitted yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th class="text-center">Overall</th>
+                        <th class="text-center">Staff</th>
+                        <th class="text-center">Facility</th>
+                        <th>Comments</th>
+                        <th>Submitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@f.PatientName</td>
+                            <td class="text-center">
+                                <span class="badge @(f.OverallRating >= 4 ? "bg-success" : f.OverallRating >= 3 ? "bg-warning text-dark" : "bg-danger")">
+                                    @f.OverallRating / 5
+                                </span>
+                            </td>
+                            <td class="text-center text-muted small">@(f.StaffRating.HasValue ? $"{f.StaffRating}/5" : "—")</td>
+                            <td class="text-center text-muted small">@(f.FacilityRating.HasValue ? $"{f.FacilityRating}/5" : "—")</td>
+                            <td class="small text-muted" style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                @(string.IsNullOrEmpty(f.Comments) ? "—" : f.Comments)
+                            </td>
+                            <td class="small text-muted">@f.SubmittedAtUtc.ToString("dd MMM yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small">@Model.Count response(s)</div>
+    }
+</div>
+
+<!-- Submit Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="SubmitFeedback" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">Submit Patient Feedback</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Patient ID *</label>
+                            <input name="PatientId" class="form-control" required
+                                   placeholder="Patient UUID" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Overall Rating (1–5) *</label>
+                            <select name="OverallRating" class="form-select" required>
+                                @for (var i = 5; i >= 1; i--)
+                                {
+                                    <option value="@i">@i — @(i switch { 5 => "Excellent", 4 => "Good", 3 => "Satisfactory", 2 => "Poor", _ => "Very Poor" })</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Staff Rating</label>
+                            <select name="StaffRating" class="form-select">
+                                <option value="">—</option>
+                                @for (var i = 5; i >= 1; i--) { <option value="@i">@i</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Facility Rating</label>
+                            <select name="FacilityRating" class="form-select">
+                                <option value="">—</option>
+                                @for (var i = 5; i >= 1; i--) { <option value="@i">@i</option> }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Comments</label>
+                            <textarea name="Comments" class="form-control" rows="3" maxlength="2000"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
