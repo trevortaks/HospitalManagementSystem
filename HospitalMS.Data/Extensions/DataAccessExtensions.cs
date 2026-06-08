@@ -617,6 +617,92 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260608000007_Phase7_Inventory', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // ── Phase 9: Supply Chain ─────────────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS "Suppliers" (
+            "Id" uuid NOT NULL,
+            "Name" character varying(200) NOT NULL,
+            "ContactName" character varying(100),
+            "ContactPhone" character varying(30),
+            "ContactEmail" character varying(256),
+            "Address" character varying(500),
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Suppliers" PRIMARY KEY ("Id")
+        )
+        """,
+
+        """
+        CREATE TABLE IF NOT EXISTS "PurchaseOrders" (
+            "Id" uuid NOT NULL,
+            "SupplierId" uuid NOT NULL,
+            "OrderedByUserId" uuid NOT NULL,
+            "OrderNumber" character varying(30) NOT NULL,
+            "Status" character varying(30) NOT NULL DEFAULT 'Draft',
+            "Notes" character varying(1000),
+            "ExpectedDeliveryDate" timestamp with time zone,
+            "OrderedAtUtc" timestamp with time zone NOT NULL,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            "UpdatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_PurchaseOrders" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_PurchaseOrders_Suppliers" FOREIGN KEY ("SupplierId") REFERENCES "Suppliers" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_PurchaseOrders_Users" FOREIGN KEY ("OrderedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_PurchaseOrders_OrderNumber" ON "PurchaseOrders" ("OrderNumber")""",
+        """CREATE INDEX IF NOT EXISTS "IX_PurchaseOrders_SupplierId" ON "PurchaseOrders" ("SupplierId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_PurchaseOrders_Status" ON "PurchaseOrders" ("Status")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "PurchaseOrderLines" (
+            "Id" uuid NOT NULL,
+            "PurchaseOrderId" uuid NOT NULL,
+            "InventoryItemId" uuid NOT NULL,
+            "Description" character varying(500) NOT NULL,
+            "QuantityOrdered" integer NOT NULL DEFAULT 1,
+            "QuantityReceived" integer NOT NULL DEFAULT 0,
+            "UnitCost" numeric(18,2) NOT NULL DEFAULT 0,
+            "TotalCost" numeric(18,2) NOT NULL DEFAULT 0,
+            CONSTRAINT "PK_PurchaseOrderLines" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_PurchaseOrderLines_PurchaseOrders" FOREIGN KEY ("PurchaseOrderId") REFERENCES "PurchaseOrders" ("Id") ON DELETE CASCADE,
+            CONSTRAINT "FK_PurchaseOrderLines_InventoryItems" FOREIGN KEY ("InventoryItemId") REFERENCES "InventoryItems" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_PurchaseOrderLines_PurchaseOrderId" ON "PurchaseOrderLines" ("PurchaseOrderId")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "GoodsReceipts" (
+            "Id" uuid NOT NULL,
+            "PurchaseOrderId" uuid NOT NULL,
+            "ReceivedByUserId" uuid NOT NULL,
+            "Notes" character varying(1000),
+            "ReceivedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_GoodsReceipts" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_GoodsReceipts_PurchaseOrders" FOREIGN KEY ("PurchaseOrderId") REFERENCES "PurchaseOrders" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_GoodsReceipts_Users" FOREIGN KEY ("ReceivedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_GoodsReceipts_PurchaseOrderId" ON "GoodsReceipts" ("PurchaseOrderId")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "GoodsReceiptLines" (
+            "Id" uuid NOT NULL,
+            "GoodsReceiptId" uuid NOT NULL,
+            "PurchaseOrderLineId" uuid NOT NULL,
+            "QuantityReceived" integer NOT NULL DEFAULT 0,
+            CONSTRAINT "PK_GoodsReceiptLines" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_GoodsReceiptLines_GoodsReceipts" FOREIGN KEY ("GoodsReceiptId") REFERENCES "GoodsReceipts" ("Id") ON DELETE CASCADE,
+            CONSTRAINT "FK_GoodsReceiptLines_PurchaseOrderLines" FOREIGN KEY ("PurchaseOrderLineId") REFERENCES "PurchaseOrderLines" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_GoodsReceiptLines_GoodsReceiptId" ON "GoodsReceiptLines" ("GoodsReceiptId")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260608000009_Phase9_SupplyChain', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

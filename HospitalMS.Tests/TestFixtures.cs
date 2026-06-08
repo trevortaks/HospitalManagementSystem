@@ -417,4 +417,43 @@ public static class TestFixtures
             CreatedAtUtc = DateTime.UtcNow
         };
     }
+
+    public static Supplier CreateSupplier(
+        Guid? id = null,
+        string name = "MedSupply Co.",
+        string? contactName = "Alice Vendor",
+        string? contactPhone = "+1 555 000 1000",
+        string? contactEmail = "sales@medsupply.test",
+        bool isActive = true)
+    {
+        return new Supplier
+        {
+            Id = id ?? Guid.NewGuid(),
+            Name = name,
+            ContactName = contactName,
+            ContactPhone = contactPhone,
+            ContactEmail = contactEmail,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static PurchaseOrder CreatePurchaseOrder(
+        Guid? id = null,
+        Guid? supplierId = null,
+        Guid? orderedByUserId = null,
+        string status = "Draft",
+        string? orderNumber = null)
+    {
+        var poId = id ?? Guid.NewGuid();
+        return new PurchaseOrder
+        {
+            Id = poId,
+            SupplierId = supplierId ?? Guid.NewGuid(),
+            OrderedByUserId = orderedByUserId ?? Guid.NewGuid(),
+            OrderNumber = orderNumber ?? $"PO-TEST-{poId:N}"[..18].ToUpperInvariant(),
+            Status = status,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
 }

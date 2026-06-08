@@ -1,0 +1,130 @@
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Purchase Order";
+    var suppliers = (IReadOnlyList<SupplierResponse>)ViewBag.Suppliers;
+    var items = (IReadOnlyList<InventoryItemResponse>)ViewBag.Items;
+    var staff = (IReadOnlyList<UserSummary>)ViewBag.Staff;
+}
+
+<div class="mb-4">
+    <a asp-controller="SupplyChain" asp-action="PurchaseOrders" class="text-decoration-none">&larr; Back to Orders</a>
+    <h2 class="fw-bold mt-2">Create Purchase Order</h2>
+</div>
+
+@if (ViewData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<form asp-controller="SupplyChain" asp-action="CreatePurchaseOrder" method="post">
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header fw-semibold">Order Details</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Supplier</label>
+                        <select name="SupplierId" class="form-select" required>
+                            <option value="">Select supplier...</option>
+                            @foreach (var s in suppliers)
+                            {
+                                <option value="@s.Id">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ordered By</label>
+                        <select name="OrderedByUserId" class="form-select" required>
+                            <option value="">Select staff member...</option>
+                            @foreach (var u in staff)
+                            {
+                                <option value="@u.Id">@u.Username (@u.Role)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Expected Delivery</label>
+                        <input name="ExpectedDeliveryDate" type="date" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes</label>
+                        <textarea name="Notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                    Line Items
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addLineBtn">+ Add Line</button>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0" id="linesTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Unit Cost ($)</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="linesBody">
+                            <tr class="line-row">
+                                <td>
+                                    <select name="ItemIds" class="form-select form-select-sm" required>
+                                        <option value="">Select item...</option>
+                                        @foreach (var i in items)
+                                        {
+                                            <option value="@i.Id" data-cost="@i.UnitCost">@i.Code — @i.Name</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td><input name="Quantities" type="number" min="1" class="form-control form-control-sm" value="1" required /></td>
+                                <td><input name="UnitCosts" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0" required /></td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-line">✕</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mt-3 text-end">
+                <button type="submit" class="btn btn-primary px-4">Create Purchase Order</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    const itemsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(items.Select(i => new { id = i.Id, code = i.Code, name = i.Name, unitCost = i.UnitCost })));
+
+    function buildItemOptions(selectedId) {
+        return '<option value="">Select item...</option>' +
+            itemsData.map(i => `<option value="${i.id}" data-cost="${i.unitCost}" ${i.id === selectedId ? 'selected' : ''}>${i.code} — ${i.name}</option>`).join('');
+    }
+
+    function addLineRow() {
+        const row = document.createElement('tr');
+        row.className = 'line-row';
+        row.innerHTML = `
+            <td><select name="ItemIds" class="form-select form-select-sm" required>${buildItemOptions(null)}</select></td>
+            <td><input name="Quantities" type="number" min="1" class="form-control form-control-sm" value="1" required /></td>
+            <td><input name="UnitCosts" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0" required /></td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger remove-line">✕</button></td>`;
+        document.getElementById('linesBody').appendChild(row);
+        row.querySelector('select').addEventListener('change', syncCost);
+        row.querySelector('.remove-line').addEventListener('click', () => row.remove());
+    }
+
+    function syncCost(e) {
+        const opt = e.target.selectedOptions[0];
+        const costInput = e.target.closest('tr').querySelector('input[name="UnitCosts"]');
+        if (opt && opt.dataset.cost) costInput.value = opt.dataset.cost;
+    }
+
+    document.getElementById('addLineBtn').addEventListener('click', addLineRow);
+    document.querySelectorAll('.line-row select').forEach(s => s.addEventListener('change', syncCost));
+    document.querySelectorAll('.remove-line').forEach(b => b.addEventListener('click', () => b.closest('tr').remove()));
+</script>

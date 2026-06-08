@@ -1,0 +1,59 @@
+@model IReadOnlyList<HospitalMS.Business.Models.SupplierResponse>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Suppliers";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Suppliers</h2>
+    <div class="d-flex gap-2">
+        <a asp-controller="SupplyChain" asp-action="PurchaseOrders" class="btn btn-outline-primary">Purchase Orders</a>
+        <a asp-controller="SupplyChain" asp-action="CreateSupplier" class="btn btn-primary">+ Add Supplier</a>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No suppliers registered yet.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@s.Name</td>
+                        <td>@(s.ContactName ?? "—")</td>
+                        <td>@(s.ContactPhone ?? "—")</td>
+                        <td>@(s.ContactEmail ?? "—")</td>
+                        <td>
+                            <span class="badge @(s.IsActive ? "bg-success" : "bg-secondary")">
+                                @(s.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <form asp-controller="SupplyChain" asp-action="ToggleSupplier" asp-route-id="@s.Id"
+                                  method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    @(s.IsActive ? "Deactivate" : "Activate")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

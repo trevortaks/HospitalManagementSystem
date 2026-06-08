@@ -1,0 +1,45 @@
+@model HospitalMS.Business.Models.CreateSupplierRequest
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Add Supplier";
+}
+
+<div class="mb-4">
+    <a asp-controller="SupplyChain" asp-action="Suppliers" class="text-decoration-none">&larr; Back to Suppliers</a>
+    <h2 class="fw-bold mt-2">Add Supplier</h2>
+</div>
+
+@if (ViewData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="card" style="max-width:520px;">
+    <div class="card-body">
+        <form asp-controller="SupplyChain" asp-action="CreateSupplier" method="post">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Company Name</label>
+                <input name="Name" class="form-control" value="@Model?.Name" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Contact Person</label>
+                <input name="ContactName" class="form-control" value="@Model?.ContactName" />
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label fw-semibold">Phone</label>
+                    <input name="ContactPhone" class="form-control" value="@Model?.ContactPhone" />
+                </div>
+                <div class="col">
+                    <label class="form-label fw-semibold">Email</label>
+                    <input name="ContactEmail" type="email" class="form-control" value="@Model?.ContactEmail" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Address</label>
+                <textarea name="Address" class="form-control" rows="2">@Model?.Address</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Save Supplier</button>
+        </form>
+    </div>
+</div>

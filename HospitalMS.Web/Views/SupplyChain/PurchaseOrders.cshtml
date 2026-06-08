@@ -1,0 +1,74 @@
+@model IReadOnlyList<HospitalMS.Business.Models.PurchaseOrderResponse>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Purchase Orders";
+    var currentStatus = (string?)ViewBag.Status;
+    var statuses = new[] { "Draft", "Submitted", "Approved", "PartiallyReceived", "Received", "Cancelled" };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold">Purchase Orders</h2>
+    <a asp-controller="SupplyChain" asp-action="CreatePurchaseOrder" class="btn btn-primary">+ New Order</a>
+</div>
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a asp-controller="SupplyChain" asp-action="PurchaseOrders"
+       class="btn btn-sm @(currentStatus is null ? "btn-primary" : "btn-outline-secondary")">All</a>
+    @foreach (var s in statuses)
+    {
+        <a asp-controller="SupplyChain" asp-action="PurchaseOrders" asp-route-status="@s"
+           class="btn btn-sm @(currentStatus == s ? "btn-primary" : "btn-outline-secondary")">@s</a>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No purchase orders found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Order #</th>
+                    <th>Supplier</th>
+                    <th>Lines</th>
+                    <th>Total Value</th>
+                    <th>Status</th>
+                    <th>Expected</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var po in Model)
+                {
+                    var statusClass = po.Status switch
+                    {
+                        "Draft" => "bg-secondary",
+                        "Submitted" => "bg-info text-dark",
+                        "Approved" => "bg-primary",
+                        "PartiallyReceived" => "bg-warning text-dark",
+                        "Received" => "bg-success",
+                        "Cancelled" => "bg-danger",
+                        _ => "bg-secondary"
+                    };
+                    <tr>
+                        <td><code>@po.OrderNumber</code></td>
+                        <td>@po.SupplierName</td>
+                        <td>@po.Lines.Count</td>
+                        <td>$@po.TotalOrderValue.ToString("0.00")</td>
+                        <td><span class="badge @statusClass">@po.Status</span></td>
+                        <td class="text-muted small">
+                            @(po.ExpectedDeliveryDate?.ToString("dd MMM yyyy") ?? "—")
+                        </td>
+                        <td>
+                            <a asp-controller="SupplyChain" asp-action="PurchaseOrderDetail" asp-route-id="@po.Id"
+                               class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

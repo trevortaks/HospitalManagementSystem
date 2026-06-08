@@ -26,6 +26,11 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<InvoiceLineItem> InvoiceLineItems => Set<InvoiceLineItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
+    public DbSet<PurchaseOrderLine> PurchaseOrderLines => Set<PurchaseOrderLine>();
+    public DbSet<GoodsReceipt> GoodsReceipts => Set<GoodsReceipt>();
+    public DbSet<GoodsReceiptLine> GoodsReceiptLines => Set<GoodsReceiptLine>();
     public DbSet<InventoryCategory> InventoryCategories => Set<InventoryCategory>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<StockTransaction> StockTransactions => Set<StockTransaction>();
@@ -472,6 +477,91 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
 
             entity.HasIndex(c => c.InvoiceId);
             entity.HasIndex(c => c.ClaimNumber).IsUnique();
+        });
+
+        modelBuilder.Entity<Supplier>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.Name).HasMaxLength(200).IsRequired();
+            entity.Property(s => s.ContactName).HasMaxLength(100);
+            entity.Property(s => s.ContactPhone).HasMaxLength(30);
+            entity.Property(s => s.ContactEmail).HasMaxLength(256);
+            entity.Property(s => s.Address).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<PurchaseOrder>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.OrderNumber).HasMaxLength(30).IsRequired();
+            entity.Property(p => p.Status).HasMaxLength(30).IsRequired();
+            entity.Property(p => p.Notes).HasMaxLength(1000);
+
+            entity.HasOne(p => p.Supplier)
+                .WithMany(s => s.PurchaseOrders)
+                .HasForeignKey(p => p.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(p => p.OrderedByUser)
+                .WithMany()
+                .HasForeignKey(p => p.OrderedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(p => p.OrderNumber).IsUnique();
+            entity.HasIndex(p => p.SupplierId);
+            entity.HasIndex(p => p.Status);
+        });
+
+        modelBuilder.Entity<PurchaseOrderLine>(entity =>
+        {
+            entity.HasKey(l => l.Id);
+            entity.Property(l => l.Description).HasMaxLength(500).IsRequired();
+            entity.Property(l => l.UnitCost).HasPrecision(18, 2);
+            entity.Property(l => l.TotalCost).HasPrecision(18, 2);
+
+            entity.HasOne(l => l.PurchaseOrder)
+                .WithMany(p => p.Lines)
+                .HasForeignKey(l => l.PurchaseOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(l => l.InventoryItem)
+                .WithMany()
+                .HasForeignKey(l => l.InventoryItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(l => l.PurchaseOrderId);
+        });
+
+        modelBuilder.Entity<GoodsReceipt>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Notes).HasMaxLength(1000);
+
+            entity.HasOne(r => r.PurchaseOrder)
+                .WithMany(p => p.Receipts)
+                .HasForeignKey(r => r.PurchaseOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.ReceivedByUser)
+                .WithMany()
+                .HasForeignKey(r => r.ReceivedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(r => r.PurchaseOrderId);
+        });
+
+        modelBuilder.Entity<GoodsReceiptLine>(entity =>
+        {
+            entity.HasKey(l => l.Id);
+
+            entity.HasOne(l => l.Receipt)
+                .WithMany(r => r.Lines)
+                .HasForeignKey(l => l.GoodsReceiptId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(l => l.PurchaseOrderLine)
+                .WithMany()
+                .HasForeignKey(l => l.PurchaseOrderLineId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<InventoryCategory>(entity =>

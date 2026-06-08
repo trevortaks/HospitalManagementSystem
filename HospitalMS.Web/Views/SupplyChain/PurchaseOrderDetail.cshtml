@@ -1,0 +1,195 @@
+@model HospitalMS.Business.Models.PurchaseOrderResponse
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    var receipts = (IReadOnlyList<GoodsReceiptResponse>)ViewBag.Receipts;
+    var staff = (IReadOnlyList<UserSummary>)ViewBag.Staff;
+    var canReceive = Model.Status is "Approved" or "PartiallyReceived";
+    var canSubmit = Model.Status == "Draft";
+    var canApprove = Model.Status == "Submitted";
+    var canCancel = Model.Status is not "Received" and not "Cancelled";
+    var statusClass = Model.Status switch
+    {
+        "Draft" => "bg-secondary",
+        "Submitted" => "bg-info text-dark",
+        "Approved" => "bg-primary",
+        "PartiallyReceived" => "bg-warning text-dark",
+        "Received" => "bg-success",
+        _ => "bg-danger"
+    };
+}
+
+<div class="mb-3">
+    <a asp-controller="SupplyChain" asp-action="PurchaseOrders" class="text-decoration-none">&larr; Back to Orders</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">@Model.OrderNumber</h2>
+        <p class="text-muted mb-1">@Model.SupplierName &bull; Ordered by @Model.OrderedByUsername</p>
+        <span class="badge @statusClass fs-6">@Model.Status</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap justify-content-end">
+        @if (canSubmit)
+        {
+            <form asp-controller="SupplyChain" asp-action="SubmitOrder" asp-route-id="@Model.Id" method="post">
+                <button class="btn btn-info">Submit for Approval</button>
+            </form>
+        }
+        @if (canApprove)
+        {
+            <form asp-controller="SupplyChain" asp-action="ApproveOrder" asp-route-id="@Model.Id" method="post">
+                <button class="btn btn-success">Approve</button>
+            </form>
+        }
+        @if (canCancel)
+        {
+            <form asp-controller="SupplyChain" asp-action="CancelOrder" asp-route-id="@Model.Id" method="post">
+                <button class="btn btn-outline-danger">Cancel</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@Model.Lines.Count</div>
+                <div class="text-muted small">Line Items</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">$@Model.TotalOrderValue.ToString("0.00")</div>
+                <div class="text-muted small">Total Value</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-4 fw-bold">@Model.Lines.Sum(l => l.QuantityReceived)</div>
+                <div class="text-muted small">Units Received</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-4 fw-bold text-muted">@(Model.ExpectedDeliveryDate?.ToString("dd MMM") ?? "—")</div>
+                <div class="text-muted small">Expected</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h5 class="fw-semibold mb-3">Order Lines</h5>
+<div class="table-responsive mb-4">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Code</th>
+                <th>Item</th>
+                <th>Qty Ordered</th>
+                <th>Qty Received</th>
+                <th>Unit Cost</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Model.Lines)
+            {
+                var progress = line.QuantityOrdered > 0 ? (double)line.QuantityReceived / line.QuantityOrdered * 100 : 0;
+                <tr>
+                    <td><code>@line.ItemCode</code></td>
+                    <td>@line.ItemName</td>
+                    <td>@line.QuantityOrdered</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            @line.QuantityReceived
+                            <div class="progress flex-fill" style="height:6px; min-width:60px;">
+                                <div class="progress-bar @(progress >= 100 ? "bg-success" : "bg-warning")"
+                                     style="width:@(Math.Min(progress, 100))%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>$@line.UnitCost.ToString("0.00")</td>
+                    <td>$@line.TotalCost.ToString("0.00")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (canReceive)
+{
+    <div class="card mb-4">
+        <div class="card-header fw-semibold text-success">Record Goods Receipt</div>
+        <div class="card-body">
+            <form asp-controller="SupplyChain" asp-action="ReceiveGoods" asp-route-id="@Model.Id" method="post">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Received By</label>
+                        <select name="ReceivedByUserId" class="form-select" required>
+                            <option value="">Select staff member...</option>
+                            @foreach (var u in staff)
+                            {
+                                <option value="@u.Id">@u.Username</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Notes</label>
+                        <input name="Notes" class="form-control" placeholder="Optional delivery notes" />
+                    </div>
+                </div>
+                <table class="table table-sm mb-3">
+                    <thead class="table-light">
+                        <tr><th>Item</th><th>Ordered</th><th>Previously Received</th><th>Receiving Now</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in Model.Lines.Where(l => l.QuantityReceived < l.QuantityOrdered))
+                        {
+                            <tr>
+                                <td>@line.ItemCode — @line.ItemName</td>
+                                <td>@line.QuantityOrdered</td>
+                                <td>@line.QuantityReceived</td>
+                                <td>
+                                    <input type="hidden" name="LineIds" value="@line.Id" />
+                                    <input name="LineQuantities" type="number" min="0"
+                                           max="@(line.QuantityOrdered - line.QuantityReceived)"
+                                           class="form-control form-control-sm" style="width:90px;"
+                                           value="@(line.QuantityOrdered - line.QuantityReceived)" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <button type="submit" class="btn btn-success">Confirm Receipt</button>
+            </form>
+        </div>
+    </div>
+}
+
+@if (receipts.Any())
+{
+    <h5 class="fw-semibold mb-3">Receipts (@receipts.Count)</h5>
+    @foreach (var r in receipts)
+    {
+        <div class="card mb-2">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between">
+                    <span><strong>Received by:</strong> @r.ReceivedByUsername &bull; @r.ReceivedAtUtc.ToString("dd MMM yyyy HH:mm")</span>
+                    <span class="text-muted small">@r.Lines.Count line(s)</span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(r.Notes))
+                {
+                    <div class="text-muted small">@r.Notes</div>
+                }
+            </div>
+        </div>
+    }
+}
