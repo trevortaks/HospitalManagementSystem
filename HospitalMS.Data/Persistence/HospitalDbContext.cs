@@ -1,10 +1,27 @@
 using HospitalMS.Data.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HospitalMS.Data.Persistence;
 
 public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : DbContext(options)
 {
+    // Npgsql requires Kind=Utc for timestamp with time zone. These converters normalize any
+    // DateTime (including Kind=Unspecified from JSON deserialization) to UTC before writing.
+    private sealed class UtcDateTimeConverter() : ValueConverter<DateTime, DateTime>(
+        v => v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc),
+        v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+    private sealed class NullableUtcDateTimeConverter() : ValueConverter<DateTime?, DateTime?>(
+        v => v == null ? null : v.Value.Kind == DateTimeKind.Utc ? v : (DateTime?)DateTime.SpecifyKind(v.Value, DateTimeKind.Utc),
+        v => v == null ? null : (DateTime?)DateTime.SpecifyKind(v.Value, DateTimeKind.Utc));
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<NullableUtcDateTimeConverter>();
+    }
+
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
