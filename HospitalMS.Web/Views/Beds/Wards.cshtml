@@ -1,0 +1,62 @@
+@model IReadOnlyList<HospitalMS.Business.Models.WardResponse>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Wards";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Wards</h2>
+    <a asp-controller="BedManagement" asp-action="CreateWard" class="btn btn-primary">+ New Ward</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No wards configured yet.</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var ward in Model)
+        {
+            <div class="col-md-4">
+                <div class="card h-100 @(ward.IsActive ? "" : "opacity-50")">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">@ward.Name</h5>
+                            <span class="badge @(ward.IsActive ? "bg-success" : "bg-secondary")">
+                                @(ward.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            @ward.WardType &bull; Floor @ward.FloorNumber
+                        </p>
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="fw-bold">@ward.TotalBeds</div>
+                                <div class="text-muted small">Total</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold text-danger">@ward.OccupiedBeds</div>
+                                <div class="text-muted small">Occupied</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold text-success">@ward.AvailableBeds</div>
+                                <div class="text-muted small">Available</div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a asp-controller="BedManagement" asp-action="WardDetail" asp-route-wardId="@ward.Id"
+                               class="btn btn-outline-primary btn-sm flex-fill">View Beds</a>
+                            <form asp-controller="BedManagement" asp-action="ToggleWard" asp-route-id="@ward.Id"
+                                  method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    @(ward.IsActive ? "Deactivate" : "Activate")
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,47 @@
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    var bed = (BedResponse?)ViewBag.Bed;
+    var staff = (IReadOnlyList<UserSummary>?)ViewBag.Staff ?? [];
+}
+
+<div class="mb-4">
+    <a asp-controller="BedManagement" asp-action="Wards" class="text-decoration-none">&larr; Back to Wards</a>
+    <h2 class="fw-bold mt-2">Admit Patient to Bed</h2>
+    @if (bed is not null)
+    {
+        <p class="text-muted">Bed <strong>@bed.BedNumber</strong> — @bed.WardName (@bed.BedType)</p>
+    }
+</div>
+
+@if (ViewData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="card" style="max-width:520px;">
+    <div class="card-body">
+        <form asp-controller="BedManagement" asp-action="Allocate" asp-route-bedId="@bed?.Id" method="post">
+            <input type="hidden" name="BedId" value="@bed?.Id" />
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Patient ID</label>
+                <input name="PatientId" class="form-control" placeholder="Patient UUID" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Admitted By</label>
+                <select name="AdmittedByUserId" class="form-select" required>
+                    <option value="">Select staff member...</option>
+                    @foreach (var u in staff)
+                    {
+                        <option value="@u.Id">@u.Username (@u.Role)</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Encounter ID (optional)</label>
+                <input name="EncounterId" class="form-control" placeholder="Leave blank if not linked to encounter" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Admit Patient</button>
+        </form>
+    </div>
+</div>

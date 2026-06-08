@@ -26,6 +26,9 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<InvoiceLineItem> InvoiceLineItems => Set<InvoiceLineItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
+    public DbSet<Ward> Wards => Set<Ward>();
+    public DbSet<Bed> Beds => Set<Bed>();
+    public DbSet<BedAllocation> BedAllocations => Set<BedAllocation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -466,6 +469,67 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
 
             entity.HasIndex(c => c.InvoiceId);
             entity.HasIndex(c => c.ClaimNumber).IsUnique();
+        });
+
+        modelBuilder.Entity<Ward>(entity =>
+        {
+            entity.HasKey(w => w.Id);
+            entity.Property(w => w.Name).HasMaxLength(100).IsRequired();
+            entity.Property(w => w.WardType).HasMaxLength(30).IsRequired();
+        });
+
+        modelBuilder.Entity<Bed>(entity =>
+        {
+            entity.HasKey(b => b.Id);
+            entity.Property(b => b.BedNumber).HasMaxLength(20).IsRequired();
+            entity.Property(b => b.BedType).HasMaxLength(30).IsRequired();
+            entity.Property(b => b.Status).HasMaxLength(30).IsRequired();
+
+            entity.HasOne(b => b.Ward)
+                .WithMany(w => w.Beds)
+                .HasForeignKey(b => b.WardId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(b => new { b.WardId, b.BedNumber }).IsUnique();
+        });
+
+        modelBuilder.Entity<BedAllocation>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.DischargeReason).HasMaxLength(500);
+
+            entity.HasOne(a => a.Bed)
+                .WithMany(b => b.Allocations)
+                .HasForeignKey(a => a.BedId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(a => a.Patient)
+                .WithMany()
+                .HasForeignKey(a => a.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(a => a.Encounter)
+                .WithMany()
+                .HasForeignKey(a => a.EncounterId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(a => a.AdmittedByUser)
+                .WithMany()
+                .HasForeignKey(a => a.AdmittedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(a => a.DischargedByUser)
+                .WithMany()
+                .HasForeignKey(a => a.DischargedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(a => a.TransferredToBed)
+                .WithMany()
+                .HasForeignKey(a => a.TransferredToBedId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(a => a.PatientId);
+            entity.HasIndex(a => a.BedId);
         });
     }
 }

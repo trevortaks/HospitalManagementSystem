@@ -316,6 +316,46 @@ public static class TestFixtures
         };
     }
 
+    public static Ward CreateWard(
+        Guid? id = null,
+        string name = "General Ward A",
+        string wardType = "General",
+        int totalBeds = 10,
+        int floorNumber = 1,
+        bool isActive = true)
+    {
+        return new Ward
+        {
+            Id = id ?? Guid.NewGuid(),
+            Name = name,
+            WardType = wardType,
+            TotalBeds = totalBeds,
+            FloorNumber = floorNumber,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static Bed CreateBed(
+        Guid? id = null,
+        Guid? wardId = null,
+        string bedNumber = "A1",
+        string bedType = "Standard",
+        string status = "Available",
+        bool isActive = true)
+    {
+        return new Bed
+        {
+            Id = id ?? Guid.NewGuid(),
+            WardId = wardId ?? Guid.NewGuid(),
+            BedNumber = bedNumber,
+            BedType = bedType,
+            Status = status,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
     public static User CreateUser(
         Guid? id = null,
         string? username = null,

@@ -1,0 +1,46 @@
+@model HospitalMS.Business.Models.CreateWardRequest
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Ward";
+}
+
+<div class="mb-4">
+    <a asp-controller="BedManagement" asp-action="Wards" class="text-decoration-none">&larr; Back to Wards</a>
+    <h2 class="fw-bold mt-2">Create Ward</h2>
+</div>
+
+@if (ViewData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="card" style="max-width:520px;">
+    <div class="card-body">
+        <form asp-controller="BedManagement" asp-action="CreateWard" method="post">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Ward Name</label>
+                <input name="Name" class="form-control" value="@Model?.Name" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Ward Type</label>
+                <select name="WardType" class="form-select" required>
+                    @foreach (var t in new[] { "General", "ICU", "HDU", "Maternity", "Paediatric", "Emergency" })
+                    {
+                        <option value="@t" selected="@(Model?.WardType == t)">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label fw-semibold">Total Beds</label>
+                    <input name="TotalBeds" type="number" min="0" class="form-control" value="@(Model?.TotalBeds ?? 0)" required />
+                </div>
+                <div class="col">
+                    <label class="form-label fw-semibold">Floor Number</label>
+                    <input name="FloorNumber" type="number" min="1" class="form-control" value="@(Model?.FloorNumber ?? 1)" required />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Create Ward</button>
+        </form>
+    </div>
+</div>

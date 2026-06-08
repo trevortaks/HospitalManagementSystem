@@ -498,6 +498,66 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260608000005_Phase5_Billing', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // ── Phase 6: Bed Management ───────────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS "Wards" (
+            "Id" uuid NOT NULL,
+            "Name" character varying(100) NOT NULL,
+            "WardType" character varying(30) NOT NULL DEFAULT 'General',
+            "TotalBeds" integer NOT NULL DEFAULT 0,
+            "FloorNumber" integer NOT NULL DEFAULT 1,
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Wards" PRIMARY KEY ("Id")
+        )
+        """,
+
+        """
+        CREATE TABLE IF NOT EXISTS "Beds" (
+            "Id" uuid NOT NULL,
+            "WardId" uuid NOT NULL,
+            "BedNumber" character varying(20) NOT NULL,
+            "BedType" character varying(30) NOT NULL DEFAULT 'Standard',
+            "Status" character varying(30) NOT NULL DEFAULT 'Available',
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Beds" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_Beds_Wards" FOREIGN KEY ("WardId") REFERENCES "Wards" ("Id") ON DELETE CASCADE
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_Beds_WardId_BedNumber" ON "Beds" ("WardId", "BedNumber")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "BedAllocations" (
+            "Id" uuid NOT NULL,
+            "BedId" uuid NOT NULL,
+            "PatientId" uuid NOT NULL,
+            "EncounterId" uuid,
+            "AdmittedByUserId" uuid NOT NULL,
+            "AdmittedAtUtc" timestamp with time zone NOT NULL,
+            "DischargedAtUtc" timestamp with time zone,
+            "DischargeReason" character varying(500),
+            "DischargedByUserId" uuid,
+            "TransferredToBedId" uuid,
+            CONSTRAINT "PK_BedAllocations" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_BedAllocations_Beds" FOREIGN KEY ("BedId") REFERENCES "Beds" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_BedAllocations_Patients" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_BedAllocations_ClinicalEncounters" FOREIGN KEY ("EncounterId") REFERENCES "ClinicalEncounters" ("Id") ON DELETE SET NULL,
+            CONSTRAINT "FK_BedAllocations_AdmittedByUser" FOREIGN KEY ("AdmittedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_BedAllocations_DischargedByUser" FOREIGN KEY ("DischargedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_BedAllocations_TransferredToBed" FOREIGN KEY ("TransferredToBedId") REFERENCES "Beds" ("Id") ON DELETE SET NULL
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_BedAllocations_BedId_Active" ON "BedAllocations" ("BedId") WHERE "DischargedAtUtc" IS NULL""",
+        """CREATE INDEX IF NOT EXISTS "IX_BedAllocations_PatientId" ON "BedAllocations" ("PatientId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_BedAllocations_BedId" ON "BedAllocations" ("BedId")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260608000006_Phase6_BedManagement', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

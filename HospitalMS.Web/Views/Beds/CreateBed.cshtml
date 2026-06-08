@@ -1,0 +1,38 @@
+@model HospitalMS.Business.Models.CreateBedRequest
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    var ward = (WardResponse)ViewBag.Ward;
+}
+
+<div class="mb-4">
+    <a asp-controller="BedManagement" asp-action="WardDetail" asp-route-wardId="@ward?.Id" class="text-decoration-none">&larr; Back to @(ward?.Name ?? "Ward")</a>
+    <h2 class="fw-bold mt-2">Add Bed</h2>
+</div>
+
+@if (ViewData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="card" style="max-width:480px;">
+    <div class="card-body">
+        <form asp-controller="BedManagement" asp-action="CreateBed" asp-route-wardId="@ward?.Id" method="post">
+            <input type="hidden" name="WardId" value="@ward?.Id" />
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Bed Number</label>
+                <input name="BedNumber" class="form-control" placeholder="e.g. A1, ICU-3" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Bed Type</label>
+                <select name="BedType" class="form-select" required>
+                    @foreach (var t in new[] { "Standard", "Isolation", "Monitored", "ICU" })
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Add Bed</button>
+        </form>
+    </div>
+</div>

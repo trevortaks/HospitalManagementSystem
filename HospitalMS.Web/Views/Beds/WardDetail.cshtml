@@ -1,0 +1,190 @@
+@model IReadOnlyList<HospitalMS.Business.Models.BedResponse>
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    var ward = (WardResponse)ViewBag.Ward;
+    var allocations = (IReadOnlyList<BedAllocationResponse>)ViewBag.Allocations;
+}
+
+<div class="mb-3">
+    <a asp-controller="BedManagement" asp-action="Wards" class="text-decoration-none">&larr; Back to Wards</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">@ward.Name</h2>
+        <span class="text-muted small">@ward.WardType &bull; Floor @ward.FloorNumber</span>
+    </div>
+    <a asp-controller="BedManagement" asp-action="CreateBed" asp-route-wardId="@ward.Id" class="btn btn-primary">+ Add Bed</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3 fw-bold">@ward.TotalBeds</div>
+                <div class="text-muted small">Total Beds</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-danger">
+            <div class="card-body">
+                <div class="fs-3 fw-bold text-danger">@ward.OccupiedBeds</div>
+                <div class="text-muted small">Occupied</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <div class="fs-3 fw-bold text-success">@ward.AvailableBeds</div>
+                <div class="text-muted small">Available</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3 fw-bold">@Model.Count</div>
+                <div class="text-muted small">Beds Created</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h5 class="fw-semibold mb-3">Beds</h5>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No beds added to this ward yet.</div>
+}
+else
+{
+    <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Bed #</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bed in Model)
+                {
+                    var statusClass = bed.Status switch
+                    {
+                        "Available" => "bg-success",
+                        "Occupied" => "bg-danger",
+                        "Reserved" => "bg-warning text-dark",
+                        "OutOfService" => "bg-dark",
+                        _ => "bg-secondary"
+                    };
+                    var currentAllocation = allocations.FirstOrDefault(a => a.BedId == bed.Id);
+                    <tr>
+                        <td class="fw-semibold">@bed.BedNumber</td>
+                        <td>@bed.BedType</td>
+                        <td><span class="badge @statusClass">@bed.Status</span></td>
+                        <td>
+                            <span class="badge @(bed.IsActive ? "bg-success" : "bg-secondary")">
+                                @(bed.IsActive ? "Yes" : "No")
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                @if (bed.Status == "Available" && bed.IsActive)
+                                {
+                                    <a asp-controller="BedManagement" asp-action="Allocate" asp-route-bedId="@bed.Id"
+                                       class="btn btn-sm btn-outline-primary">Admit Patient</a>
+                                }
+                                @if (currentAllocation is not null)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                            data-bs-toggle="modal" data-bs-target="#dischargeModal"
+                                            data-allocation-id="@currentAllocation.Id"
+                                            data-patient="@currentAllocation.PatientName">
+                                        Discharge
+                                    </button>
+                                }
+                                <form asp-controller="BedManagement" asp-action="ToggleBed"
+                                      asp-route-id="@bed.Id" asp-route-wardId="@ward.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        @(bed.IsActive ? "Deactivate" : "Activate")
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (allocations.Any())
+{
+    <h5 class="fw-semibold mb-3">Active Admissions</h5>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Bed</th>
+                    <th>Patient</th>
+                    <th>MRN</th>
+                    <th>Admitted By</th>
+                    <th>Admitted At</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in allocations)
+                {
+                    <tr>
+                        <td class="fw-semibold">@a.BedNumber</td>
+                        <td>@a.PatientName</td>
+                        <td><code>@a.MedicalRecordNumber</code></td>
+                        <td>@a.AdmittedByUsername</td>
+                        <td>@a.AdmittedAtUtc.ToString("dd MMM yyyy HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Discharge Modal -->
+<div class="modal fade" id="dischargeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Discharge Patient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-controller="BedManagement" asp-action="Discharge" asp-route-allocationId="placeholder" method="post" id="dischargeForm">
+                <div class="modal-body">
+                    <p>Discharging: <strong id="dischargePatientName"></strong></p>
+                    <input type="hidden" name="AllocationId" id="dischargeAllocationId" />
+                    <input type="hidden" name="DischargedByUserId" value="@Context.Session.GetString("user_id")" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Discharge Reason</label>
+                        <textarea name="DischargeReason" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Confirm Discharge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('dischargeModal')?.addEventListener('show.bs.modal', function (e) {
+        const btn = e.relatedTarget;
+        document.getElementById('dischargeAllocationId').value = btn.dataset.allocationId;
+        document.getElementById('dischargePatientName').textContent = btn.dataset.patient;
+        document.getElementById('dischargeForm').action = '/beds/discharge/' + btn.dataset.allocationId;
+    });
+</script>
