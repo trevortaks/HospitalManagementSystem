@@ -1,11 +1,13 @@
 using HospitalMS.Business.Models;
 using HospitalMS.Business.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HospitalMS.API.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public sealed class AuthController(IUserService userService) : ControllerBase
 {
     [HttpPost("register")]

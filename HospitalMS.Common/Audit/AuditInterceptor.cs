@@ -31,7 +31,7 @@ public sealed class AuditInterceptor(IAuditLogger auditLogger) : SaveChangesInte
 
         var auditEntries = context.ChangeTracker
             .Entries()
-            .Where(static entry => entry.Entity is not AuditLog)
+            .Where(static entry => entry.Entity is not AuditLog and not INoAuditLog)
             .Where(static entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
             .Select(CreateAuditLog)
             .ToArray();

@@ -1,0 +1,122 @@
+@model IReadOnlyList<HospitalMS.Business.Models.AuditEntryResponse>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Audit Log";
+    var currentEntityType = (string?)ViewBag.EntityType;
+    var currentAction     = (string?)ViewBag.Action;
+    var currentUserId     = (Guid?)ViewBag.UserId;
+    var currentFrom       = (DateTime?)ViewBag.From;
+    var currentTo         = (DateTime?)ViewBag.To;
+
+    var entityTypes = new[] { "Patient", "Invoice", "PurchaseOrder", "Appointment", "Prescription", "BedAllocation", "User" };
+    var actions     = new[] { "Created", "Updated", "Deleted", "StatusChanged", "LoggedIn", "LoggedOut", "Viewed", "Exported" };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold">Audit Log</h2>
+    <span class="text-muted small">Showing up to 200 most recent events</span>
+</div>
+
+<form asp-controller="Audit" asp-action="Index" method="get" class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Entity Type</label>
+                <select name="entityType" class="form-select form-select-sm">
+                    <option value="">All types</option>
+                    @foreach (var t in entityTypes)
+                    {
+                        if (currentEntityType == t)
+                        {
+                            <option value="@t" selected>@t</option>
+                        }
+                        else
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Action</label>
+                <select name="action" class="form-select form-select-sm">
+                    <option value="">All actions</option>
+                    @foreach (var a in actions)
+                    {
+                        if (currentAction == a)
+                        {
+                            <option value="@a" selected>@a</option>
+                        }
+                        else
+                        {
+                            <option value="@a">@a</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">From</label>
+                <input name="from" type="date" class="form-control form-control-sm"
+                       value="@(currentFrom?.ToString("yyyy-MM-dd") ?? "")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">To</label>
+                <input name="to" type="date" class="form-control form-control-sm"
+                       value="@(currentTo?.ToString("yyyy-MM-dd") ?? "")" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                <a asp-controller="Audit" asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No audit entries match the current filters.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>When</th>
+                    <th>Action</th>
+                    <th>Entity Type</th>
+                    <th>Entity ID</th>
+                    <th>User</th>
+                    <th>IP</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in Model)
+                {
+                    var actionClass = entry.Action switch
+                    {
+                        "Created"       => "bg-success",
+                        "Updated"       => "bg-primary",
+                        "Deleted"       => "bg-danger",
+                        "StatusChanged" => "bg-warning text-dark",
+                        "LoggedIn"      => "bg-info text-dark",
+                        "AccessDenied"  => "bg-danger",
+                        _               => "bg-secondary"
+                    };
+                    <tr>
+                        <td class="text-nowrap text-muted small">@entry.PerformedAtUtc.ToString("dd MMM HH:mm:ss")</td>
+                        <td><span class="badge @actionClass">@entry.Action</span></td>
+                        <td class="fw-semibold small">@entry.EntityType</td>
+                        <td class="font-monospace small text-muted">@(entry.EntityId?.ToString("D")[..8] ?? "—")…</td>
+                        <td class="small">@(entry.PerformedByUsername ?? "—")</td>
+                        <td class="small text-muted">@(entry.IpAddress ?? "—")</td>
+                        <td class="small text-truncate" style="max-width:260px;"
+                            title="@entry.Details">@(entry.Details ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="text-muted small text-end">@Model.Count entries displayed</p>
+}

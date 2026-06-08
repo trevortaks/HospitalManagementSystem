@@ -37,6 +37,7 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<Ward> Wards => Set<Ward>();
     public DbSet<Bed> Beds => Set<Bed>();
     public DbSet<BedAllocation> BedAllocations => Set<BedAllocation>();
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -670,6 +671,20 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
 
             entity.HasIndex(a => a.PatientId);
             entity.HasIndex(a => a.BedId);
+        });
+
+        modelBuilder.Entity<AuditEntry>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.EntityType).HasMaxLength(100).IsRequired();
+            entity.Property(a => a.Action).HasMaxLength(50).IsRequired();
+            entity.Property(a => a.Details).HasMaxLength(2000);
+            entity.Property(a => a.PerformedByUsername).HasMaxLength(100);
+            entity.Property(a => a.IpAddress).HasMaxLength(45);
+
+            entity.HasIndex(a => a.EntityType);
+            entity.HasIndex(a => a.PerformedByUserId);
+            entity.HasIndex(a => a.PerformedAtUtc);
         });
     }
 }

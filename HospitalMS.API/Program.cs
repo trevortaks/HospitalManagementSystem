@@ -1,9 +1,11 @@
 using System.Linq;
+using System.Threading.RateLimiting;
 using HospitalMS.API.Infrastructure;
 using HospitalMS.Business;
 using HospitalMS.Common.Extensions;
 using HospitalMS.Data.Extensions;
 using HospitalMS.ServiceDefaults.Extensions;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +16,18 @@ builder.Services.AddControllers();
 builder.Services.AddHospitalDataAccess(builder.Configuration);
 builder.Services.AddHospitalSecurity(builder.Configuration);
 builder.Services.AddHospitalBusinessServices();
+
+builder.Services.AddRateLimiter(opts =>
+{
+    opts.AddFixedWindowLimiter("auth", limiter =>
+    {
+        limiter.PermitLimit = 10;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiter.QueueLimit = 0;
+    });
+    opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -70,6 +84,7 @@ if (HasHttpsEndpoint(builder.Configuration))
 }
 
 app.UseRouting();
+app.UseRateLimiter();
 app.UseHospitalSecurity();
 app.MapControllers();
 app.MapDefaultHealthChecks();

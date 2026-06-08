@@ -703,6 +703,31 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260608000009_Phase9_SupplyChain', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // ── Phase 10: Audit Persistence ──────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS "AuditEntries" (
+            "Id" uuid NOT NULL,
+            "EntityType" character varying(100) NOT NULL,
+            "EntityId" uuid,
+            "Action" character varying(50) NOT NULL,
+            "Details" character varying(2000),
+            "PerformedByUserId" uuid,
+            "PerformedByUsername" character varying(100),
+            "IpAddress" character varying(45),
+            "PerformedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_AuditEntries" PRIMARY KEY ("Id")
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_AuditEntries_EntityType" ON "AuditEntries" ("EntityType")""",
+        """CREATE INDEX IF NOT EXISTS "IX_AuditEntries_PerformedByUserId" ON "AuditEntries" ("PerformedByUserId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_AuditEntries_PerformedAtUtc" ON "AuditEntries" ("PerformedAtUtc" DESC)""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260608000010_Phase10_AuditPersistence', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }
