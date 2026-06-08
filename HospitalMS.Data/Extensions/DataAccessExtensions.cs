@@ -728,6 +728,81 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260608000010_Phase10_AuditPersistence', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // ── Phase 11: Facilities Management ──────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS "Rooms" (
+            "Id" uuid NOT NULL,
+            "Name" character varying(200) NOT NULL,
+            "RoomNumber" character varying(20) NOT NULL,
+            "RoomType" character varying(50) NOT NULL DEFAULT 'General',
+            "FloorNumber" integer NOT NULL DEFAULT 1,
+            "Building" character varying(100),
+            "CapacityPersons" integer NOT NULL DEFAULT 1,
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "Notes" character varying(500),
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Rooms" PRIMARY KEY ("Id")
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_Rooms_RoomNumber" ON "Rooms" ("RoomNumber")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "Equipment" (
+            "Id" uuid NOT NULL,
+            "Name" character varying(200) NOT NULL,
+            "Code" character varying(50) NOT NULL,
+            "EquipmentType" character varying(100) NOT NULL,
+            "SerialNumber" character varying(100),
+            "Manufacturer" character varying(200),
+            "Model" character varying(200),
+            "LocationRoomId" uuid,
+            "Status" character varying(30) NOT NULL DEFAULT 'Active',
+            "PurchaseDate" timestamp with time zone,
+            "LastMaintenanceDate" timestamp with time zone,
+            "NextMaintenanceDue" timestamp with time zone,
+            "WarrantyExpiryDate" timestamp with time zone,
+            "Notes" character varying(500),
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Equipment" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_Equipment_Rooms" FOREIGN KEY ("LocationRoomId") REFERENCES "Rooms" ("Id") ON DELETE SET NULL
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_Equipment_Code" ON "Equipment" ("Code")""",
+        """CREATE INDEX IF NOT EXISTS "IX_Equipment_LocationRoomId" ON "Equipment" ("LocationRoomId")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "MaintenanceRequests" (
+            "Id" uuid NOT NULL,
+            "Title" character varying(200) NOT NULL,
+            "Description" character varying(2000) NOT NULL,
+            "RequestType" character varying(30) NOT NULL DEFAULT 'Corrective',
+            "Priority" character varying(20) NOT NULL DEFAULT 'Medium',
+            "Status" character varying(20) NOT NULL DEFAULT 'Open',
+            "RoomId" uuid,
+            "EquipmentId" uuid,
+            "RequestedByUserId" uuid NOT NULL,
+            "AssignedToUserId" uuid,
+            "RequestedAtUtc" timestamp with time zone NOT NULL,
+            "ScheduledDate" timestamp with time zone,
+            "ResolvedAtUtc" timestamp with time zone,
+            "ResolutionNotes" character varying(2000),
+            CONSTRAINT "PK_MaintenanceRequests" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_MaintenanceRequests_Rooms" FOREIGN KEY ("RoomId") REFERENCES "Rooms" ("Id") ON DELETE SET NULL,
+            CONSTRAINT "FK_MaintenanceRequests_Equipment" FOREIGN KEY ("EquipmentId") REFERENCES "Equipment" ("Id") ON DELETE SET NULL,
+            CONSTRAINT "FK_MaintenanceRequests_RequestedBy" FOREIGN KEY ("RequestedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_MaintenanceRequests_AssignedTo" FOREIGN KEY ("AssignedToUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_MaintenanceRequests_Status" ON "MaintenanceRequests" ("Status")""",
+        """CREATE INDEX IF NOT EXISTS "IX_MaintenanceRequests_RequestedAtUtc" ON "MaintenanceRequests" ("RequestedAtUtc" DESC)""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260608000011_Phase11_FacilitiesManagement', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

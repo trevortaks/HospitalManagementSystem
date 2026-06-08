@@ -38,6 +38,9 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<Bed> Beds => Set<Bed>();
     public DbSet<BedAllocation> BedAllocations => Set<BedAllocation>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<Room> Rooms => Set<Room>();
+    public DbSet<Equipment> Equipment => Set<Equipment>();
+    public DbSet<MaintenanceRequest> MaintenanceRequests => Set<MaintenanceRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -685,6 +688,70 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
             entity.HasIndex(a => a.EntityType);
             entity.HasIndex(a => a.PerformedByUserId);
             entity.HasIndex(a => a.PerformedAtUtc);
+        });
+
+        modelBuilder.Entity<Room>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Name).HasMaxLength(200).IsRequired();
+            entity.Property(r => r.RoomNumber).HasMaxLength(20).IsRequired();
+            entity.Property(r => r.RoomType).HasMaxLength(50).IsRequired();
+            entity.Property(r => r.Building).HasMaxLength(100);
+            entity.Property(r => r.Notes).HasMaxLength(500);
+            entity.HasIndex(r => r.RoomNumber).IsUnique();
+        });
+
+        modelBuilder.Entity<Equipment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.EquipmentType).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.SerialNumber).HasMaxLength(100);
+            entity.Property(e => e.Manufacturer).HasMaxLength(200);
+            entity.Property(e => e.Model).HasMaxLength(200);
+            entity.Property(e => e.Status).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.HasIndex(e => e.Code).IsUnique();
+
+            entity.HasOne(e => e.LocationRoom)
+                .WithMany()
+                .HasForeignKey(e => e.LocationRoomId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<MaintenanceRequest>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Title).HasMaxLength(200).IsRequired();
+            entity.Property(m => m.Description).HasMaxLength(2000).IsRequired();
+            entity.Property(m => m.RequestType).HasMaxLength(30).IsRequired();
+            entity.Property(m => m.Priority).HasMaxLength(20).IsRequired();
+            entity.Property(m => m.Status).HasMaxLength(20).IsRequired();
+            entity.Property(m => m.ResolutionNotes).HasMaxLength(2000);
+
+            entity.HasOne(m => m.Room)
+                .WithMany(r => r.MaintenanceRequests)
+                .HasForeignKey(m => m.RoomId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(m => m.Equipment)
+                .WithMany(e => e.MaintenanceRequests)
+                .HasForeignKey(m => m.EquipmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(m => m.RequestedByUser)
+                .WithMany()
+                .HasForeignKey(m => m.RequestedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(m => m.AssignedToUser)
+                .WithMany()
+                .HasForeignKey(m => m.AssignedToUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(m => m.Status);
+            entity.HasIndex(m => m.RequestedAtUtc);
         });
     }
 }

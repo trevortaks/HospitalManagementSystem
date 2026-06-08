@@ -20,8 +20,9 @@ public static class Permissions
     public const string InvoicesManage = "invoices.manage";
     public const string PaymentsRecord = "payments.record";
     public const string InsuranceManage = "insurance.manage";
-    public const string InventoryManage = "inventory.manage";
-    public const string HRManage = "hr.manage";
+    public const string InventoryManage    = "inventory.manage";
+    public const string FacilitiesManage   = "facilities.manage";
+    public const string HRManage           = "hr.manage";
     public const string AuditLogsRead = "auditlogs.read";
     public const string SystemAdmin = "system.admin";
     public const string SelfService = "selfservice.access";
@@ -43,6 +44,7 @@ public static class Permissions
         PaymentsRecord,
         InsuranceManage,
         InventoryManage,
+        FacilitiesManage,
         HRManage,
         AuditLogsRead,
         SystemAdmin,
@@ -73,6 +75,7 @@ public static class Permissions
                     AppointmentsRead,
                     EncountersRead,
                     EncountersWrite,
+                    FacilitiesManage,
                     SelfService
                 ],
                 [UserRoles.Patient] =

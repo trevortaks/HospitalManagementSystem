@@ -1,0 +1,138 @@
+@model IReadOnlyList<HospitalMS.Business.Models.EquipmentResponse>
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Equipment";
+    var currentStatus = (string?)ViewBag.Status;
+    var rooms = (IReadOnlyList<RoomResponse>)ViewBag.Rooms;
+    var statuses = new[] { "Active", "UnderMaintenance", "Decommissioned" };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold">Equipment</h2>
+    <div class="d-flex gap-2">
+        <a asp-controller="Facilities" asp-action="Rooms" class="btn btn-outline-secondary">Rooms</a>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">+ Add Equipment</button>
+    </div>
+</div>
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a asp-controller="Facilities" asp-action="Equipment"
+       class="btn btn-sm @(currentStatus is null ? "btn-primary" : "btn-outline-secondary")">All</a>
+    @foreach (var s in statuses)
+    {
+        <a asp-controller="Facilities" asp-action="Equipment" asp-route-status="@s"
+           class="btn btn-sm @(currentStatus == s ? "btn-primary" : "btn-outline-secondary")">@s</a>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No equipment found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Code</th><th>Name</th><th>Type</th><th>Location</th>
+                    <th>Status</th><th>Next Maintenance</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model)
+                {
+                    var statusClass = e.Status switch
+                    {
+                        "Active"           => "bg-success",
+                        "UnderMaintenance" => "bg-warning text-dark",
+                        "Decommissioned"   => "bg-danger",
+                        _                  => "bg-secondary"
+                    };
+                    var maintenanceDue = e.NextMaintenanceDue.HasValue && e.NextMaintenanceDue.Value < DateTime.UtcNow.AddDays(7);
+                    <tr>
+                        <td><code>@e.Code</code></td>
+                        <td class="fw-semibold">@e.Name</td>
+                        <td class="text-muted small">@e.EquipmentType</td>
+                        <td class="small">@(e.LocationRoomName ?? "—")</td>
+                        <td><span class="badge @statusClass">@e.Status</span></td>
+                        <td class="small @(maintenanceDue ? "text-danger fw-semibold" : "text-muted")">
+                            @(e.NextMaintenanceDue?.ToString("dd MMM yyyy") ?? "—")
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                @foreach (var s in statuses.Where(s => s != e.Status))
+                                {
+                                    <form asp-controller="Facilities" asp-action="UpdateEquipmentStatus"
+                                          asp-route-id="@e.Id" method="post" class="d-inline">
+                                        <input type="hidden" name="Status" value="@s" />
+                                        <button class="btn btn-sm btn-outline-secondary">→ @s</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Create Equipment Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Add Equipment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form asp-controller="Facilities" asp-action="CreateEquipment" method="post">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-8">
+                            <label class="form-label fw-semibold">Name</label>
+                            <input name="Name" class="form-control" required />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Code</label>
+                            <input name="Code" class="form-control" required placeholder="XRAY-001" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Equipment Type</label>
+                            <input name="EquipmentType" class="form-control" required placeholder="Imaging, Monitoring…" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Location Room</label>
+                            <select name="LocationRoomId" class="form-select">
+                                <option value="">None</option>
+                                @foreach (var r in rooms)
+                                {
+                                    <option value="@r.Id">@r.RoomNumber — @r.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Serial No.</label>
+                            <input name="SerialNumber" class="form-control" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Manufacturer</label>
+                            <input name="Manufacturer" class="form-control" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Model</label>
+                            <input name="Model" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Notes</label>
+                            <textarea name="Notes" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Equipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

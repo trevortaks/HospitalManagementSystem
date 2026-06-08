@@ -456,4 +456,70 @@ public static class TestFixtures
             CreatedAtUtc = DateTime.UtcNow
         };
     }
+
+    public static Room CreateRoom(
+        Guid? id = null,
+        string name = "Operating Theatre 1",
+        string roomNumber = "OT-01",
+        string roomType = "OperatingTheatre",
+        int floorNumber = 2,
+        bool isActive = true)
+    {
+        return new Room
+        {
+            Id          = id ?? Guid.NewGuid(),
+            Name        = name,
+            RoomNumber  = roomNumber,
+            RoomType    = roomType,
+            FloorNumber = floorNumber,
+            IsActive    = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static Equipment CreateEquipment(
+        Guid? id = null,
+        string name = "X-Ray Machine",
+        string code = "XRAY-001",
+        string equipmentType = "Imaging",
+        Guid? locationRoomId = null,
+        string status = "Active",
+        bool isActive = true)
+    {
+        return new Equipment
+        {
+            Id            = id ?? Guid.NewGuid(),
+            Name          = name,
+            Code          = code,
+            EquipmentType = equipmentType,
+            LocationRoomId = locationRoomId,
+            Status        = status,
+            IsActive      = isActive,
+            CreatedAtUtc  = DateTime.UtcNow
+        };
+    }
+
+    public static MaintenanceRequest CreateMaintenanceRequest(
+        Guid? id = null,
+        Guid? requestedByUserId = null,
+        Guid? roomId = null,
+        Guid? equipmentId = null,
+        string title = "Fix leaking pipe",
+        string status = "Open",
+        string priority = "Medium")
+    {
+        return new MaintenanceRequest
+        {
+            Id                 = id ?? Guid.NewGuid(),
+            Title              = title,
+            Description        = "Detailed description of the issue.",
+            RequestType        = "Corrective",
+            Priority           = priority,
+            Status             = status,
+            RoomId             = roomId,
+            EquipmentId        = equipmentId,
+            RequestedByUserId  = requestedByUserId ?? Guid.NewGuid(),
+            RequestedAtUtc     = DateTime.UtcNow
+        };
+    }
 }

@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<ISupplyChainService, SupplyChainService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IFacilitiesService, FacilitiesService>();
         services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         services.AddHealthChecks()
