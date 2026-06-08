@@ -1,0 +1,91 @@
+@model HospitalMS.Business.Models.PatientDemographicsReport
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Patient Demographics";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Patient Demographics</h2>
+    <a asp-controller="Reports" asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">&larr; Dashboard</a>
+</div>
+
+@if (Model is null) { <div class="alert alert-warning">Unable to load report.</div> }
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent fw-semibold">Total Patients</div>
+                <div class="card-body text-center">
+                    <div class="display-5 fw-bold">@Model.TotalPatients.ToString("N0")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent fw-semibold">By Gender</div>
+                <div class="card-body">
+                    @foreach (var g in Model.ByGender)
+                    {
+                        var pct = Model.TotalPatients > 0 ? (double)g.Count / Model.TotalPatients * 100 : 0;
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>@g.Label</span>
+                            <span class="fw-semibold">@g.Count (@pct.ToString("0.0")%)</span>
+                        </div>
+                        <div class="progress mb-2" style="height:5px;">
+                            <div class="progress-bar" style="width:@pct%"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent fw-semibold">By Age Group</div>
+                <div class="card-body">
+                    @foreach (var a in Model.ByAgeGroup)
+                    {
+                        var pct = Model.TotalPatients > 0 ? (double)a.Count / Model.TotalPatients * 100 : 0;
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>@a.Label</span>
+                            <span class="fw-semibold">@a.Count</span>
+                        </div>
+                        <div class="progress mb-2" style="height:5px;">
+                            <div class="progress-bar bg-info" style="width:@pct%"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent fw-semibold">New Patients — Last 12 Months</div>
+        <div class="card-body">
+            @if (!Model.NewPatientsPerMonth.Any())
+            {
+                <p class="text-muted small">No data for the past 12 months.</p>
+            }
+            else
+            {
+                var maxCount = Model.NewPatientsPerMonth.Max(m => m.Count);
+                <div class="d-flex align-items-end gap-1" style="height:100px;">
+                    @foreach (var m in Model.NewPatientsPerMonth)
+                    {
+                        var barHeight = maxCount > 0 ? (double)m.Count / maxCount * 80 : 0;
+                        <div class="d-flex flex-column align-items-center flex-fill" title="@m.MonthLabel: @m.Count">
+                            <span class="text-muted" style="font-size:10px;">@m.Count</span>
+                            <div class="bg-primary rounded-top w-100" style="height:@(barHeight)px; min-height:2px;"></div>
+                        </div>
+                    }
+                </div>
+                <div class="d-flex gap-1 mt-1">
+                    @foreach (var m in Model.NewPatientsPerMonth)
+                    {
+                        <div class="flex-fill text-center text-muted" style="font-size:9px;">@m.MonthLabel[5..]</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}

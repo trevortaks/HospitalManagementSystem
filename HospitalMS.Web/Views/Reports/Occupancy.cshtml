@@ -1,0 +1,98 @@
+@model HospitalMS.Business.Models.BedOccupancyReport
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Bed Occupancy";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Bed Occupancy</h2>
+    <a asp-controller="Reports" asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">&larr; Dashboard</a>
+</div>
+
+@if (Model is null) { <div class="alert alert-warning">Unable to load report.</div> }
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Total Beds</div>
+                    <div class="fs-2 fw-bold">@Model.TotalBeds</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Occupied</div>
+                    <div class="fs-2 fw-bold text-danger">@Model.OccupiedBeds</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Available</div>
+                    <div class="fs-2 fw-bold text-success">@Model.AvailableBeds</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Occupancy Rate</div>
+                    <div class="fs-2 fw-bold">@Model.OccupancyRate%</div>
+                    <div class="progress mt-2" style="height:6px;">
+                        <div class="progress-bar @(Model.OccupancyRate > 90 ? "bg-danger" : Model.OccupancyRate > 70 ? "bg-warning" : "bg-success")"
+                             style="width:@Model.OccupancyRate%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent fw-semibold">Occupancy by Ward</div>
+        @if (!Model.ByWard.Any())
+        {
+            <div class="card-body"><p class="text-muted small">No ward data available.</p></div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ward</th>
+                            <th class="text-center">Total Beds</th>
+                            <th class="text-center">Occupied</th>
+                            <th class="text-center">Available</th>
+                            <th style="width:30%">Occupancy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ward in Model.ByWard.OrderByDescending(w => w.OccupancyRate))
+                        {
+                            var available = ward.TotalBeds - ward.OccupiedBeds;
+                            <tr>
+                                <td class="fw-semibold">@ward.WardName</td>
+                                <td class="text-center">@ward.TotalBeds</td>
+                                <td class="text-center">@ward.OccupiedBeds</td>
+                                <td class="text-center @(available == 0 ? "text-danger" : "text-success")">@available</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-fill" style="height:8px;">
+                                            <div class="progress-bar @(ward.OccupancyRate > 90 ? "bg-danger" : ward.OccupancyRate > 70 ? "bg-warning" : "bg-success")"
+                                                 style="width:@ward.OccupancyRate%"></div>
+                                        </div>
+                                        <span class="small fw-semibold" style="min-width:40px;">@ward.OccupancyRate%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}

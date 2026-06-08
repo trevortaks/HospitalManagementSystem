@@ -1,0 +1,96 @@
+@model HospitalMS.Business.Models.DashboardSummary
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Analytics Dashboard</h2>
+    <div class="d-flex gap-2">
+        <a asp-controller="Reports" asp-action="Patients" class="btn btn-outline-primary btn-sm">Patients</a>
+        <a asp-controller="Reports" asp-action="Revenue" class="btn btn-outline-success btn-sm">Revenue</a>
+        <a asp-controller="Reports" asp-action="Occupancy" class="btn btn-outline-info btn-sm">Occupancy</a>
+        <a asp-controller="Reports" asp-action="Inventory" class="btn btn-outline-warning btn-sm">Inventory</a>
+    </div>
+</div>
+
+@if (Model is null)
+{
+    <div class="alert alert-warning">Unable to load dashboard data.</div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Total Patients</div>
+                    <div class="fs-2 fw-bold">@Model.TotalPatients.ToString("N0")</div>
+                    <div class="text-success small">+@Model.NewPatientsThisMonth new this month</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Appointments</div>
+                    <div class="fs-2 fw-bold">@Model.AppointmentsToday</div>
+                    <div class="text-muted small">@Model.AppointmentsThisWeek this week</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Bed Occupancy</div>
+                    <div class="fs-2 fw-bold">@Model.OccupancyRate%</div>
+                    <div class="text-muted small">@Model.OccupiedBeds / @Model.TotalBeds beds occupied</div>
+                    <div class="progress mt-2" style="height:6px;">
+                        <div class="progress-bar @(Model.OccupancyRate > 90 ? "bg-danger" : Model.OccupancyRate > 70 ? "bg-warning" : "bg-success")"
+                             style="width:@Model.OccupancyRate%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Outstanding Balance</div>
+                    <div class="fs-2 fw-bold text-danger">$@Model.OutstandingInvoiceBalance.ToString("N2")</div>
+                    <div class="text-muted small">unpaid invoices</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent fw-semibold">Open Maintenance Requests</div>
+                <div class="card-body d-flex align-items-center">
+                    <span class="display-6 fw-bold @(Model.OpenMaintenanceRequests > 0 ? "text-warning" : "text-success")">
+                        @Model.OpenMaintenanceRequests
+                    </span>
+                    <span class="ms-3 text-muted">
+                        @(Model.OpenMaintenanceRequests == 0 ? "All clear" : "request(s) need attention")
+                    </span>
+                    <a asp-controller="Facilities" asp-action="MaintenanceRequests" class="btn btn-sm btn-outline-secondary ms-auto">View</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent fw-semibold">Low Stock Items</div>
+                <div class="card-body d-flex align-items-center">
+                    <span class="display-6 fw-bold @(Model.LowStockItemCount > 0 ? "text-danger" : "text-success")">
+                        @Model.LowStockItemCount
+                    </span>
+                    <span class="ms-3 text-muted">
+                        @(Model.LowStockItemCount == 0 ? "All stocked" : "item(s) below reorder level")
+                    </span>
+                    <a asp-controller="Reports" asp-action="Inventory" class="btn btn-sm btn-outline-secondary ms-auto">View</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}

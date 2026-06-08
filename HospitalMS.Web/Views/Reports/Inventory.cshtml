@@ -1,0 +1,89 @@
+@model HospitalMS.Business.Models.InventoryStatusReport
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Inventory Status";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Inventory Status</h2>
+    <a asp-controller="Reports" asp-action="Dashboard" class="btn btn-outline-secondary btn-sm">&larr; Dashboard</a>
+</div>
+
+@if (Model is null) { <div class="alert alert-warning">Unable to load report.</div> }
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Active Items</div>
+                    <div class="fs-2 fw-bold">@Model.TotalActiveItems.ToString("N0")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Low Stock Items</div>
+                    <div class="fs-2 fw-bold @(Model.LowStockCount > 0 ? "text-danger" : "text-success")">
+                        @Model.LowStockCount
+                    </div>
+                    <div class="text-muted small">at or below reorder level</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.LowStockItems.Any())
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Low Stock Items</span>
+                <span class="badge bg-danger">@Model.LowStockCount item(s) need restocking</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th class="text-center">Current Stock</th>
+                            <th class="text-center">Reorder Level</th>
+                            <th class="text-center">Unit</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.LowStockItems.OrderBy(i => i.CurrentStock))
+                        {
+                            var isOut = item.CurrentStock == 0;
+                            <tr class="@(isOut ? "table-danger" : "table-warning")">
+                                <td class="fw-semibold text-muted small">@item.Code</td>
+                                <td class="fw-semibold">@item.Name</td>
+                                <td class="text-center fw-bold @(isOut ? "text-danger" : "text-warning")">
+                                    @item.CurrentStock
+                                </td>
+                                <td class="text-center text-muted">@item.ReorderLevel</td>
+                                <td class="text-center text-muted small">@item.Unit</td>
+                                <td class="text-center">
+                                    @if (isOut)
+                                    {
+                                        <span class="badge bg-danger">Out of Stock</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">Low Stock</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success">All items are sufficiently stocked.</div>
+    }
+}
