@@ -1,0 +1,160 @@
+@model HospitalMS.Business.Models.PredictiveInsightsSummary
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Predictive Insights";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Predictive Insights</h2>
+    <div class="d-flex gap-2">
+        <a asp-action="Readmission" class="btn btn-outline-danger btn-sm">Readmission Risk</a>
+        <a asp-action="Stock" class="btn btn-outline-warning btn-sm">Stock Predictions</a>
+    </div>
+</div>
+
+@if (Model is null)
+{
+    <div class="alert alert-warning">Unable to load insights.</div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 border-start border-danger border-3">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">High Readmission Risk</div>
+                    <div class="fs-2 fw-bold text-danger">@Model.HighRiskReadmissions</div>
+                    <div class="text-muted small">patients</div>
+                    <a asp-action="Readmission" class="btn btn-outline-danger btn-sm mt-2">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 border-start border-warning border-3">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">Critical Stock Items</div>
+                    <div class="fs-2 fw-bold text-warning">@Model.CriticalStockItems</div>
+                    <div class="text-muted small">need immediate reorder</div>
+                    <a asp-action="Stock" class="btn btn-outline-warning btn-sm mt-2">View All</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 border-start border-info border-3">
+                <div class="card-body">
+                    <div class="text-muted small mb-1">High No-Show Risk</div>
+                    <div class="fs-2 fw-bold text-info">@Model.HighNoShowRiskAppointments</div>
+                    <div class="text-muted small">upcoming appointments</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent fw-semibold">Top Readmission Risks</div>
+                <div class="card-body p-0">
+                    @if (!Model.TopReadmissionRisks.Any())
+                    {
+                        <div class="p-3 text-muted small">No high-risk patients identified.</div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var r in Model.TopReadmissionRisks)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold small">@r.PatientName</div>
+                                        <div class="text-muted" style="font-size:11px;">@string.Join(", ", r.RiskFactors)</div>
+                                    </div>
+                                    <span class="badge @(r.RiskLevel == "High" ? "bg-danger" : r.RiskLevel == "Medium" ? "bg-warning text-dark" : "bg-secondary")">
+                                        @r.RiskScore%
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent fw-semibold">Weekly Bed Demand Forecast</div>
+                <div class="card-body">
+                    @if (!Model.WeeklyBedForecast.Any())
+                    {
+                        <div class="text-muted small">No forecast data available.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="small">Period</th>
+                                        <th class="text-center small">Predicted Admissions</th>
+                                        <th class="text-center small">Recommended Beds</th>
+                                        <th class="text-center small">Confidence</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var f in Model.WeeklyBedForecast)
+                                    {
+                                        <tr>
+                                            <td class="small fw-semibold">@f.Period</td>
+                                            <td class="text-center small">@f.PredictedAdmissions</td>
+                                            <td class="text-center small">@f.RecommendedAvailableBeds</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-light text-dark border" style="font-size:10px;">@f.ConfidenceLevel%</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.CriticalStockPredictions.Any())
+    {
+        <div class="card border-0 shadow-sm border-warning border-2">
+            <div class="card-header bg-warning bg-opacity-10 fw-semibold text-warning">
+                Critical Stock Alert
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item</th>
+                            <th class="text-center">Current</th>
+                            <th class="text-center">Days Left</th>
+                            <th class="text-center">Avg Daily Use</th>
+                            <th class="text-center">Urgency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.CriticalStockPredictions)
+                        {
+                            <tr>
+                                <td class="fw-semibold small">@s.ItemName <span class="text-muted">(@s.ItemCode)</span></td>
+                                <td class="text-center small">@s.CurrentStock @s.Unit</td>
+                                <td class="text-center small @(s.EstimatedDaysUntilStockout == 0 ? "text-danger fw-bold" : "")">
+                                    @(s.EstimatedDaysUntilStockout >= 999 ? "—" : s.EstimatedDaysUntilStockout.ToString())
+                                </td>
+                                <td class="text-center small text-muted">@s.AverageDailyUsage</td>
+                                <td class="text-center">
+                                    <span class="badge @(s.Urgency == "Out of Stock" ? "bg-danger" : "bg-warning text-dark")">@s.Urgency</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}

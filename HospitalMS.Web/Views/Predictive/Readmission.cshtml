@@ -1,0 +1,56 @@
+@model List<HospitalMS.Business.Models.ReadmissionRiskScore>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Readmission Risk";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Readmission Risk Scores</h2>
+    <a asp-action="Summary" class="btn btn-outline-secondary btn-sm">&larr; Insights</a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    @if (!Model.Any())
+    {
+        <div class="card-body text-center text-muted py-5">No patients with elevated readmission risk.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th class="text-center">Risk Score</th>
+                        <th class="text-center">Level</th>
+                        <th>Risk Factors</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@r.PatientName</td>
+                            <td class="text-center">
+                                <div class="d-flex align-items-center gap-2 justify-content-center">
+                                    <div class="progress flex-fill" style="height:8px; max-width:80px;">
+                                        <div class="progress-bar @(r.RiskLevel == "High" ? "bg-danger" : r.RiskLevel == "Medium" ? "bg-warning" : "bg-success")"
+                                             style="width:@r.RiskScore%"></div>
+                                    </div>
+                                    <span class="fw-semibold small">@r.RiskScore</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @(r.RiskLevel == "High" ? "bg-danger" : r.RiskLevel == "Medium" ? "bg-warning text-dark" : "bg-success")">
+                                    @r.RiskLevel
+                                </span>
+                            </td>
+                            <td class="small text-muted">@string.Join(" · ", r.RiskFactors)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small">@Model.Count patient(s) with elevated risk</div>
+    }
+</div>

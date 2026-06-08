@@ -1,0 +1,58 @@
+@model List<HospitalMS.Business.Models.LowStockPrediction>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Stock Predictions";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Stock Depletion Predictions</h2>
+    <a asp-action="Summary" class="btn btn-outline-secondary btn-sm">&larr; Insights</a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    @if (!Model.Any())
+    {
+        <div class="card-body text-center text-muted py-5">All items have sufficient stock levels.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th class="text-center">Current Stock</th>
+                        <th class="text-center">Reorder Level</th>
+                        <th class="text-center">Avg Daily Use</th>
+                        <th class="text-center">Days Until Stockout</th>
+                        <th class="text-center">Urgency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model)
+                    {
+                        var rowClass = s.Urgency is "Out of Stock" or "Critical" ? "table-danger" :
+                                       s.Urgency == "Warning" ? "table-warning" : "";
+                        <tr class="@rowClass">
+                            <td class="text-muted small fw-semibold">@s.ItemCode</td>
+                            <td class="fw-semibold">@s.ItemName</td>
+                            <td class="text-center">@s.CurrentStock <span class="text-muted small">@s.Unit</span></td>
+                            <td class="text-center text-muted small">@s.ReorderLevel</td>
+                            <td class="text-center text-muted small">@s.AverageDailyUsage</td>
+                            <td class="text-center fw-semibold @(s.EstimatedDaysUntilStockout == 0 ? "text-danger" : "")">
+                                @(s.EstimatedDaysUntilStockout >= 999 ? "—" : s.EstimatedDaysUntilStockout.ToString() + "d")
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @(s.Urgency == "Out of Stock" ? "bg-danger" : s.Urgency == "Critical" ? "bg-danger" : s.Urgency == "Warning" ? "bg-warning text-dark" : "bg-info text-dark")">
+                                    @s.Urgency
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small">@Model.Count item(s) require attention</div>
+    }
+</div>
