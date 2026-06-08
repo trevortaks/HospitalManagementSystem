@@ -1,0 +1,250 @@
+@model HospitalMS.Business.Models.InvoiceResponse
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = $"Invoice {Model.InvoiceNumber}";
+    ViewData["ActivePage"] = "Billing";
+    var chargeItems  = ViewBag.ChargeItems  as IReadOnlyList<HospitalMS.Business.Models.ChargeItemResponse> ?? [];
+    var accountsStaff = ViewBag.AccountsStaff as IReadOnlyList<HospitalMS.Business.Models.UserSummary> ?? [];
+    var claims       = ViewBag.Claims        as IReadOnlyList<HospitalMS.Business.Models.InsuranceClaimResponse> ?? [];
+
+    string StatusClass(string s) => s switch {
+        InvoiceStatus.Paid          => "appt-badge--completed",
+        InvoiceStatus.Voided        => "appt-badge--cancelled",
+        InvoiceStatus.Overdue       => "appt-badge--cancelled",
+        InvoiceStatus.PartiallyPaid => "appt-badge--noshow",
+        InvoiceStatus.Issued        => "appt-badge--confirmed",
+        _                           => "appt-badge--scheduled"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Invoices" class="pf-breadcrumb-link">Invoices</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">@Model.InvoiceNumber</span>
+        </div>
+        <h1 class="page-header-title">@Model.InvoiceNumber</h1>
+        <div class="page-header-subtitle">@Model.PatientName — @Model.PatientMrn</div>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <span class="appt-status-badge @StatusClass(Model.Status)" style="font-size:.85rem">@Model.Status</span>
+        @if (Model.Status == InvoiceStatus.Draft)
+        {
+            <form asp-action="IssueInvoice" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-primary-dash" style="background:#16a34a">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Issue
+                </button>
+            </form>
+        }
+        @if (Model.Status is not (InvoiceStatus.Voided or InvoiceStatus.Paid))
+        {
+            <form asp-action="VoidInvoice" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="dropdown-item pt-dropdown-danger pf-back-btn"
+                        onclick="return confirm('Void this invoice?')">Void</button>
+            </form>
+        }
+        <a asp-action="Invoices" class="pf-back-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger py-2 small mb-3">@err</div>
+}
+
+<!-- Summary cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="dash-card stat-card">
+            <div><div class="stat-label">Subtotal</div><div class="pt-fullname mt-1">@Model.SubtotalAmount.ToString("N2")</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dash-card stat-card">
+            <div><div class="stat-label">Total (after disc/tax)</div><div class="pt-fullname mt-1">@Model.TotalAmount.ToString("N2")</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dash-card stat-card">
+            <div><div class="stat-label">Paid</div><div class="pt-fullname mt-1" style="color:#16a34a">@Model.PaidAmount.ToString("N2")</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dash-card stat-card">
+            <div><div class="stat-label">Balance Due</div><div class="pt-fullname mt-1" style="color:@(Model.BalanceDue > 0 ? "#dc2626" : "#16a34a")">@Model.BalanceDue.ToString("N2")</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Line items -->
+    <div class="col-lg-8">
+        <div class="dash-card mb-4">
+            <div class="d-flex justify-content-between align-items-center" style="padding:1.25rem 1.5rem .75rem">
+                <h6 class="mb-0" style="color:#1e293b">Line Items (@Model.LineItems.Count)</h6>
+            </div>
+            @if (!Model.LineItems.Any())
+            {
+                <div style="padding:.75rem 1.5rem 1.5rem;color:#94a3b8;font-size:.875rem">No line items yet. Add items below.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="patients-table">
+                        <thead><tr><th>Code</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th><th class="col-actions"></th></tr></thead>
+                        <tbody>
+                            @foreach (var li in Model.LineItems)
+                            {
+                                <tr>
+                                    <td><span class="pt-mrn-badge">@li.ChargeItemCode</span></td>
+                                    <td>@li.Description</td>
+                                    <td>@li.Quantity</td>
+                                    <td>@li.UnitPrice.ToString("N2")</td>
+                                    <td><strong>@li.TotalPrice.ToString("N2")</strong></td>
+                                    <td class="col-actions">
+                                        @if (Model.Status == InvoiceStatus.Draft)
+                                        {
+                                            <form asp-action="RemoveLineItem" asp-route-id="@Model.Id" asp-route-lineItemId="@li.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="dropdown-item pt-dropdown-danger" style="font-size:.78rem;padding:.2rem .5rem"
+                                                        onclick="return confirm('Remove this item?')">Remove</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            @if (Model.Status == InvoiceStatus.Draft && chargeItems.Any())
+            {
+                <div class="pf-body" style="border-top:1px solid #f1f5f9;margin-top:.5rem">
+                    <div class="pf-section-title mb-3" style="font-size:.85rem">Add Line Item</div>
+                    <form asp-action="AddLineItem" asp-route-id="@Model.Id" method="post" class="d-flex gap-2 align-items-end flex-wrap">
+                        @Html.AntiForgeryToken()
+                        <div class="pf-field" style="flex:1;min-width:200px">
+                            <label class="pf-label">Charge Item</label>
+                            <select name="chargeItemId" class="pf-input" required>
+                                <option value="">— Select —</option>
+                                @foreach (var ci in chargeItems)
+                                {
+                                    <option value="@ci.Id">[@ci.Code] @ci.Description — @ci.UnitPrice.ToString("N2")</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="pf-field" style="width:80px">
+                            <label class="pf-label">Qty</label>
+                            <input name="quantity" type="number" min="1" value="1" class="pf-input" />
+                        </div>
+                        <button type="submit" class="btn-primary-dash" style="margin-bottom:.1rem">Add</button>
+                    </form>
+                </div>
+            }
+        </div>
+
+        <!-- Payments -->
+        <div class="dash-card">
+            <div class="d-flex justify-content-between align-items-center" style="padding:1.25rem 1.5rem .75rem">
+                <h6 class="mb-0" style="color:#1e293b">Payments (@Model.Payments.Count)</h6>
+            </div>
+            @if (Model.Payments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="patients-table">
+                        <thead><tr><th>Amount</th><th>Method</th><th>Reference</th><th>Recorded By</th><th>Date</th></tr></thead>
+                        <tbody>
+                            @foreach (var p in Model.Payments)
+                            {
+                                <tr>
+                                    <td><strong>@p.Amount.ToString("N2")</strong></td>
+                                    <td>@p.Method</td>
+                                    <td>@(p.ReferenceNumber ?? "—")</td>
+                                    <td>@p.RecordedByName</td>
+                                    <td>@p.PaidAtUtc.ToString("MMM d, yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div style="padding:.75rem 1.5rem 1rem;color:#94a3b8;font-size:.875rem">No payments recorded.</div>
+            }
+
+            @if (Model.Status is InvoiceStatus.Issued or InvoiceStatus.PartiallyPaid or InvoiceStatus.Overdue)
+            {
+                <div class="pf-body" style="border-top:1px solid #f1f5f9;margin-top:.5rem">
+                    <div class="pf-section-title mb-3" style="font-size:.85rem">Record Payment</div>
+                    <form asp-action="RecordPayment" asp-route-id="@Model.Id" method="post" class="d-flex gap-2 align-items-end flex-wrap">
+                        @Html.AntiForgeryToken()
+                        <div class="pf-field" style="width:120px">
+                            <label class="pf-label">Amount</label>
+                            <input name="amount" type="number" step="0.01" min="0.01" class="pf-input" placeholder="0.00" required />
+                        </div>
+                        <div class="pf-field" style="width:140px">
+                            <label class="pf-label">Method</label>
+                            <select name="method" class="pf-input">
+                                @foreach (var m in PaymentMethod.All)
+                                {
+                                    <option value="@m">@m</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="pf-field" style="flex:1;min-width:160px">
+                            <label class="pf-label">Recorded By</label>
+                            <select name="recordedByUserId" class="pf-input" required>
+                                <option value="">— Select —</option>
+                                @foreach (var u in accountsStaff)
+                                {
+                                    <option value="@u.Id">@u.Username</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="pf-field" style="width:160px">
+                            <label class="pf-label">Reference #</label>
+                            <input name="referenceNumber" class="pf-input" placeholder="Optional" />
+                        </div>
+                        <button type="submit" class="btn-primary-dash" style="margin-bottom:.1rem">Record</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Insurance claims -->
+    <div class="col-lg-4">
+        <div class="dash-card">
+            <div class="d-flex justify-content-between align-items-center" style="padding:1.25rem 1.5rem .75rem">
+                <h6 class="mb-0" style="color:#1e293b">Claims (@claims.Count)</h6>
+            </div>
+            @foreach (var c in claims)
+            {
+                <div style="padding:.5rem 1.5rem;border-bottom:1px solid #f1f5f9">
+                    <div style="font-size:.85rem;font-weight:600;color:#1e293b">@c.ClaimNumber</div>
+                    <div style="font-size:.78rem;color:#64748b">@c.ProviderName · @c.PolicyNumber</div>
+                    <div style="font-size:.78rem;color:#64748b">Status: <strong>@c.Status</strong>@(c.ApprovedAmount.HasValue ? $" · Approved: {c.ApprovedAmount:N2}" : "")</div>
+                </div>
+            }
+            @if (!claims.Any())
+            {
+                <div style="padding:.75rem 1.5rem 1rem;color:#94a3b8;font-size:.875rem">No claims filed.</div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        @using HospitalMS.Data.Persistence.Entities
+    </script>
+}

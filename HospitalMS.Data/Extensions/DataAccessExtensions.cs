@@ -367,6 +367,137 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260607000004_Phase4_LabImaging', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // ── Phase 5: Billing & Insurance ─────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS "ChargeItems" (
+            "Id" uuid NOT NULL,
+            "Code" character varying(50) NOT NULL,
+            "Description" character varying(500) NOT NULL,
+            "Category" character varying(100),
+            "UnitPrice" numeric(18,2) NOT NULL DEFAULT 0,
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_ChargeItems" PRIMARY KEY ("Id")
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_ChargeItems_Code" ON "ChargeItems" ("Code")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "InsuranceProviders" (
+            "Id" uuid NOT NULL,
+            "Name" character varying(200) NOT NULL,
+            "ContactPhone" character varying(30),
+            "ContactEmail" character varying(256),
+            "Address" character varying(500),
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_InsuranceProviders" PRIMARY KEY ("Id")
+        )
+        """,
+
+        """
+        CREATE TABLE IF NOT EXISTS "PatientInsurances" (
+            "Id" uuid NOT NULL,
+            "PatientId" uuid NOT NULL,
+            "ProviderId" uuid NOT NULL,
+            "PolicyNumber" character varying(100) NOT NULL,
+            "GroupNumber" character varying(100),
+            "IsPrimary" boolean NOT NULL DEFAULT false,
+            "ExpiresAt" timestamp with time zone,
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_PatientInsurances" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_PatientInsurances_Patients" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_PatientInsurances_InsuranceProviders" FOREIGN KEY ("ProviderId") REFERENCES "InsuranceProviders" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_PatientInsurances_PatientId" ON "PatientInsurances" ("PatientId")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "Invoices" (
+            "Id" uuid NOT NULL,
+            "InvoiceNumber" character varying(50) NOT NULL,
+            "PatientId" uuid NOT NULL,
+            "EncounterId" uuid,
+            "CreatedByUserId" uuid NOT NULL,
+            "Status" character varying(30) NOT NULL DEFAULT 'Draft',
+            "SubtotalAmount" numeric(18,2) NOT NULL DEFAULT 0,
+            "DiscountAmount" numeric(18,2) NOT NULL DEFAULT 0,
+            "TaxAmount" numeric(18,2) NOT NULL DEFAULT 0,
+            "TotalAmount" numeric(18,2) NOT NULL DEFAULT 0,
+            "PaidAmount" numeric(18,2) NOT NULL DEFAULT 0,
+            "DueDate" timestamp with time zone,
+            "Notes" character varying(1000),
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            "UpdatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Invoices" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_Invoices_Patients" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_Invoices_ClinicalEncounters" FOREIGN KEY ("EncounterId") REFERENCES "ClinicalEncounters" ("Id") ON DELETE SET NULL,
+            CONSTRAINT "FK_Invoices_Users" FOREIGN KEY ("CreatedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_Invoices_InvoiceNumber" ON "Invoices" ("InvoiceNumber")""",
+        """CREATE INDEX IF NOT EXISTS "IX_Invoices_PatientId" ON "Invoices" ("PatientId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_Invoices_Status" ON "Invoices" ("Status")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "InvoiceLineItems" (
+            "Id" uuid NOT NULL,
+            "InvoiceId" uuid NOT NULL,
+            "ChargeItemId" uuid NOT NULL,
+            "Description" character varying(500) NOT NULL,
+            "Quantity" integer NOT NULL DEFAULT 1,
+            "UnitPrice" numeric(18,2) NOT NULL,
+            "TotalPrice" numeric(18,2) NOT NULL,
+            CONSTRAINT "PK_InvoiceLineItems" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_InvoiceLineItems_Invoices" FOREIGN KEY ("InvoiceId") REFERENCES "Invoices" ("Id") ON DELETE CASCADE,
+            CONSTRAINT "FK_InvoiceLineItems_ChargeItems" FOREIGN KEY ("ChargeItemId") REFERENCES "ChargeItems" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_InvoiceLineItems_InvoiceId" ON "InvoiceLineItems" ("InvoiceId")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "Payments" (
+            "Id" uuid NOT NULL,
+            "InvoiceId" uuid NOT NULL,
+            "RecordedByUserId" uuid NOT NULL,
+            "Amount" numeric(18,2) NOT NULL,
+            "Method" character varying(30) NOT NULL,
+            "ReferenceNumber" character varying(100),
+            "Notes" character varying(500),
+            "PaidAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Payments" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_Payments_Invoices" FOREIGN KEY ("InvoiceId") REFERENCES "Invoices" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_Payments_Users" FOREIGN KEY ("RecordedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_Payments_InvoiceId" ON "Payments" ("InvoiceId")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "InsuranceClaims" (
+            "Id" uuid NOT NULL,
+            "InvoiceId" uuid NOT NULL,
+            "PatientInsuranceId" uuid NOT NULL,
+            "ClaimNumber" character varying(100) NOT NULL,
+            "Status" character varying(30) NOT NULL DEFAULT 'Pending',
+            "ApprovedAmount" numeric(18,2),
+            "RejectionReason" character varying(500),
+            "SubmittedAtUtc" timestamp with time zone NOT NULL,
+            "ResolvedAtUtc" timestamp with time zone,
+            CONSTRAINT "PK_InsuranceClaims" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_InsuranceClaims_Invoices" FOREIGN KEY ("InvoiceId") REFERENCES "Invoices" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_InsuranceClaims_PatientInsurances" FOREIGN KEY ("PatientInsuranceId") REFERENCES "PatientInsurances" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_InsuranceClaims_ClaimNumber" ON "InsuranceClaims" ("ClaimNumber")""",
+        """CREATE INDEX IF NOT EXISTS "IX_InsuranceClaims_InvoiceId" ON "InsuranceClaims" ("InvoiceId")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260608000005_Phase5_Billing', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

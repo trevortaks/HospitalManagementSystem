@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "New Insurance Provider";
+    ViewData["ActivePage"] = "Insurance";
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Providers" class="pf-breadcrumb-link">Insurance Providers</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">New Provider</span>
+        </div>
+        <h1 class="page-header-title">New Insurance Provider</h1>
+    </div>
+    <a asp-action="Providers" class="pf-back-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back
+    </a>
+</div>
+
+<form asp-action="CreateProvider" method="post" novalidate>
+    <div class="dash-card" style="max-width:640px">
+        <div class="pf-body">
+            <div class="pf-field mb-4">
+                <label for="Name" class="pf-label">Provider Name <span class="pf-required">*</span></label>
+                <input id="Name" name="Name" class="pf-input" placeholder="e.g. BlueCross BlueShield" required />
+            </div>
+            <div class="pf-grid-2 mb-4">
+                <div class="pf-field">
+                    <label for="ContactPhone" class="pf-label">Contact Phone</label>
+                    <input id="ContactPhone" name="ContactPhone" class="pf-input" placeholder="+1 800 000 0000" />
+                </div>
+                <div class="pf-field">
+                    <label for="ContactEmail" class="pf-label">Contact Email</label>
+                    <input id="ContactEmail" name="ContactEmail" type="email" class="pf-input" placeholder="claims@provider.com" />
+                </div>
+            </div>
+            <div class="pf-field">
+                <label for="Address" class="pf-label">Address</label>
+                <textarea id="Address" name="Address" class="pf-input" rows="2" placeholder="Mailing address…"></textarea>
+            </div>
+        </div>
+        <div class="pf-footer">
+            <a asp-action="Providers" class="pf-btn-cancel">Cancel</a>
+            <button type="submit" class="btn-primary-dash">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Save Provider
+            </button>
+        </div>
+    </div>
+</form>

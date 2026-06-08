@@ -1,0 +1,105 @@
+@model IReadOnlyList<HospitalMS.Business.Models.InvoiceResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = "Invoices";
+    ViewData["ActivePage"] = "Billing";
+    var status = ViewBag.Status as string;
+
+    string StatusClass(string s) => s switch {
+        InvoiceStatus.Paid          => "appt-badge--completed",
+        InvoiceStatus.Voided        => "appt-badge--cancelled",
+        InvoiceStatus.Overdue       => "appt-badge--cancelled",
+        InvoiceStatus.PartiallyPaid => "appt-badge--noshow",
+        InvoiceStatus.Issued        => "appt-badge--confirmed",
+        _                           => "appt-badge--scheduled"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Invoices</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <div class="d-flex gap-2">
+        <select onchange="location='?status='+this.value" class="pf-input" style="width:auto;font-size:.85rem">
+            <option value="">All statuses</option>
+            @foreach (var s in InvoiceStatus.All)
+            {
+                if (s == status) { <option value="@s" selected>@s</option> }
+                else             { <option value="@s">@s</option> }
+            }
+        </select>
+        <a asp-action="CreateInvoice" class="btn-primary-dash">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Invoice
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger py-2 small mb-3">@err</div>
+}
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <h3 class="patients-empty-title">No invoices</h3>
+            <p class="patients-empty-text">No invoices match the current filter.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Patient</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inv in Model)
+                    {
+                        <tr>
+                            <td><div class="pt-fullname">@inv.InvoiceNumber</div></td>
+                            <td>
+                                <div class="pt-fullname">@inv.PatientName</div>
+                                <div class="pt-mrn-sub">@inv.PatientMrn</div>
+                            </td>
+                            <td><strong>@inv.TotalAmount.ToString("N2")</strong></td>
+                            <td>@inv.PaidAmount.ToString("N2")</td>
+                            <td>
+                                @if (inv.BalanceDue > 0)
+                                {
+                                    <span style="color:#dc2626;font-weight:600">@inv.BalanceDue.ToString("N2")</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#16a34a">0.00</span>
+                                }
+                            </td>
+                            <td>@(inv.DueDate?.ToString("MMM d, yyyy") ?? "—")</td>
+                            <td><span class="appt-status-badge @StatusClass(inv.Status)">@inv.Status</span></td>
+                            <td>@inv.CreatedAtUtc.ToString("MMM d, yyyy")</td>
+                            <td class="col-actions">
+                                <a asp-action="InvoiceDetail" asp-route-id="@inv.Id" class="pf-back-btn" style="font-size:.8rem;padding:.3rem .7rem">View</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> invoice@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>

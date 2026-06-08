@@ -260,6 +260,62 @@ public static class TestFixtures
         };
     }
 
+    public static ChargeItem CreateChargeItem(
+        Guid? id = null,
+        string code = "CONSULT-GP",
+        string description = "General Practitioner Consultation",
+        string? category = "Consultation",
+        decimal unitPrice = 50.00m,
+        bool isActive = true)
+    {
+        return new ChargeItem
+        {
+            Id = id ?? Guid.NewGuid(),
+            Code = code,
+            Description = description,
+            Category = category,
+            UnitPrice = unitPrice,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static InsuranceProvider CreateInsuranceProvider(
+        Guid? id = null,
+        string name = "BlueCross Medical",
+        string? contactPhone = "+1 800 000 0001",
+        bool isActive = true)
+    {
+        return new InsuranceProvider
+        {
+            Id = id ?? Guid.NewGuid(),
+            Name = name,
+            ContactPhone = contactPhone,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static Invoice CreateInvoice(
+        Guid? id = null,
+        Guid? patientId = null,
+        Guid? createdByUserId = null,
+        string status = "Draft",
+        decimal totalAmount = 0m)
+    {
+        return new Invoice
+        {
+            Id = id ?? Guid.NewGuid(),
+            InvoiceNumber = $"INV-TEST-{Guid.NewGuid():N}"[..18].ToUpperInvariant(),
+            PatientId = patientId ?? Guid.NewGuid(),
+            CreatedByUserId = createdByUserId ?? Guid.NewGuid(),
+            Status = status,
+            TotalAmount = totalAmount,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+    }
+
     public static User CreateUser(
         Guid? id = null,
         string? username = null,

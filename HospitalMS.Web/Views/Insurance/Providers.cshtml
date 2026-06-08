@@ -1,0 +1,72 @@
+@model IReadOnlyList<HospitalMS.Business.Models.InsuranceProviderResponse>
+@{
+    ViewData["Title"] = "Insurance Providers";
+    ViewData["ActivePage"] = "Insurance";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Insurance Providers</h1>
+        <div class="page-header-subtitle"><strong>@Model.Count</strong> provider@(Model.Count == 1 ? "" : "s")</div>
+    </div>
+    <a asp-action="CreateProvider" class="btn-primary-dash">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Provider
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <h3 class="patients-empty-title">No insurance providers</h3>
+            <p class="patients-empty-text">Add insurance companies to set up patient coverage.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td><div class="pt-fullname">@p.Name</div></td>
+                            <td>@(p.ContactPhone ?? "—")</td>
+                            <td>@(p.ContactEmail ?? "—")</td>
+                            <td>@(p.Address ?? "—")</td>
+                            <td>
+                                @if (p.IsActive)
+                                {
+                                    <span class="appt-status-badge appt-badge--completed">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="appt-status-badge appt-badge--cancelled">Inactive</span>
+                                }
+                            </td>
+                            <td class="col-actions">
+                                <form asp-action="ToggleProvider" asp-route-id="@p.Id" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="pf-back-btn" style="font-size:.78rem;padding:.25rem .6rem">
+                                        @(p.IsActive ? "Deactivate" : "Activate")
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

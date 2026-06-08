@@ -17,6 +17,9 @@ public static class Permissions
     public const string PrescriptionsManage = "prescriptions.manage";
     public const string LabResultsManage = "labresults.manage";
     public const string BillingManage = "billing.manage";
+    public const string InvoicesManage = "invoices.manage";
+    public const string PaymentsRecord = "payments.record";
+    public const string InsuranceManage = "insurance.manage";
     public const string HRManage = "hr.manage";
     public const string AuditLogsRead = "auditlogs.read";
     public const string SystemAdmin = "system.admin";
@@ -35,6 +38,9 @@ public static class Permissions
         PrescriptionsManage,
         LabResultsManage,
         BillingManage,
+        InvoicesManage,
+        PaymentsRecord,
+        InsuranceManage,
         HRManage,
         AuditLogsRead,
         SystemAdmin,
@@ -92,7 +98,11 @@ public static class Permissions
                 ],
                 [UserRoles.AccountsManager] =
                 [
+                    PatientsRead,
                     BillingManage,
+                    InvoicesManage,
+                    PaymentsRecord,
+                    InsuranceManage,
                     AuditLogsRead,
                     SelfService
                 ],

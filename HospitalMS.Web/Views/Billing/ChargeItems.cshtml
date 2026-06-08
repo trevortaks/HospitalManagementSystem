@@ -1,0 +1,75 @@
+@model IReadOnlyList<HospitalMS.Business.Models.ChargeItemResponse>
+@{
+    ViewData["Title"] = "Charge Items";
+    ViewData["ActivePage"] = "Billing";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Charge Items</h1>
+        <div class="page-header-subtitle">Service catalogue — <strong>@Model.Count</strong> items</div>
+    </div>
+    <a asp-action="CreateChargeItem" class="btn-primary-dash">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Item
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <h3 class="patients-empty-title">No charge items</h3>
+            <p class="patients-empty-text">Add billable services to the catalogue.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Unit Price</th>
+                        <th>Active</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><span class="pt-mrn-badge">@item.Code</span></td>
+                            <td>@item.Description</td>
+                            <td>@(item.Category ?? "—")</td>
+                            <td><strong>@item.UnitPrice.ToString("N2")</strong></td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="appt-status-badge appt-badge--completed">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="appt-status-badge appt-badge--cancelled">Inactive</span>
+                                }
+                            </td>
+                            <td class="col-actions">
+                                <form asp-action="ToggleChargeItem" asp-route-id="@item.Id" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="pf-back-btn" style="font-size:.78rem;padding:.25rem .6rem">
+                                        @(item.IsActive ? "Deactivate" : "Activate")
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> item@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>

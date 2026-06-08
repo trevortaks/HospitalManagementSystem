@@ -1,0 +1,123 @@
+@model IReadOnlyList<HospitalMS.Business.Models.PatientInsuranceResponse>
+@{
+    ViewData["Title"] = "Patient Coverage";
+    ViewData["ActivePage"] = "Insurance";
+    var patientId = (Guid)ViewBag.PatientId;
+    var providers = ViewBag.Providers as IReadOnlyList<HospitalMS.Business.Models.InsuranceProviderResponse> ?? [];
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Providers" class="pf-breadcrumb-link">Insurance Providers</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">Patient Coverage</span>
+        </div>
+        <h1 class="page-header-title">Patient Coverage</h1>
+        <div class="page-header-subtitle">Patient ID: @patientId</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="dash-card">
+            <div class="d-flex justify-content-between align-items-center" style="padding:1.25rem 1.5rem .75rem">
+                <h6 class="mb-0" style="color:#1e293b">Active Coverage (@Model.Count)</h6>
+            </div>
+            @if (!Model.Any())
+            {
+                <div style="padding:.75rem 1.5rem 1.5rem;color:#94a3b8;font-size:.875rem">No insurance coverage on file.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="patients-table">
+                        <thead><tr><th>Provider</th><th>Policy #</th><th>Group #</th><th>Primary</th><th>Expires</th><th class="col-actions"></th></tr></thead>
+                        <tbody>
+                            @foreach (var pi in Model)
+                            {
+                                <tr>
+                                    <td><div class="pt-fullname">@pi.ProviderName</div></td>
+                                    <td>@pi.PolicyNumber</td>
+                                    <td>@(pi.GroupNumber ?? "—")</td>
+                                    <td>
+                                        @if (pi.IsPrimary)
+                                        {
+                                            <span class="appt-status-badge appt-badge--completed">Primary</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#94a3b8;font-size:.8rem">—</span>
+                                        }
+                                    </td>
+                                    <td>@(pi.ExpiresAt?.ToString("MMM d, yyyy") ?? "—")</td>
+                                    <td class="col-actions">
+                                        <div class="d-flex gap-1">
+                                            @if (!pi.IsPrimary)
+                                            {
+                                                <form asp-action="SetPrimary" asp-route-id="@pi.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="patientId" value="@patientId" />
+                                                    <button type="submit" class="pf-back-btn" style="font-size:.75rem;padding:.2rem .5rem">Set Primary</button>
+                                                </form>
+                                            }
+                                            <form asp-action="DeletePatientInsurance" asp-route-id="@pi.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="patientId" value="@patientId" />
+                                                <button type="submit" class="dropdown-item pt-dropdown-danger pf-back-btn" style="font-size:.75rem;padding:.2rem .5rem"
+                                                        onclick="return confirm('Remove this coverage?')">Remove</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="dash-card">
+            <div class="pf-section-header">
+                <div class="pf-section-title">Add Coverage</div>
+            </div>
+            <form asp-action="AddPatientInsurance" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="PatientId" value="@patientId" />
+                <div class="pf-body">
+                    <div class="pf-field mb-3">
+                        <label class="pf-label">Provider <span class="pf-required">*</span></label>
+                        <select name="ProviderId" class="pf-input" required>
+                            <option value="">— Select provider —</option>
+                            @foreach (var p in providers)
+                            {
+                                <option value="@p.Id">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="pf-field mb-3">
+                        <label class="pf-label">Policy # <span class="pf-required">*</span></label>
+                        <input name="PolicyNumber" class="pf-input" placeholder="Policy number" required />
+                    </div>
+                    <div class="pf-field mb-3">
+                        <label class="pf-label">Group #</label>
+                        <input name="GroupNumber" class="pf-input" placeholder="Group number" />
+                    </div>
+                    <div class="pf-field mb-3">
+                        <label class="pf-label">Expiry Date</label>
+                        <input name="ExpiresAt" type="date" class="pf-input" />
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="IsPrimary" name="IsPrimary" value="true" />
+                        <label class="form-check-label pf-label" for="IsPrimary">Set as Primary</label>
+                    </div>
+                </div>
+                <div class="pf-footer">
+                    <button type="submit" class="btn-primary-dash">Add Coverage</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

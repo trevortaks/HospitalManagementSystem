@@ -19,6 +19,13 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<LabResult> LabResults => Set<LabResult>();
     public DbSet<ImagingRequest> ImagingRequests => Set<ImagingRequest>();
     public DbSet<ImagingReport> ImagingReports => Set<ImagingReport>();
+    public DbSet<ChargeItem> ChargeItems => Set<ChargeItem>();
+    public DbSet<InsuranceProvider> InsuranceProviders => Set<InsuranceProvider>();
+    public DbSet<PatientInsurance> PatientInsurances => Set<PatientInsurance>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceLineItem> InvoiceLineItems => Set<InvoiceLineItem>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -326,6 +333,139 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
                 .WithMany()
                 .HasForeignKey(r => r.RadiologyUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ChargeItem>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Code).HasMaxLength(50).IsRequired();
+            entity.Property(c => c.Description).HasMaxLength(500).IsRequired();
+            entity.Property(c => c.Category).HasMaxLength(100);
+            entity.Property(c => c.UnitPrice).HasPrecision(18, 2);
+            entity.HasIndex(c => c.Code).IsUnique();
+        });
+
+        modelBuilder.Entity<InsuranceProvider>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Name).HasMaxLength(200).IsRequired();
+            entity.Property(p => p.ContactPhone).HasMaxLength(30);
+            entity.Property(p => p.ContactEmail).HasMaxLength(256);
+            entity.Property(p => p.Address).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<PatientInsurance>(entity =>
+        {
+            entity.HasKey(pi => pi.Id);
+            entity.Property(pi => pi.PolicyNumber).HasMaxLength(100).IsRequired();
+            entity.Property(pi => pi.GroupNumber).HasMaxLength(100);
+
+            entity.HasOne(pi => pi.Patient)
+                .WithMany()
+                .HasForeignKey(pi => pi.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(pi => pi.Provider)
+                .WithMany()
+                .HasForeignKey(pi => pi.ProviderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(pi => pi.PatientId);
+        });
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.InvoiceNumber).HasMaxLength(50).IsRequired();
+            entity.Property(i => i.Status).HasMaxLength(30).IsRequired();
+            entity.Property(i => i.SubtotalAmount).HasPrecision(18, 2);
+            entity.Property(i => i.DiscountAmount).HasPrecision(18, 2);
+            entity.Property(i => i.TaxAmount).HasPrecision(18, 2);
+            entity.Property(i => i.TotalAmount).HasPrecision(18, 2);
+            entity.Property(i => i.PaidAmount).HasPrecision(18, 2);
+            entity.Property(i => i.Notes).HasMaxLength(1000);
+            entity.HasIndex(i => i.InvoiceNumber).IsUnique();
+
+            entity.HasOne(i => i.Patient)
+                .WithMany()
+                .HasForeignKey(i => i.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(i => i.Encounter)
+                .WithMany()
+                .HasForeignKey(i => i.EncounterId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(i => i.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(i => i.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(i => i.PatientId);
+            entity.HasIndex(i => i.Status);
+        });
+
+        modelBuilder.Entity<InvoiceLineItem>(entity =>
+        {
+            entity.HasKey(li => li.Id);
+            entity.Property(li => li.Description).HasMaxLength(500).IsRequired();
+            entity.Property(li => li.UnitPrice).HasPrecision(18, 2);
+            entity.Property(li => li.TotalPrice).HasPrecision(18, 2);
+
+            entity.HasOne(li => li.Invoice)
+                .WithMany(i => i.LineItems)
+                .HasForeignKey(li => li.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(li => li.ChargeItem)
+                .WithMany()
+                .HasForeignKey(li => li.ChargeItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(li => li.InvoiceId);
+        });
+
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Amount).HasPrecision(18, 2);
+            entity.Property(p => p.Method).HasMaxLength(30).IsRequired();
+            entity.Property(p => p.ReferenceNumber).HasMaxLength(100);
+            entity.Property(p => p.Notes).HasMaxLength(500);
+
+            entity.HasOne(p => p.Invoice)
+                .WithMany(i => i.Payments)
+                .HasForeignKey(p => p.InvoiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(p => p.RecordedByUser)
+                .WithMany()
+                .HasForeignKey(p => p.RecordedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(p => p.InvoiceId);
+        });
+
+        modelBuilder.Entity<InsuranceClaim>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.ClaimNumber).HasMaxLength(100).IsRequired();
+            entity.Property(c => c.Status).HasMaxLength(30).IsRequired();
+            entity.Property(c => c.ApprovedAmount).HasPrecision(18, 2);
+            entity.Property(c => c.RejectionReason).HasMaxLength(500);
+
+            entity.HasOne(c => c.Invoice)
+                .WithMany(i => i.Claims)
+                .HasForeignKey(c => c.InvoiceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(c => c.PatientInsurance)
+                .WithMany()
+                .HasForeignKey(c => c.PatientInsuranceId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(c => c.InvoiceId);
+            entity.HasIndex(c => c.ClaimNumber).IsUnique();
         });
     }
 }
