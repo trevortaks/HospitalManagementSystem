@@ -60,6 +60,9 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<MaintenanceRequest> MaintenanceRequests => Set<MaintenanceRequest>();
     public DbSet<QualityIncident> QualityIncidents => Set<QualityIncident>();
     public DbSet<PatientFeedback> PatientFeedback => Set<PatientFeedback>();
+    public DbSet<Department> Departments => Set<Department>();
+    public DbSet<EmployeeRecord> EmployeeRecords => Set<EmployeeRecord>();
+    public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -821,6 +824,67 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
 
             entity.HasIndex(f => f.PatientId);
             entity.HasIndex(f => f.SubmittedAtUtc);
+        });
+
+        modelBuilder.Entity<Department>(entity =>
+        {
+            entity.HasKey(d => d.Id);
+            entity.Property(d => d.Name).HasMaxLength(200).IsRequired();
+            entity.Property(d => d.Description).HasMaxLength(1000);
+            entity.HasIndex(d => d.Name).IsUnique();
+
+            entity.HasOne(d => d.HeadUser)
+                .WithMany()
+                .HasForeignKey(d => d.HeadUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<EmployeeRecord>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EmployeeNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.JobTitle).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.EmploymentType).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.Property(e => e.Salary).HasPrecision(18, 2);
+            entity.HasIndex(e => e.EmployeeNumber).IsUnique();
+            entity.HasIndex(e => e.UserId).IsUnique();
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Department)
+                .WithMany(d => d.Employees)
+                .HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.DepartmentId);
+        });
+
+        modelBuilder.Entity<LeaveRequest>(entity =>
+        {
+            entity.HasKey(l => l.Id);
+            entity.Property(l => l.LeaveType).HasMaxLength(30).IsRequired();
+            entity.Property(l => l.Status).HasMaxLength(20).IsRequired();
+            entity.Property(l => l.Reason).HasMaxLength(1000);
+            entity.Property(l => l.ReviewNotes).HasMaxLength(1000);
+
+            entity.HasOne(l => l.EmployeeRecord)
+                .WithMany(e => e.LeaveRequests)
+                .HasForeignKey(l => l.EmployeeRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(l => l.ReviewedByUser)
+                .WithMany()
+                .HasForeignKey(l => l.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(l => l.Status);
+            entity.HasIndex(l => l.EmployeeRecordId);
         });
     }
 }

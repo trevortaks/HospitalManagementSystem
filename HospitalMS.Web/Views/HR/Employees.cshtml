@@ -1,0 +1,142 @@
+@model List<HospitalMS.Business.Models.EmployeeRecordResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Employees";
+    var depts           = ViewData["Departments"] as List<HospitalMS.Business.Models.DepartmentResponse> ?? [];
+    var currentStatus   = ViewData["CurrentStatus"] as string ?? "";
+    var currentDeptId   = ViewData["CurrentDepartment"] as Guid?;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Employees</h2>
+    <div class="d-flex gap-2">
+        <a asp-action="Departments" class="btn btn-outline-secondary btn-sm">Departments</a>
+        <a asp-action="Leave" class="btn btn-outline-info btn-sm">Leave</a>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createModal">+ Add Employee</button>
+    </div>
+</div>
+
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a asp-action="Employees" class="btn btn-sm @(string.IsNullOrEmpty(currentStatus) ? "btn-dark" : "btn-outline-dark")">All</a>
+    @foreach (var s in new[] { EmployeeStatus.Active, EmployeeStatus.OnLeave, EmployeeStatus.Terminated })
+    {
+        <a asp-action="Employees" asp-route-status="@s"
+           class="btn btn-sm @(currentStatus == s ? "btn-dark" : "btn-outline-secondary")">@s</a>
+    }
+</div>
+
+<div class="card border-0 shadow-sm">
+    @if (!Model.Any())
+    {
+        <div class="card-body text-center text-muted py-5">No employees found.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Emp #</th>
+                        <th>Username</th>
+                        <th>Job Title</th>
+                        <th>Department</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Hired</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var emp in Model)
+                    {
+                        <tr>
+                            <td class="text-muted small fw-semibold">@emp.EmployeeNumber</td>
+                            <td class="fw-semibold">@emp.Username</td>
+                            <td class="small">@emp.JobTitle</td>
+                            <td class="small text-muted">@(emp.DepartmentName ?? "—")</td>
+                            <td><span class="badge bg-light text-dark border small">@emp.EmploymentType</span></td>
+                            <td>
+                                <span class="badge @(emp.Status == EmployeeStatus.Active ? "bg-success" : emp.Status == EmployeeStatus.OnLeave ? "bg-info text-dark" : emp.Status == EmployeeStatus.Terminated ? "bg-danger" : "bg-warning text-dark")">
+                                    @emp.Status
+                                </span>
+                            </td>
+                            <td class="small text-muted">@emp.HiredAtUtc.ToString("dd MMM yyyy")</td>
+                            <td>
+                                @if (emp.Status != EmployeeStatus.Terminated)
+                                {
+                                    <form asp-action="UpdateStatus" asp-route-id="@emp.Id" method="post">
+                                        <input type="hidden" name="Status" value="@EmployeeStatus.Terminated" />
+                                        <button type="submit" class="btn btn-xs btn-outline-danger"
+                                                style="font-size:11px; padding:2px 6px;"
+                                                onclick="return confirm('Terminate this employee?')">
+                                            Terminate
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small">@Model.Count employee(s)</div>
+    }
+</div>
+
+<!-- Add Employee Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form asp-action="CreateEmployee" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">Add Employee Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">User ID *</label>
+                            <input name="UserId" class="form-control" required placeholder="User UUID" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Job Title *</label>
+                            <input name="JobTitle" class="form-control" required maxlength="200" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Employment Type *</label>
+                            <select name="EmploymentType" class="form-select">
+                                @foreach (var t in EmploymentType.All)
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Department</label>
+                            <select name="DepartmentId" class="form-select">
+                                <option value="">— None —</option>
+                                @foreach (var d in depts.Where(d => d.IsActive))
+                                {
+                                    <option value="@d.Id">@d.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Hire Date *</label>
+                            <input name="HiredAtUtc" type="date" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Salary *</label>
+                            <input name="Salary" type="number" step="0.01" class="form-control" required min="0" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

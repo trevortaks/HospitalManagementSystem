@@ -853,6 +853,70 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260608000013_Phase13_QualityMonitoring', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // ── Phase 8: HR Management ────────────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS "Departments" (
+            "Id" uuid NOT NULL,
+            "Name" character varying(200) NOT NULL,
+            "Description" character varying(1000),
+            "HeadUserId" uuid,
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_Departments" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_Departments_HeadUser" FOREIGN KEY ("HeadUserId") REFERENCES "Users" ("Id") ON DELETE SET NULL
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_Departments_Name" ON "Departments" ("Name")""",
+        """
+        CREATE TABLE IF NOT EXISTS "EmployeeRecords" (
+            "Id" uuid NOT NULL,
+            "UserId" uuid NOT NULL,
+            "DepartmentId" uuid,
+            "EmployeeNumber" character varying(50) NOT NULL,
+            "JobTitle" character varying(200) NOT NULL,
+            "EmploymentType" character varying(30) NOT NULL DEFAULT 'FullTime',
+            "Status" character varying(20) NOT NULL DEFAULT 'Active',
+            "HiredAtUtc" timestamp with time zone NOT NULL,
+            "TerminatedAtUtc" timestamp with time zone,
+            "Salary" numeric(18,2) NOT NULL DEFAULT 0,
+            "Notes" character varying(2000),
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_EmployeeRecords" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_EmployeeRecords_User" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_EmployeeRecords_Department" FOREIGN KEY ("DepartmentId") REFERENCES "Departments" ("Id") ON DELETE SET NULL
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_EmployeeRecords_EmployeeNumber" ON "EmployeeRecords" ("EmployeeNumber")""",
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_EmployeeRecords_UserId" ON "EmployeeRecords" ("UserId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_EmployeeRecords_Status" ON "EmployeeRecords" ("Status")""",
+        """CREATE INDEX IF NOT EXISTS "IX_EmployeeRecords_DepartmentId" ON "EmployeeRecords" ("DepartmentId")""",
+        """
+        CREATE TABLE IF NOT EXISTS "LeaveRequests" (
+            "Id" uuid NOT NULL,
+            "EmployeeRecordId" uuid NOT NULL,
+            "LeaveType" character varying(30) NOT NULL DEFAULT 'Annual',
+            "StartDate" timestamp with time zone NOT NULL,
+            "EndDate" timestamp with time zone NOT NULL,
+            "Reason" character varying(1000),
+            "Status" character varying(20) NOT NULL DEFAULT 'Pending',
+            "ReviewedByUserId" uuid,
+            "ReviewNotes" character varying(1000),
+            "RequestedAtUtc" timestamp with time zone NOT NULL,
+            "ReviewedAtUtc" timestamp with time zone,
+            CONSTRAINT "PK_LeaveRequests" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_LeaveRequests_Employee" FOREIGN KEY ("EmployeeRecordId") REFERENCES "EmployeeRecords" ("Id") ON DELETE CASCADE,
+            CONSTRAINT "FK_LeaveRequests_ReviewedBy" FOREIGN KEY ("ReviewedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_LeaveRequests_Status" ON "LeaveRequests" ("Status")""",
+        """CREATE INDEX IF NOT EXISTS "IX_LeaveRequests_EmployeeRecordId" ON "LeaveRequests" ("EmployeeRecordId")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260608000008_Phase8_HRManagement', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

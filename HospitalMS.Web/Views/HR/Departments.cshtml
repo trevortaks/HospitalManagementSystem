@@ -1,0 +1,83 @@
+@model List<HospitalMS.Business.Models.DepartmentResponse>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Departments";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Departments</h2>
+    <div class="d-flex gap-2">
+        <a asp-action="Employees" class="btn btn-outline-secondary btn-sm">Employees</a>
+        <a asp-action="Leave" class="btn btn-outline-info btn-sm">Leave Requests</a>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createModal">+ New Department</button>
+    </div>
+</div>
+
+<div class="row g-3">
+    @foreach (var dept in Model)
+    {
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 @(dept.IsActive ? "" : "opacity-50")">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="fw-bold mb-1">@dept.Name</h6>
+                        <span class="badge @(dept.IsActive ? "bg-success" : "bg-secondary")">
+                            @(dept.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(dept.Description))
+                    {
+                        <p class="text-muted small mb-2">@dept.Description</p>
+                    }
+                    <div class="small text-muted mb-1">
+                        Head: @(dept.HeadUsername ?? "—")
+                    </div>
+                    <div class="small text-muted">
+                        @dept.EmployeeCount employee(s)
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <form asp-action="ToggleDepartment" asp-route-id="@dept.Id" method="post">
+                        <button type="submit" class="btn btn-xs btn-outline-secondary"
+                                style="font-size:11px; padding:2px 8px;">
+                            @(dept.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center text-muted py-5">No departments found.</div>
+}
+
+<!-- Create Department Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="CreateDepartment" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">New Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Name *</label>
+                        <input name="Name" class="form-control" required maxlength="200" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description</label>
+                        <textarea name="Description" class="form-control" rows="2" maxlength="1000"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
