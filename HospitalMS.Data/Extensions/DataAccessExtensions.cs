@@ -558,6 +558,65 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260608000006_Phase6_BedManagement', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // ── Phase 7: Inventory Management ────────────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS "InventoryCategories" (
+            "Id" uuid NOT NULL,
+            "Name" character varying(100) NOT NULL,
+            "Description" character varying(500),
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_InventoryCategories" PRIMARY KEY ("Id")
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_InventoryCategories_Name" ON "InventoryCategories" ("Name")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "InventoryItems" (
+            "Id" uuid NOT NULL,
+            "CategoryId" uuid NOT NULL,
+            "Code" character varying(50) NOT NULL,
+            "Name" character varying(200) NOT NULL,
+            "Description" character varying(500),
+            "Unit" character varying(50) NOT NULL DEFAULT 'Unit',
+            "ReorderLevel" integer NOT NULL DEFAULT 0,
+            "CurrentStock" integer NOT NULL DEFAULT 0,
+            "UnitCost" numeric(18,2) NOT NULL DEFAULT 0,
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_InventoryItems" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_InventoryItems_InventoryCategories" FOREIGN KEY ("CategoryId") REFERENCES "InventoryCategories" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_InventoryItems_Code" ON "InventoryItems" ("Code")""",
+        """CREATE INDEX IF NOT EXISTS "IX_InventoryItems_CategoryId" ON "InventoryItems" ("CategoryId")""",
+
+        """
+        CREATE TABLE IF NOT EXISTS "StockTransactions" (
+            "Id" uuid NOT NULL,
+            "ItemId" uuid NOT NULL,
+            "Type" character varying(20) NOT NULL DEFAULT 'In',
+            "Quantity" integer NOT NULL,
+            "StockAfter" integer NOT NULL,
+            "ReferenceType" character varying(50),
+            "ReferenceId" uuid,
+            "Notes" character varying(500),
+            "PerformedByUserId" uuid NOT NULL,
+            "TransactedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_StockTransactions" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_StockTransactions_InventoryItems" FOREIGN KEY ("ItemId") REFERENCES "InventoryItems" ("Id") ON DELETE CASCADE,
+            CONSTRAINT "FK_StockTransactions_Users" FOREIGN KEY ("PerformedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_StockTransactions_ItemId" ON "StockTransactions" ("ItemId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_StockTransactions_TransactedAtUtc" ON "StockTransactions" ("TransactedAtUtc")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260608000007_Phase7_Inventory', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

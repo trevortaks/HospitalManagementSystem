@@ -20,6 +20,7 @@ public static class Permissions
     public const string InvoicesManage = "invoices.manage";
     public const string PaymentsRecord = "payments.record";
     public const string InsuranceManage = "insurance.manage";
+    public const string InventoryManage = "inventory.manage";
     public const string HRManage = "hr.manage";
     public const string AuditLogsRead = "auditlogs.read";
     public const string SystemAdmin = "system.admin";
@@ -41,6 +42,7 @@ public static class Permissions
         InvoicesManage,
         PaymentsRecord,
         InsuranceManage,
+        InventoryManage,
         HRManage,
         AuditLogsRead,
         SystemAdmin,
@@ -88,6 +90,7 @@ public static class Permissions
                 [
                     PatientsRead,
                     PrescriptionsManage,
+                    InventoryManage,
                     SelfService
                 ],
                 [UserRoles.LabTechnician] =

@@ -1,0 +1,60 @@
+@model IReadOnlyList<HospitalMS.Business.Models.InventoryCategoryResponse>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Inventory Categories";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Inventory Categories</h2>
+    <div class="d-flex gap-2">
+        <a asp-controller="Inventory" asp-action="Items" class="btn btn-outline-primary">View All Items</a>
+        <a asp-controller="Inventory" asp-action="CreateCategory" class="btn btn-primary">+ New Category</a>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No categories created yet.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Items</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cat in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@cat.Name</td>
+                        <td class="text-muted">@(cat.Description ?? "—")</td>
+                        <td>
+                            <a asp-controller="Inventory" asp-action="Items" asp-route-categoryId="@cat.Id"
+                               class="badge bg-primary text-decoration-none">@cat.ItemCount items</a>
+                        </td>
+                        <td>
+                            <span class="badge @(cat.IsActive ? "bg-success" : "bg-secondary")">
+                                @(cat.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <form asp-controller="Inventory" asp-action="ToggleCategory" asp-route-id="@cat.Id"
+                                  method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    @(cat.IsActive ? "Deactivate" : "Activate")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

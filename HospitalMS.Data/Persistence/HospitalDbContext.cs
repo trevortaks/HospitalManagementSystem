@@ -26,6 +26,9 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<InvoiceLineItem> InvoiceLineItems => Set<InvoiceLineItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
+    public DbSet<InventoryCategory> InventoryCategories => Set<InventoryCategory>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<StockTransaction> StockTransactions => Set<StockTransaction>();
     public DbSet<Ward> Wards => Set<Ward>();
     public DbSet<Bed> Beds => Set<Bed>();
     public DbSet<BedAllocation> BedAllocations => Set<BedAllocation>();
@@ -469,6 +472,53 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
 
             entity.HasIndex(c => c.InvoiceId);
             entity.HasIndex(c => c.ClaimNumber).IsUnique();
+        });
+
+        modelBuilder.Entity<InventoryCategory>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            entity.Property(c => c.Description).HasMaxLength(500);
+            entity.HasIndex(c => c.Name).IsUnique();
+        });
+
+        modelBuilder.Entity<InventoryItem>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.Code).HasMaxLength(50).IsRequired();
+            entity.Property(i => i.Name).HasMaxLength(200).IsRequired();
+            entity.Property(i => i.Description).HasMaxLength(500);
+            entity.Property(i => i.Unit).HasMaxLength(50).IsRequired();
+            entity.Property(i => i.UnitCost).HasPrecision(18, 2);
+
+            entity.HasOne(i => i.Category)
+                .WithMany(c => c.Items)
+                .HasForeignKey(i => i.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(i => i.Code).IsUnique();
+            entity.HasIndex(i => i.CategoryId);
+        });
+
+        modelBuilder.Entity<StockTransaction>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.Type).HasMaxLength(20).IsRequired();
+            entity.Property(t => t.ReferenceType).HasMaxLength(50);
+            entity.Property(t => t.Notes).HasMaxLength(500);
+
+            entity.HasOne(t => t.Item)
+                .WithMany(i => i.Transactions)
+                .HasForeignKey(t => t.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(t => t.PerformedByUser)
+                .WithMany()
+                .HasForeignKey(t => t.PerformedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(t => t.ItemId);
+            entity.HasIndex(t => t.TransactedAtUtc);
         });
 
         modelBuilder.Entity<Ward>(entity =>

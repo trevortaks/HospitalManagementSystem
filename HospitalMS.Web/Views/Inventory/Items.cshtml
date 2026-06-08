@@ -1,0 +1,85 @@
+@model IReadOnlyList<HospitalMS.Business.Models.InventoryItemResponse>
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Inventory Items";
+    var categories = (IReadOnlyList<InventoryCategoryResponse>)ViewBag.Categories;
+    var categoryId = (Guid?)ViewBag.CategoryId;
+    var lowStockOnly = (bool?)ViewBag.LowStockOnly;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold">Inventory Items</h2>
+    <a asp-controller="Inventory" asp-action="CreateItem" class="btn btn-primary">+ New Item</a>
+</div>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <select name="categoryId" class="form-select" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            @foreach (var cat in categories)
+            {
+                <option value="@cat.Id" selected="@(categoryId == cat.Id)">@cat.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto d-flex align-items-center gap-2">
+        <input type="checkbox" class="form-check-input" name="lowStockOnly" id="lowStockOnly"
+               value="true" checked="@(lowStockOnly == true)" onchange="this.form.submit()" />
+        <label class="form-check-label" for="lowStockOnly">Low stock only</label>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No items found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Stock</th>
+                    <th>Reorder At</th>
+                    <th>Unit Cost</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><code>@item.Code</code></td>
+                        <td class="fw-semibold">@item.Name</td>
+                        <td class="text-muted">@item.CategoryName</td>
+                        <td>
+                            <span class="@(item.IsLowStock ? "text-danger fw-bold" : "")">
+                                @item.CurrentStock @item.Unit
+                                @if (item.IsLowStock)
+                                {
+                                    <span class="badge bg-danger ms-1">Low</span>
+                                }
+                            </span>
+                        </td>
+                        <td>@item.ReorderLevel</td>
+                        <td>$@item.UnitCost.ToString("0.00")</td>
+                        <td>
+                            <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
+                                @(item.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <a asp-controller="Inventory" asp-action="ItemDetail" asp-route-id="@item.Id"
+                               class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

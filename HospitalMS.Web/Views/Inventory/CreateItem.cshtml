@@ -1,0 +1,69 @@
+@model HospitalMS.Business.Models.CreateInventoryItemRequest
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    var categories = (IReadOnlyList<InventoryCategoryResponse>)ViewBag.Categories;
+}
+
+<div class="mb-4">
+    <a asp-controller="Inventory" asp-action="Items" class="text-decoration-none">&larr; Back to Items</a>
+    <h2 class="fw-bold mt-2">Create Inventory Item</h2>
+</div>
+
+@if (ViewData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="card" style="max-width:560px;">
+    <div class="card-body">
+        <form asp-controller="Inventory" asp-action="CreateItem" method="post">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Category</label>
+                <select name="CategoryId" class="form-select" required>
+                    <option value="">Select category...</option>
+                    @foreach (var cat in categories)
+                    {
+                        <option value="@cat.Id" selected="@(Model?.CategoryId == cat.Id)">@cat.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label fw-semibold">Item Code</label>
+                    <input name="Code" class="form-control" placeholder="e.g. MED-AMOX-500" value="@Model?.Code" required />
+                </div>
+                <div class="col">
+                    <label class="form-label fw-semibold">Unit</label>
+                    <select name="Unit" class="form-select" required>
+                        @foreach (var u in new[] { "Tablet", "Capsule", "mL", "L", "Box", "Vial", "Ampoule", "Unit", "Pack" })
+                        {
+                            <option value="@u" selected="@(Model?.Unit == u)">@u</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Name</label>
+                <input name="Name" class="form-control" value="@Model?.Name" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea name="Description" class="form-control" rows="2">@Model?.Description</textarea>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label fw-semibold">Reorder Level</label>
+                    <input name="ReorderLevel" type="number" min="0" class="form-control"
+                           value="@(Model?.ReorderLevel ?? 0)" required />
+                </div>
+                <div class="col">
+                    <label class="form-label fw-semibold">Unit Cost ($)</label>
+                    <input name="UnitCost" type="number" min="0" step="0.01" class="form-control"
+                           value="@(Model?.UnitCost ?? 0)" required />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Create Item</button>
+        </form>
+    </div>
+</div>

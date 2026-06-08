@@ -316,6 +316,48 @@ public static class TestFixtures
         };
     }
 
+    public static InventoryCategory CreateInventoryCategory(
+        Guid? id = null,
+        string name = "Pharmaceuticals",
+        string? description = "Medicines and drugs",
+        bool isActive = true)
+    {
+        return new InventoryCategory
+        {
+            Id = id ?? Guid.NewGuid(),
+            Name = name,
+            Description = description,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static InventoryItem CreateInventoryItem(
+        Guid? id = null,
+        Guid? categoryId = null,
+        string code = "MED-AMOX-500",
+        string name = "Amoxicillin 500mg",
+        string unit = "Tablet",
+        int reorderLevel = 100,
+        int currentStock = 500,
+        decimal unitCost = 0.25m,
+        bool isActive = true)
+    {
+        return new InventoryItem
+        {
+            Id = id ?? Guid.NewGuid(),
+            CategoryId = categoryId ?? Guid.NewGuid(),
+            Code = code,
+            Name = name,
+            Unit = unit,
+            ReorderLevel = reorderLevel,
+            CurrentStock = currentStock,
+            UnitCost = unitCost,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
     public static Ward CreateWard(
         Guid? id = null,
         string name = "General Ward A",

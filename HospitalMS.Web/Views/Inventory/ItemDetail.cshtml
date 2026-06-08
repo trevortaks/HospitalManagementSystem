@@ -1,0 +1,196 @@
+@model HospitalMS.Business.Models.InventoryItemResponse
+@using HospitalMS.Business.Models
+@{
+    Layout = "_Layout";
+    var txs = (IReadOnlyList<StockTransactionResponse>)ViewBag.Transactions;
+    var staff = (IReadOnlyList<UserSummary>)ViewBag.Staff;
+}
+
+<div class="mb-3">
+    <a asp-controller="Inventory" asp-action="Items" class="text-decoration-none">&larr; Back to Items</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">@Model.Name</h2>
+        <p class="text-muted mb-0"><code>@Model.Code</code> &bull; @Model.CategoryName &bull; @Model.Unit</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form asp-controller="Inventory" asp-action="ToggleItem" asp-route-id="@Model.Id" method="post">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                @(Model.IsActive ? "Deactivate" : "Activate")
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center @(Model.IsLowStock ? "border-danger" : "")">
+            <div class="card-body">
+                <div class="fs-3 fw-bold @(Model.IsLowStock ? "text-danger" : "")">@Model.CurrentStock</div>
+                <div class="text-muted small">Current Stock</div>
+                @if (Model.IsLowStock) { <span class="badge bg-danger">Low Stock</span> }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3 fw-bold">@Model.ReorderLevel</div>
+                <div class="text-muted small">Reorder Level</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3 fw-bold">$@Model.UnitCost.ToString("0.00")</div>
+                <div class="text-muted small">Unit Cost</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3 fw-bold">$@((Model.UnitCost * Model.CurrentStock).ToString("0.00"))</div>
+                <div class="text-muted small">Total Value</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <h5 class="fw-semibold mb-3">Transaction History</h5>
+        @if (!txs.Any())
+        {
+            <div class="alert alert-info">No transactions recorded yet.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Type</th>
+                            <th>Qty</th>
+                            <th>Stock After</th>
+                            <th>Ref</th>
+                            <th>Notes</th>
+                            <th>By</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tx in txs)
+                        {
+                            var typeClass = tx.Type switch
+                            {
+                                "In" or "Return" => "bg-success",
+                                "Out" or "Waste" => "bg-danger",
+                                _ => "bg-warning text-dark"
+                            };
+                            <tr>
+                                <td><span class="badge @typeClass">@tx.Type</span></td>
+                                <td class="@(tx.Quantity < 0 ? "text-danger" : "text-success")">
+                                    @(tx.Quantity >= 0 ? "+" : "")@tx.Quantity
+                                </td>
+                                <td>@tx.StockAfter</td>
+                                <td class="text-muted">@(tx.ReferenceType ?? "—")</td>
+                                <td class="text-muted">@(tx.Notes ?? "—")</td>
+                                <td>@tx.PerformedByUsername</td>
+                                <td>@tx.TransactedAtUtc.ToString("dd MMM HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="col-md-4">
+        <h5 class="fw-semibold mb-3">Stock Actions</h5>
+
+        @if (Model.IsActive)
+        {
+            <div class="card mb-3">
+                <div class="card-header fw-semibold text-success">Stock In</div>
+                <div class="card-body">
+                    <form asp-controller="Inventory" asp-action="StockIn" asp-route-id="@Model.Id" method="post">
+                        <input type="hidden" name="ItemId" value="@Model.Id" />
+                        <div class="mb-2">
+                            <input name="Quantity" type="number" min="1" class="form-control form-control-sm"
+                                   placeholder="Quantity" required />
+                        </div>
+                        <div class="mb-2">
+                            <select name="PerformedByUserId" class="form-select form-select-sm" required>
+                                <option value="">Staff member...</option>
+                                @foreach (var u in staff)
+                                {
+                                    <option value="@u.Id">@u.Username</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <input name="Notes" class="form-control form-control-sm" placeholder="Notes (optional)" />
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm w-100">Receive Stock</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header fw-semibold text-danger">Stock Out / Issue</div>
+                <div class="card-body">
+                    <form asp-controller="Inventory" asp-action="StockOut" asp-route-id="@Model.Id" method="post">
+                        <input type="hidden" name="ItemId" value="@Model.Id" />
+                        <div class="mb-2">
+                            <input name="Quantity" type="number" min="1" class="form-control form-control-sm"
+                                   placeholder="Quantity" required />
+                        </div>
+                        <div class="mb-2">
+                            <select name="PerformedByUserId" class="form-select form-select-sm" required>
+                                <option value="">Staff member...</option>
+                                @foreach (var u in staff)
+                                {
+                                    <option value="@u.Id">@u.Username</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <input name="Notes" class="form-control form-control-sm" placeholder="Notes (optional)" />
+                        </div>
+                        <button type="submit" class="btn btn-danger btn-sm w-100">Issue Stock</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header fw-semibold text-warning">Stock Adjustment</div>
+                <div class="card-body">
+                    <form asp-controller="Inventory" asp-action="AdjustStock" asp-route-id="@Model.Id" method="post">
+                        <input type="hidden" name="ItemId" value="@Model.Id" />
+                        <div class="mb-2">
+                            <input name="NewQuantity" type="number" min="0" class="form-control form-control-sm"
+                                   placeholder="New stock count" required />
+                        </div>
+                        <div class="mb-2">
+                            <select name="PerformedByUserId" class="form-select form-select-sm" required>
+                                <option value="">Staff member...</option>
+                                @foreach (var u in staff)
+                                {
+                                    <option value="@u.Id">@u.Username</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <input name="Notes" class="form-control form-control-sm" placeholder="Reason for adjustment" />
+                        </div>
+                        <button type="submit" class="btn btn-warning btn-sm w-100">Apply Adjustment</button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>

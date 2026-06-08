@@ -1,0 +1,31 @@
+@model HospitalMS.Business.Models.CreateInventoryCategoryRequest
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Category";
+}
+
+<div class="mb-4">
+    <a asp-controller="Inventory" asp-action="Categories" class="text-decoration-none">&larr; Back to Categories</a>
+    <h2 class="fw-bold mt-2">Create Inventory Category</h2>
+</div>
+
+@if (ViewData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="card" style="max-width:480px;">
+    <div class="card-body">
+        <form asp-controller="Inventory" asp-action="CreateCategory" method="post">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Name</label>
+                <input name="Name" class="form-control" value="@Model?.Name" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea name="Description" class="form-control" rows="2">@Model?.Description</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Create Category</button>
+        </form>
+    </div>
+</div>
