@@ -263,6 +263,110 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260607000003_Phase3_PatientPortal', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // Phase 4 — Lab order panels
+        """
+        CREATE TABLE IF NOT EXISTS "LabOrderPanels" (
+            "Id" uuid NOT NULL,
+            "Code" character varying(50) NOT NULL,
+            "Name" character varying(200) NOT NULL,
+            "Category" character varying(100),
+            "IsActive" boolean NOT NULL DEFAULT true,
+            "CreatedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_LabOrderPanels" PRIMARY KEY ("Id")
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_LabOrderPanels_Code" ON "LabOrderPanels" ("Code")""",
+
+        // Phase 4 — Lab orders
+        """
+        CREATE TABLE IF NOT EXISTS "LabOrders" (
+            "Id" uuid NOT NULL,
+            "EncounterId" uuid NOT NULL,
+            "PatientId" uuid NOT NULL,
+            "OrderedByUserId" uuid NOT NULL,
+            "PanelId" uuid NOT NULL,
+            "Priority" character varying(20) NOT NULL DEFAULT 'Routine',
+            "Status" character varying(20) NOT NULL DEFAULT 'Ordered',
+            "OrderedAtUtc" timestamp with time zone NOT NULL,
+            "CollectedAtUtc" timestamp with time zone,
+            "ResultedAtUtc" timestamp with time zone,
+            "Notes" character varying(1000),
+            CONSTRAINT "PK_LabOrders" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_LabOrders_ClinicalEncounters" FOREIGN KEY ("EncounterId") REFERENCES "ClinicalEncounters" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_LabOrders_Patients" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_LabOrders_Users" FOREIGN KEY ("OrderedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_LabOrders_Panels" FOREIGN KEY ("PanelId") REFERENCES "LabOrderPanels" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_LabOrders_PatientId" ON "LabOrders" ("PatientId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_LabOrders_EncounterId" ON "LabOrders" ("EncounterId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_LabOrders_Status" ON "LabOrders" ("Status")""",
+
+        // Phase 4 — Lab results
+        """
+        CREATE TABLE IF NOT EXISTS "LabResults" (
+            "Id" uuid NOT NULL,
+            "OrderId" uuid NOT NULL,
+            "RecordedByUserId" uuid NOT NULL,
+            "AnalyteName" character varying(200) NOT NULL,
+            "Value" character varying(200) NOT NULL,
+            "Unit" character varying(50),
+            "ReferenceRange" character varying(100),
+            "Flag" character varying(10) NOT NULL DEFAULT 'Normal',
+            "RecordedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_LabResults" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_LabResults_LabOrders" FOREIGN KEY ("OrderId") REFERENCES "LabOrders" ("Id") ON DELETE CASCADE,
+            CONSTRAINT "FK_LabResults_Users" FOREIGN KEY ("RecordedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_LabResults_OrderId" ON "LabResults" ("OrderId")""",
+
+        // Phase 4 — Imaging requests
+        """
+        CREATE TABLE IF NOT EXISTS "ImagingRequests" (
+            "Id" uuid NOT NULL,
+            "EncounterId" uuid NOT NULL,
+            "PatientId" uuid NOT NULL,
+            "RequestedByUserId" uuid NOT NULL,
+            "Modality" character varying(50) NOT NULL,
+            "BodyPart" character varying(100),
+            "ClinicalIndication" character varying(1000),
+            "Priority" character varying(20) NOT NULL DEFAULT 'Routine',
+            "Status" character varying(30) NOT NULL DEFAULT 'Requested',
+            "RequestedAtUtc" timestamp with time zone NOT NULL,
+            CONSTRAINT "PK_ImagingRequests" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_ImagingRequests_ClinicalEncounters" FOREIGN KEY ("EncounterId") REFERENCES "ClinicalEncounters" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_ImagingRequests_Patients" FOREIGN KEY ("PatientId") REFERENCES "Patients" ("Id") ON DELETE RESTRICT,
+            CONSTRAINT "FK_ImagingRequests_Users" FOREIGN KEY ("RequestedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE INDEX IF NOT EXISTS "IX_ImagingRequests_PatientId" ON "ImagingRequests" ("PatientId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_ImagingRequests_EncounterId" ON "ImagingRequests" ("EncounterId")""",
+        """CREATE INDEX IF NOT EXISTS "IX_ImagingRequests_Status" ON "ImagingRequests" ("Status")""",
+
+        // Phase 4 — Imaging reports (1:1 with ImagingRequests)
+        """
+        CREATE TABLE IF NOT EXISTS "ImagingReports" (
+            "Id" uuid NOT NULL,
+            "RequestId" uuid NOT NULL,
+            "RadiologyUserId" uuid NOT NULL,
+            "ReportText" character varying(8000) NOT NULL,
+            "Impression" character varying(2000),
+            "ReportedAtUtc" timestamp with time zone NOT NULL,
+            "AttachmentPath" character varying(500),
+            CONSTRAINT "PK_ImagingReports" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_ImagingReports_ImagingRequests" FOREIGN KEY ("RequestId") REFERENCES "ImagingRequests" ("Id") ON DELETE CASCADE,
+            CONSTRAINT "FK_ImagingReports_Users" FOREIGN KEY ("RadiologyUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_ImagingReports_RequestId" ON "ImagingReports" ("RequestId")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260607000004_Phase4_LabImaging', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

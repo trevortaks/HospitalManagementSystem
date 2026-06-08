@@ -1,0 +1,120 @@
+@model HospitalMS.Business.Models.ImagingRequestResponse
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = $"Imaging — {Model.Modality}";
+    ViewData["ActivePage"] = "Imaging";
+    var radiologists = ViewBag.Radiologists as IReadOnlyList<HospitalMS.Business.Models.UserSummary> ?? [];
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Index" class="pf-breadcrumb-link">Imaging Requests</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">@Model.Modality — @Model.PatientName</span>
+        </div>
+        <h1 class="page-header-title">@Model.Modality@(Model.BodyPart is not null ? $" — {Model.BodyPart}" : "")</h1>
+        <div class="page-header-subtitle">@Model.PatientName — @Model.PatientMrn</div>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.Status != ImagingRequestStatus.Cancelled && Model.Status != ImagingRequestStatus.Reported)
+        {
+            <form asp-action="UpdateStatus" asp-route-id="@Model.Id" method="post" class="d-flex gap-2">
+                @Html.AntiForgeryToken()
+                <select name="status" class="pf-input" style="width:auto;font-size:.85rem">
+                    @foreach (var s in ImagingRequestStatus.All.Where(s => s != ImagingRequestStatus.Cancelled && s != ImagingRequestStatus.Reported))
+                    {
+                        if (s == Model.Status)
+                        {
+                            <option value="@s" selected>@s</option>
+                        }
+                        else
+                        {
+                            <option value="@s">@s</option>
+                        }
+                    }
+                </select>
+                <button type="submit" class="pf-back-btn">Update Status</button>
+            </form>
+        }
+        <a asp-action="Index" class="pf-back-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </a>
+    </div>
+</div>
+
+<!-- Existing report -->
+@if (Model.Report is not null)
+{
+    <div class="dash-card mb-4">
+        <div class="pf-section-header">
+            <div class="pf-section-icon" style="background:#f0fdf4;color:#16a34a">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div>
+                <div class="pf-section-title">Radiology Report</div>
+                <div class="pf-section-subtitle">Filed by @Model.Report.RadiologyUserName on @Model.Report.ReportedAtUtc.ToString("MMM d, yyyy HH:mm")</div>
+            </div>
+        </div>
+        <div class="pf-body">
+            <div class="pf-field mb-3">
+                <div class="pf-label">Report</div>
+                <div style="white-space:pre-wrap;font-size:.875rem;color:#334155;background:#f8fafc;border-radius:8px;padding:.75rem 1rem;border:1px solid #e2e8f0">@Model.Report.ReportText</div>
+            </div>
+            @if (Model.Report.Impression is not null)
+            {
+                <div class="pf-field">
+                    <div class="pf-label">Impression</div>
+                    <div style="white-space:pre-wrap;font-size:.875rem;font-style:italic;color:#334155;background:#fefce8;border-radius:8px;padding:.75rem 1rem;border:1px solid #fef08a">@Model.Report.Impression</div>
+                </div>
+            }
+        </div>
+    </div>
+}
+else if (Model.Status != ImagingRequestStatus.Cancelled)
+{
+    <!-- File new report -->
+    <div class="dash-card">
+        <div class="pf-section-header">
+            <div class="pf-section-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div>
+                <div class="pf-section-title">File Radiology Report</div>
+                <div class="pf-section-subtitle">Submit findings and impression.</div>
+            </div>
+        </div>
+        <form asp-action="CreateReport" asp-route-id="@Model.Id" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <div class="pf-body">
+                <div class="pf-field mb-4">
+                    <label for="RadiologyUserId" class="pf-label">Radiologist <span class="pf-required">*</span></label>
+                    <select id="RadiologyUserId" name="RadiologyUserId" class="pf-input" required>
+                        <option value="">— Select radiologist —</option>
+                        @foreach (var u in radiologists)
+                        {
+                            <option value="@u.Id">@u.Username (@u.Role)</option>
+                        }
+                    </select>
+                </div>
+                <div class="pf-field mb-4">
+                    <label for="ReportText" class="pf-label">Report Text <span class="pf-required">*</span></label>
+                    <textarea id="ReportText" name="ReportText" class="pf-input" rows="5" required
+                              placeholder="Detailed radiological findings…"></textarea>
+                </div>
+                <div class="pf-field">
+                    <label for="Impression" class="pf-label">Impression / Conclusion</label>
+                    <textarea id="Impression" name="Impression" class="pf-input" rows="3"
+                              placeholder="Summary impression…"></textarea>
+                </div>
+            </div>
+            <div class="pf-footer">
+                <button type="submit" class="btn-primary-dash">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Submit Report
+                </button>
+            </div>
+        </form>
+    </div>
+}

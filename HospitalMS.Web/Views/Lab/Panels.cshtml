@@ -1,0 +1,85 @@
+@model IReadOnlyList<HospitalMS.Business.Models.LabOrderPanelResponse>
+@{
+    ViewData["Title"] = "Lab Panels";
+    ViewData["ActivePage"] = "Lab";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Lab Order Panels</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <a asp-action="CreatePanel" class="btn-primary-dash">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Panel
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <h3 class="patients-empty-title">No panels yet</h3>
+            <p class="patients-empty-text">Add the first lab order panel to enable lab ordering.</p>
+            <a asp-action="CreatePanel" class="btn-primary-dash">Add Panel</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td><span class="pt-mrn-badge">@p.Code</span></td>
+                            <td><div class="pt-fullname">@p.Name</div></td>
+                            <td>@(p.Category ?? "—")</td>
+                            <td>
+                                @if (p.IsActive)
+                                {
+                                    <span class="appt-status-badge appt-badge--confirmed">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="appt-status-badge appt-badge--cancelled">Inactive</span>
+                                }
+                            </td>
+                            <td class="col-actions">
+                                <form asp-action="TogglePanelActive" asp-route-id="@p.Id" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="pt-actions-btn" title="@(p.IsActive ? "Deactivate" : "Activate")">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            @if (p.IsActive)
+                                            {
+                                                <path d="M18 6L6 18"/><path d="M6 6l12 12"/>
+                                            }
+                                            else
+                                            {
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            }
+                                        </svg>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> panel@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>

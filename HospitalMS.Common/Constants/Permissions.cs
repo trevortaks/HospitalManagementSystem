@@ -102,6 +102,12 @@ public static class Permissions
                     HRManage,
                     AuditLogsRead,
                     SelfService
+                ],
+                [UserRoles.Radiologist] =
+                [
+                    PatientsRead,
+                    LabResultsManage,
+                    SelfService
                 ]
             });
 

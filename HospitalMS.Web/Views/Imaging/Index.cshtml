@@ -1,0 +1,127 @@
+@model IReadOnlyList<HospitalMS.Business.Models.ImagingRequestResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = "Imaging Requests";
+    ViewData["ActivePage"] = "Imaging";
+
+    string StatusClass(string s) => s switch {
+        ImagingRequestStatus.Reported  => "appt-badge--completed",
+        ImagingRequestStatus.Cancelled => "appt-badge--cancelled",
+        ImagingRequestStatus.Acquired  => "appt-badge--confirmed",
+        ImagingRequestStatus.Scheduled => "appt-badge--inprogress",
+        _                               => "appt-badge--scheduled"
+    };
+
+    var patientId = ViewBag.PatientId as Guid?;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Imaging Requests</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <a asp-action="Create" asp-route-patientId="@patientId" class="btn-primary-dash">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Request
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <h3 class="patients-empty-title">No imaging requests</h3>
+            <p class="patients-empty-text">No imaging requests match the current filter.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Modality</th>
+                        <th>Body Part</th>
+                        <th>Priority</th>
+                        <th>Requested By</th>
+                        <th>Requested</th>
+                        <th>Report</th>
+                        <th>Status</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="pt-fullname">@r.PatientName</div>
+                                <div class="pt-mrn-sub">@r.PatientMrn</div>
+                            </td>
+                            <td><span class="pt-mrn-badge">@r.Modality</span></td>
+                            <td>@(r.BodyPart ?? "—")</td>
+                            <td>
+                                @if (r.Priority == "Stat")
+                                {
+                                    <span class="appt-status-badge appt-badge--cancelled">Stat</span>
+                                }
+                                else if (r.Priority == "Urgent")
+                                {
+                                    <span class="appt-status-badge appt-badge--noshow">Urgent</span>
+                                }
+                                else
+                                {
+                                    <span>Routine</span>
+                                }
+                            </td>
+                            <td>@r.RequestedByName</td>
+                            <td>@r.RequestedAtUtc.ToString("MMM d, yyyy")</td>
+                            <td>
+                                @if (r.Report is not null)
+                                {
+                                    <span class="appt-status-badge appt-badge--completed">Filed</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#94a3b8;font-size:.8rem">—</span>
+                                }
+                            </td>
+                            <td><span class="appt-status-badge @StatusClass(r.Status)">@r.Status</span></td>
+                            <td class="col-actions">
+                                <div class="dropdown">
+                                    <button class="pt-actions-btn" type="button" data-bs-toggle="dropdown">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end pt-dropdown shadow-sm">
+                                        <li>
+                                            <a class="dropdown-item pt-dropdown-item" asp-action="RequestDetail" asp-route-id="@r.Id">
+                                                View / Report
+                                            </a>
+                                        </li>
+                                        @if (r.Status != ImagingRequestStatus.Cancelled && r.Status != ImagingRequestStatus.Reported)
+                                        {
+                                            <li>
+                                                <form asp-action="Cancel" asp-route-id="@r.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="patientId" value="@patientId" />
+                                                    <button type="submit" class="dropdown-item pt-dropdown-item pt-dropdown-danger"
+                                                            onclick="return confirm('Cancel this imaging request?')">Cancel</button>
+                                                </form>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> request@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>

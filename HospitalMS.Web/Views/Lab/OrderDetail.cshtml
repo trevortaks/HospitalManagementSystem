@@ -1,0 +1,170 @@
+@model HospitalMS.Business.Models.LabOrderResponse
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = $"Lab Order — {Model.PanelCode}";
+    ViewData["ActivePage"] = "Lab";
+
+    string FlagClass(string f) => f switch {
+        LabResultFlag.CriticalHigh or LabResultFlag.CriticalLow => "appt-badge--cancelled",
+        LabResultFlag.High or LabResultFlag.Low                  => "appt-badge--noshow",
+        _                                                         => "appt-badge--confirmed"
+    };
+
+    var labTechs = ViewBag.LabTechnicians as IReadOnlyList<HospitalMS.Business.Models.UserSummary> ?? [];
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-action="Orders" class="pf-breadcrumb-link">Lab Orders</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">@Model.PanelCode — @Model.PatientName</span>
+        </div>
+        <h1 class="page-header-title">@Model.PanelName</h1>
+        <div class="page-header-subtitle">@Model.PatientName — @Model.PatientMrn</div>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.Status != LabOrderStatus.Collected && Model.Status != LabOrderStatus.Resulted && Model.Status != LabOrderStatus.Cancelled)
+        {
+            <form asp-action="CollectOrder" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="pf-back-btn">Mark Collected</button>
+            </form>
+        }
+        <a asp-action="Orders" class="pf-back-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+        </a>
+    </div>
+</div>
+
+<!-- Order summary card -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="dash-card stat-card">
+            <div><div class="stat-label">Status</div><div class="pt-fullname mt-1">@Model.Status</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dash-card stat-card">
+            <div><div class="stat-label">Priority</div><div class="pt-fullname mt-1">@Model.Priority</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dash-card stat-card">
+            <div><div class="stat-label">Ordered By</div><div class="pt-fullname mt-1">@Model.OrderedByName</div></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dash-card stat-card">
+            <div><div class="stat-label">Ordered</div><div class="pt-fullname mt-1">@Model.OrderedAtUtc.ToString("MMM d, yyyy")</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Results table -->
+    <div class="col-lg-8">
+        <div class="dash-card">
+            <div class="d-flex justify-content-between align-items-center" style="padding:1.25rem 1.5rem .75rem">
+                <h6 class="mb-0" style="color:#1e293b">Results (@Model.Results.Count)</h6>
+            </div>
+            @if (!Model.Results.Any())
+            {
+                <div style="padding:.75rem 1.5rem 1.5rem;color:#94a3b8;font-size:.875rem">No results recorded yet.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="patients-table">
+                        <thead>
+                            <tr>
+                                <th>Analyte</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                                <th>Reference</th>
+                                <th>Flag</th>
+                                <th>Recorded By</th>
+                                <th>At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Results)
+                            {
+                                <tr>
+                                    <td><div class="pt-fullname">@r.AnalyteName</div></td>
+                                    <td><strong>@r.Value</strong></td>
+                                    <td>@(r.Unit ?? "—")</td>
+                                    <td>@(r.ReferenceRange ?? "—")</td>
+                                    <td><span class="appt-status-badge @FlagClass(r.Flag)">@r.Flag</span></td>
+                                    <td>@r.RecordedByName</td>
+                                    <td>@r.RecordedAtUtc.ToString("HH:mm MMM d")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Add result form -->
+    @if (Model.Status != LabOrderStatus.Cancelled)
+    {
+        <div class="col-lg-4">
+            <div class="dash-card">
+                <div class="pf-section-header">
+                    <div class="pf-section-title">Add Result</div>
+                </div>
+                <form asp-action="AddResult" asp-route-id="@Model.Id" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="pf-body">
+                        <div class="pf-field mb-3">
+                            <label for="AnalyteName" class="pf-label">Analyte <span class="pf-required">*</span></label>
+                            <input id="AnalyteName" name="AnalyteName" class="pf-input" placeholder="e.g. Haemoglobin" required />
+                        </div>
+                        <div class="pf-field mb-3">
+                            <label for="Value" class="pf-label">Value <span class="pf-required">*</span></label>
+                            <input id="Value" name="Value" class="pf-input" placeholder="e.g. 13.5" required />
+                        </div>
+                        <div class="pf-grid-2 mb-3">
+                            <div class="pf-field">
+                                <label for="Unit" class="pf-label">Unit</label>
+                                <input id="Unit" name="Unit" class="pf-input" placeholder="g/dL" />
+                            </div>
+                            <div class="pf-field">
+                                <label for="Flag" class="pf-label">Flag</label>
+                                <select id="Flag" name="Flag" class="pf-input">
+                                    @foreach (var f in LabResultFlag.All)
+                                    {
+                                        <option value="@f">@f</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="pf-field mb-3">
+                            <label for="ReferenceRange" class="pf-label">Reference Range</label>
+                            <input id="ReferenceRange" name="ReferenceRange" class="pf-input" placeholder="e.g. 12.0–16.0" />
+                        </div>
+                        <div class="pf-field mb-3">
+                            <label for="RecordedByUserId" class="pf-label">Recorded By <span class="pf-required">*</span></label>
+                            <select id="RecordedByUserId" name="RecordedByUserId" class="pf-input" required>
+                                <option value="">— Select technician —</option>
+                                @foreach (var u in labTechs)
+                                {
+                                    <option value="@u.Id">@u.Username (@u.Role)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pf-footer">
+                        <button type="submit" class="btn-primary-dash">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            Add Result
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+</div>

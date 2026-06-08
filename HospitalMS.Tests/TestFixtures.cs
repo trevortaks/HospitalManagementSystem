@@ -8,6 +8,11 @@ using EncounterType = HospitalMS.Data.Persistence.Entities.EncounterType;
 using MedicationForm = HospitalMS.Data.Persistence.Entities.MedicationForm;
 using PrescriptionStatus = HospitalMS.Data.Persistence.Entities.PrescriptionStatus;
 using PatientPortalSession = HospitalMS.Data.Persistence.Entities.PatientPortalSession;
+using LabOrderPriorityC = HospitalMS.Data.Persistence.Entities.LabOrderPriority;
+using LabOrderStatusC = HospitalMS.Data.Persistence.Entities.LabOrderStatus;
+using LabResultFlagC = HospitalMS.Data.Persistence.Entities.LabResultFlag;
+using ImagingModalityC = HospitalMS.Data.Persistence.Entities.ImagingModality;
+using ImagingRequestStatusC = HospitalMS.Data.Persistence.Entities.ImagingRequestStatus;
 
 namespace HospitalMS.Tests;
 
@@ -148,6 +153,110 @@ public static class TestFixtures
             IpAddress = ipAddress,
             LoginAtUtc = DateTime.UtcNow,
             LastActivityAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static LabOrderPanel CreateLabOrderPanel(
+        Guid? id = null,
+        string code = "CBC",
+        string name = "Complete Blood Count",
+        string? category = "Haematology",
+        bool isActive = true)
+    {
+        return new LabOrderPanel
+        {
+            Id = id ?? Guid.NewGuid(),
+            Code = code,
+            Name = name,
+            Category = category,
+            IsActive = isActive,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static LabOrder CreateLabOrder(
+        Guid? id = null,
+        Guid? encounterId = null,
+        Guid? patientId = null,
+        Guid? orderedByUserId = null,
+        Guid? panelId = null,
+        string priority = "Routine",
+        string status = "Ordered")
+    {
+        return new LabOrder
+        {
+            Id = id ?? Guid.NewGuid(),
+            EncounterId = encounterId ?? Guid.NewGuid(),
+            PatientId = patientId ?? Guid.NewGuid(),
+            OrderedByUserId = orderedByUserId ?? Guid.NewGuid(),
+            PanelId = panelId ?? Guid.NewGuid(),
+            Priority = priority,
+            Status = status,
+            OrderedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static LabResult CreateLabResult(
+        Guid? id = null,
+        Guid? orderId = null,
+        Guid? recordedByUserId = null,
+        string analyteName = "Haemoglobin",
+        string value = "13.5",
+        string? unit = "g/dL",
+        string flag = "Normal")
+    {
+        return new LabResult
+        {
+            Id = id ?? Guid.NewGuid(),
+            OrderId = orderId ?? Guid.NewGuid(),
+            RecordedByUserId = recordedByUserId ?? Guid.NewGuid(),
+            AnalyteName = analyteName,
+            Value = value,
+            Unit = unit,
+            Flag = flag,
+            RecordedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static ImagingRequest CreateImagingRequest(
+        Guid? id = null,
+        Guid? encounterId = null,
+        Guid? patientId = null,
+        Guid? requestedByUserId = null,
+        string modality = "XRay",
+        string? bodyPart = "Chest",
+        string priority = "Routine",
+        string status = "Requested")
+    {
+        return new ImagingRequest
+        {
+            Id = id ?? Guid.NewGuid(),
+            EncounterId = encounterId ?? Guid.NewGuid(),
+            PatientId = patientId ?? Guid.NewGuid(),
+            RequestedByUserId = requestedByUserId ?? Guid.NewGuid(),
+            Modality = modality,
+            BodyPart = bodyPart,
+            Priority = priority,
+            Status = status,
+            RequestedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    public static ImagingReport CreateImagingReport(
+        Guid? id = null,
+        Guid? requestId = null,
+        Guid? radiologyUserId = null,
+        string reportText = "No abnormality detected.",
+        string? impression = "Normal")
+    {
+        return new ImagingReport
+        {
+            Id = id ?? Guid.NewGuid(),
+            RequestId = requestId ?? Guid.NewGuid(),
+            RadiologyUserId = radiologyUserId ?? Guid.NewGuid(),
+            ReportText = reportText,
+            Impression = impression,
+            ReportedAtUtc = DateTime.UtcNow
         };
     }
 

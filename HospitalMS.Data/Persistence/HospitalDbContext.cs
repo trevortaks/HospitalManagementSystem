@@ -14,6 +14,11 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<Medication> Medications => Set<Medication>();
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
     public DbSet<PatientPortalSession> PatientPortalSessions => Set<PatientPortalSession>();
+    public DbSet<LabOrderPanel> LabOrderPanels => Set<LabOrderPanel>();
+    public DbSet<LabOrder> LabOrders => Set<LabOrder>();
+    public DbSet<LabResult> LabResults => Set<LabResult>();
+    public DbSet<ImagingRequest> ImagingRequests => Set<ImagingRequest>();
+    public DbSet<ImagingReport> ImagingReports => Set<ImagingReport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -211,6 +216,116 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
 
             entity.HasIndex(s => s.UserId);
             entity.HasIndex(s => s.PatientId);
+        });
+
+        modelBuilder.Entity<LabOrderPanel>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Code).HasMaxLength(50).IsRequired();
+            entity.Property(p => p.Name).HasMaxLength(200).IsRequired();
+            entity.Property(p => p.Category).HasMaxLength(100);
+            entity.HasIndex(p => p.Code).IsUnique();
+        });
+
+        modelBuilder.Entity<LabOrder>(entity =>
+        {
+            entity.HasKey(o => o.Id);
+            entity.Property(o => o.Priority).HasMaxLength(20).IsRequired();
+            entity.Property(o => o.Status).HasMaxLength(20).IsRequired();
+            entity.Property(o => o.Notes).HasMaxLength(1000);
+
+            entity.HasOne(o => o.Encounter)
+                .WithMany()
+                .HasForeignKey(o => o.EncounterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(o => o.Patient)
+                .WithMany()
+                .HasForeignKey(o => o.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(o => o.OrderedByUser)
+                .WithMany()
+                .HasForeignKey(o => o.OrderedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(o => o.Panel)
+                .WithMany()
+                .HasForeignKey(o => o.PanelId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(o => o.PatientId);
+            entity.HasIndex(o => o.EncounterId);
+            entity.HasIndex(o => o.Status);
+        });
+
+        modelBuilder.Entity<LabResult>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.AnalyteName).HasMaxLength(200).IsRequired();
+            entity.Property(r => r.Value).HasMaxLength(200).IsRequired();
+            entity.Property(r => r.Unit).HasMaxLength(50);
+            entity.Property(r => r.ReferenceRange).HasMaxLength(100);
+            entity.Property(r => r.Flag).HasMaxLength(10).IsRequired();
+
+            entity.HasOne(r => r.Order)
+                .WithMany(o => o.Results)
+                .HasForeignKey(r => r.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.RecordedByUser)
+                .WithMany()
+                .HasForeignKey(r => r.RecordedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(r => r.OrderId);
+        });
+
+        modelBuilder.Entity<ImagingRequest>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Modality).HasMaxLength(50).IsRequired();
+            entity.Property(r => r.BodyPart).HasMaxLength(100);
+            entity.Property(r => r.ClinicalIndication).HasMaxLength(1000);
+            entity.Property(r => r.Priority).HasMaxLength(20).IsRequired();
+            entity.Property(r => r.Status).HasMaxLength(30).IsRequired();
+
+            entity.HasOne(r => r.Encounter)
+                .WithMany()
+                .HasForeignKey(r => r.EncounterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.Patient)
+                .WithMany()
+                .HasForeignKey(r => r.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.RequestedByUser)
+                .WithMany()
+                .HasForeignKey(r => r.RequestedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(r => r.PatientId);
+            entity.HasIndex(r => r.EncounterId);
+            entity.HasIndex(r => r.Status);
+        });
+
+        modelBuilder.Entity<ImagingReport>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.ReportText).HasMaxLength(8000).IsRequired();
+            entity.Property(r => r.Impression).HasMaxLength(2000);
+            entity.Property(r => r.AttachmentPath).HasMaxLength(500);
+
+            entity.HasOne(r => r.Request)
+                .WithOne(req => req.Report)
+                .HasForeignKey<ImagingReport>(r => r.RequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.RadiologyUser)
+                .WithMany()
+                .HasForeignKey(r => r.RadiologyUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

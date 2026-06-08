@@ -1,6 +1,7 @@
 using HospitalMS.Business.Repositories;
 using HospitalMS.Business.Services;
 using HospitalMS.Common.Audit;
+using HospitalMS.Common.Storage;
 using HospitalMS.Data.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -49,6 +50,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMedicationService, MedicationService>();
         services.AddScoped<IPrescriptionService, PrescriptionService>();
         services.AddScoped<IPortalService, PortalService>();
+        services.AddScoped<ILabService, LabService>();
+        services.AddScoped<IImagingService, ImagingService>();
+        services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
         services.AddHealthChecks()
             .AddCheck<HospitalDatabaseHealthCheck>("postgres", tags: ["ready"]);

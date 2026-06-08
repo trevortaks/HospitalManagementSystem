@@ -15,6 +15,7 @@ public static class UserRoles
     public const string LabTechnician = "LabTechnician";
     public const string AccountsManager = "AccountsManager";
     public const string HRManager = "HRManager";
+    public const string Radiologist = "Radiologist";
 
     public static readonly IReadOnlyCollection<string> All =
     [
@@ -26,7 +27,8 @@ public static class UserRoles
         Pharmacist,
         LabTechnician,
         AccountsManager,
-        HRManager
+        HRManager,
+        Radiologist
     ];
 
     public static IReadOnlyDictionary<string, IReadOnlyCollection<string>> RolePermissions =>

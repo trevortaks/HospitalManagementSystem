@@ -1,0 +1,124 @@
+@model IReadOnlyList<HospitalMS.Business.Models.LabOrderResponse>
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"] = "Lab Orders";
+    ViewData["ActivePage"] = "Lab";
+
+    string StatusClass(string s) => s switch {
+        LabOrderStatus.Resulted  => "appt-badge--completed",
+        LabOrderStatus.Cancelled => "appt-badge--cancelled",
+        LabOrderStatus.Collected => "appt-badge--confirmed",
+        LabOrderStatus.Processing => "appt-badge--inprogress",
+        _                         => "appt-badge--scheduled"
+    };
+    string PriorityClass(string p) => p switch {
+        LabOrderPriority.Stat   => "appt-badge--cancelled",
+        LabOrderPriority.Urgent => "appt-badge--noshow",
+        _                        => ""
+    };
+
+    var patientId    = ViewBag.PatientId as Guid?;
+    var statusFilter = ViewBag.StatusFilter as string;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Lab Orders</h1>
+        <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
+    </div>
+    <a asp-action="CreateOrder" asp-route-patientId="@patientId" class="btn-primary-dash">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Order
+    </a>
+</div>
+
+<div class="dash-card">
+    @if (!Model.Any())
+    {
+        <div class="patients-empty">
+            <h3 class="patients-empty-title">No lab orders</h3>
+            <p class="patients-empty-text">No lab orders match the current filter.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Panel</th>
+                        <th>Priority</th>
+                        <th>Ordered By</th>
+                        <th>Ordered</th>
+                        <th>Results</th>
+                        <th>Status</th>
+                        <th class="col-actions"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="pt-fullname">@o.PatientName</div>
+                                <div class="pt-mrn-sub">@o.PatientMrn</div>
+                            </td>
+                            <td>
+                                <div class="pt-fullname">@o.PanelName</div>
+                                @if (o.PanelCategory is not null)
+                                {
+                                    <span class="pt-mrn-badge">@o.PanelCategory</span>
+                                }
+                            </td>
+                            <td><span class="appt-status-badge @PriorityClass(o.Priority)">@o.Priority</span></td>
+                            <td>@o.OrderedByName</td>
+                            <td>@o.OrderedAtUtc.ToString("MMM d, yyyy")</td>
+                            <td>
+                                @if (o.Results.Any())
+                                {
+                                    <span class="pt-mrn-badge">@o.Results.Count result@(o.Results.Count == 1 ? "" : "s")</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#94a3b8;font-size:.8rem">—</span>
+                                }
+                            </td>
+                            <td><span class="appt-status-badge @StatusClass(o.Status)">@o.Status</span></td>
+                            <td class="col-actions">
+                                <div class="dropdown">
+                                    <button class="pt-actions-btn" type="button" data-bs-toggle="dropdown">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end pt-dropdown shadow-sm">
+                                        <li>
+                                            <a class="dropdown-item pt-dropdown-item" asp-action="OrderDetail" asp-route-id="@o.Id">
+                                                View / Add Results
+                                            </a>
+                                        </li>
+                                        @if (o.Status != LabOrderStatus.Cancelled && o.Status != LabOrderStatus.Resulted)
+                                        {
+                                            <li>
+                                                <form asp-action="CancelOrder" asp-route-id="@o.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="patientId" value="@patientId" />
+                                                    <button type="submit" class="dropdown-item pt-dropdown-item pt-dropdown-danger"
+                                                            onclick="return confirm('Cancel this lab order?')">Cancel</button>
+                                                </form>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="patients-table-footer">
+            <span>Showing <strong>@Model.Count</strong> order@(Model.Count == 1 ? "" : "s")</span>
+        </div>
+    }
+</div>
