@@ -39,7 +39,7 @@ public static class SecurityExtensions
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.RequireHttpsMetadata = true;
+                options.RequireHttpsMetadata = false;
                 options.SaveToken = true;
                 options.TokenValidationParameters = JwtTokenProvider.CreateValidationParameters(jwtSettings);
             });

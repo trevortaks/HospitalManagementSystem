@@ -1,10 +1,12 @@
 using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
+using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalMS.Web.Controllers;
 
 [Route("appointments")]
+[RequireSession]
 public sealed class AppointmentsController(IHttpClientFactory httpClientFactory) : Controller
 {
     private const string TokenSessionKey = "jwt_token";
