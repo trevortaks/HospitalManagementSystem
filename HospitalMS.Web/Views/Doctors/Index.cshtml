@@ -1,0 +1,133 @@
+@model List<HospitalMS.Business.Models.UserSummary>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Doctors";
+    var activeCount   = Model.Count(d => d.IsActive);
+    var inactiveCount = Model.Count(d => !d.IsActive);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Doctors</h2>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createModal">
+        + Add Doctor
+    </button>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @err
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Total Doctors</div>
+                <div class="fs-2 fw-bold">@Model.Count</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Active</div>
+                <div class="fs-2 fw-bold text-success">@activeCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Inactive</div>
+                <div class="fs-2 fw-bold text-secondary">@inactiveCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    @if (!Model.Any())
+    {
+        <div class="card-body text-center text-muted py-5">
+            No doctor accounts found. Use the <strong>Add Doctor</strong> button to create one.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th class="text-center">Status</th>
+                        <th>Joined</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var doc in Model.OrderBy(d => d.Username))
+                    {
+                        <tr class="@(doc.IsActive ? "" : "table-secondary opacity-75")">
+                            <td class="fw-semibold">@doc.Username</td>
+                            <td class="text-muted small">@doc.Email</td>
+                            <td class="text-center">
+                                <span class="badge @(doc.IsActive ? "bg-success" : "bg-secondary")">
+                                    @(doc.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="small text-muted">@doc.CreatedAtUtc.ToString("dd MMM yyyy")</td>
+                            <td class="text-end">
+                                <form asp-action="Toggle" asp-route-id="@doc.Id" method="post">
+                                    <button type="submit"
+                                            class="btn btn-sm @(doc.IsActive ? "btn-outline-secondary" : "btn-outline-success")">
+                                        @(doc.IsActive ? "Deactivate" : "Activate")
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small">@Model.Count doctor(s)</div>
+    }
+</div>
+
+<!-- Add Doctor Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="Create" method="post">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">Add Doctor Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Username *</label>
+                        <input name="Username" class="form-control" required maxlength="100"
+                               placeholder="e.g. dr.smith" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Email *</label>
+                        <input name="Email" type="email" class="form-control" required maxlength="256" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Password *</label>
+                        <input name="Password" type="password" class="form-control" required minlength="8" />
+                        <div class="form-text">Minimum 8 characters.</div>
+                    </div>
+                    <input type="hidden" name="Role" value="Doctor" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -66,6 +66,15 @@ public sealed class UserService(
         return users.Select(u => new UserSummary(u.Id, u.Username, u.Email, u.Role, u.IsActive, u.CreatedAtUtc)).ToArray();
     }
 
+    public async Task<UserSummary> ToggleActiveAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var user = await dbContext.Users.FindAsync([id], cancellationToken)
+            ?? throw new KeyNotFoundException($"User {id} not found.");
+        user.IsActive = !user.IsActive;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return new UserSummary(user.Id, user.Username, user.Email, user.Role, user.IsActive, user.CreatedAtUtc);
+    }
+
     private AuthResponse BuildAuthResponse(User user)
     {
         var token = jwtTokenProvider.GenerateToken(

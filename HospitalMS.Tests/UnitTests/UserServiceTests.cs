@@ -105,4 +105,46 @@ public sealed class UserServiceTests : IntegrationTestBase
         Assert.Equal("nurse1", result.Username);
         Assert.Equal(UserRoles.Nurse, result.Role);
     }
+
+    [Fact]
+    public async Task ToggleActiveAsync_DeactivatesActiveUser()
+    {
+        var user = TestFixtures.CreateUser(username: "dr.toggle", role: UserRoles.Doctor);
+        Context.Users.Add(user);
+        await Context.SaveChangesAsync();
+
+        await using var ctx = CreateContext();
+        var service = CreateService(ctx);
+
+        var result = await service.ToggleActiveAsync(user.Id);
+
+        Assert.False(result.IsActive);
+        Assert.Equal(user.Id, result.Id);
+    }
+
+    [Fact]
+    public async Task ToggleActiveAsync_ReactivatesInactiveUser()
+    {
+        var user = TestFixtures.CreateUser(username: "dr.inactive", role: UserRoles.Doctor);
+        user.IsActive = false;
+        Context.Users.Add(user);
+        await Context.SaveChangesAsync();
+
+        await using var ctx = CreateContext();
+        var service = CreateService(ctx);
+
+        var result = await service.ToggleActiveAsync(user.Id);
+
+        Assert.True(result.IsActive);
+    }
+
+    [Fact]
+    public async Task ToggleActiveAsync_Throws_WhenUserNotFound()
+    {
+        await using var ctx = CreateContext();
+        var service = CreateService(ctx);
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => service.ToggleActiveAsync(Guid.NewGuid()));
+    }
 }

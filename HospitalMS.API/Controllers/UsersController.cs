@@ -16,4 +16,11 @@ public sealed class UsersController(IUserService userService) : ControllerBase
         var users = await userService.GetAllAsync(cancellationToken);
         return Ok(users);
     }
+
+    [HttpPost("{id:guid}/toggle-active")]
+    public async Task<IActionResult> ToggleActive(Guid id, CancellationToken cancellationToken)
+    {
+        try { return Ok(await userService.ToggleActiveAsync(id, cancellationToken)); }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
 }
