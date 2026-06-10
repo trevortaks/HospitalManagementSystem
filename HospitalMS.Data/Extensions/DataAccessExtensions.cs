@@ -917,6 +917,32 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260608000008_Phase8_HRManagement', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        // Extended profile fields (20260610120000)
+        """ALTER TABLE "Patients" ADD COLUMN IF NOT EXISTS "AddressLine2" character varying(200)""",
+        """ALTER TABLE "Patients" ADD COLUMN IF NOT EXISTS "State" character varying(100)""",
+        """ALTER TABLE "Patients" ADD COLUMN IF NOT EXISTS "EmergencyContactRelationship" character varying(100)""",
+        """ALTER TABLE "Patients" ADD COLUMN IF NOT EXISTS "EmergencyContactEmail" character varying(256)""",
+        """ALTER TABLE "Patients" ADD COLUMN IF NOT EXISTS "Allergies" character varying(2000)""",
+        """ALTER TABLE "Patients" ADD COLUMN IF NOT EXISTS "ChronicConditions" character varying(2000)""",
+        """ALTER TABLE "Patients" ADD COLUMN IF NOT EXISTS "Notes" character varying(4000)""",
+
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "FirstName" character varying(100)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "LastName" character varying(100)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "PhoneNumber" character varying(20)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "AddressLine1" character varying(200)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "City" character varying(100)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "PostalCode" character varying(20)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "Country" character varying(100)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "Specialization" character varying(200)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "LicenseNumber" character varying(100)""",
+        """ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "Bio" character varying(1000)""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260610120000_AddExtendedProfileFields', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

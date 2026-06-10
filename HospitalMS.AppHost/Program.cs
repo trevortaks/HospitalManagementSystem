@@ -7,6 +7,7 @@ Environment.SetEnvironmentVariable("DOTNET_DASHBOARD_OTLP_HTTP_ENDPOINT_URL", "h
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("postgres")
+    .WithDataVolume("hospitalms-postgres-data")
     .WithPgAdmin(pgAdmin => pgAdmin.WithHostPort(5050))
     .AddDatabase("hospitalms");
 
