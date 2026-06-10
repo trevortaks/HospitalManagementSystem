@@ -1,0 +1,571 @@
+@model HospitalMS.Web.Models.PatientDetailViewModel
+@using HospitalMS.Business.Models
+@{
+    ViewData["Title"] = $"{Model.Patient.FirstName} {Model.Patient.LastName}";
+    ViewData["ActivePage"] = "Patients";
+
+    var p = Model.Patient;
+
+    int Age(DateTime dob)
+    {
+        var today = DateTime.UtcNow;
+        int a = today.Year - dob.Year;
+        if (dob.Date > today.AddYears(-a)) a--;
+        return a;
+    }
+
+    string BloodBadgeColor(string? bg) => bg switch
+    {
+        "A+" or "A-"   => "bg-danger bg-opacity-10 text-danger",
+        "B+" or "B-"   => "bg-primary bg-opacity-10 text-primary",
+        "AB+" or "AB-" => "bg-warning bg-opacity-10 text-warning",
+        "O+" or "O-"   => "bg-success bg-opacity-10 text-success",
+        _              => "bg-secondary bg-opacity-10 text-secondary"
+    };
+
+    string ApptStatusColor(string s) => s switch
+    {
+        "Completed"  => "bg-success",
+        "Cancelled"  => "bg-danger",
+        "NoShow"     => "bg-warning",
+        "InProgress" => "bg-primary",
+        _            => "bg-secondary"
+    };
+
+    string RxStatusColor(string s) => s switch
+    {
+        "Active"    => "bg-success",
+        "Dispensed" => "bg-primary",
+        "Cancelled" => "bg-danger",
+        _           => "bg-secondary"
+    };
+
+    string InvStatusColor(string s) => s switch
+    {
+        "Paid"           => "bg-success",
+        "PartiallyPaid"  => "bg-warning",
+        "Overdue"        => "bg-danger",
+        _                => "bg-secondary"
+    };
+}
+
+<!-- Breadcrumb + back -->
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-controller="Dashboard" asp-action="Index" class="pf-breadcrumb-link">Dashboard</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <a asp-action="Index" class="pf-breadcrumb-link">Patients</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">@p.FirstName @p.LastName</span>
+        </div>
+        <h1 class="page-header-title">Patient Profile</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-outline-primary btn-sm px-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit
+        </a>
+        <a asp-action="Index" class="pf-back-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- ── Left column: profile cards ── -->
+    <div class="col-xl-4">
+        <div class="d-flex flex-column gap-4">
+
+            <!-- Identity card -->
+            <div class="dash-card">
+                <div class="p-4 text-center border-bottom">
+                    @{
+                        var initials = $"{p.FirstName[0]}{p.LastName[0]}".ToUpper();
+                        string[] palette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626","#0e7490","#9333ea"];
+                        int h = 0;
+                        foreach (char c in p.FirstName + p.LastName) h = c + ((h << 5) - h);
+                        var color = palette[Math.Abs(h) % palette.Length];
+                    }
+                    <div style="width:72px;height:72px;border-radius:50%;background:@color;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;color:#fff;margin:0 auto 1rem;">
+                        @initials
+                    </div>
+                    <h5 class="fw-bold mb-0">@p.FirstName @p.LastName</h5>
+                    <div class="text-muted small mt-1">@p.MedicalRecordNumber</div>
+                    <div class="mt-2 d-flex justify-content-center gap-2 flex-wrap">
+                        @if (!string.IsNullOrWhiteSpace(p.BloodGroup))
+                        {
+                            <span class="badge @BloodBadgeColor(p.BloodGroup) px-2 py-1" style="font-size:.8rem;">
+                                @p.BloodGroup
+                            </span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.Gender))
+                        {
+                            <span class="badge bg-light text-dark border px-2 py-1" style="font-size:.8rem;">@p.Gender</span>
+                        }
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Age</span>
+                            <span class="small fw-semibold">@Age(p.DateOfBirth) yrs (@p.DateOfBirth.ToString("dd MMM yyyy"))</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(p.Email))
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Email</span>
+                                <a href="mailto:@p.Email" class="small text-truncate" style="max-width:180px">@p.Email</a>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.PhoneNumber))
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Phone</span>
+                                <span class="small fw-semibold">@p.PhoneNumber</span>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Registered</span>
+                            <span class="small fw-semibold">@p.CreatedAtUtc.ToString("dd MMM yyyy")</span>
+                        </div>
+                        @if (p.UpdatedAtUtc.HasValue)
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Last Updated</span>
+                                <span class="small fw-semibold">@p.UpdatedAtUtc.Value.ToString("dd MMM yyyy")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address card -->
+            @if (!string.IsNullOrWhiteSpace(p.AddressLine1) || !string.IsNullOrWhiteSpace(p.City))
+            {
+                <div class="dash-card p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted">
+                            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing:.05em">Address</span>
+                    </div>
+                    <div class="small lh-lg text-secondary">
+                        @if (!string.IsNullOrWhiteSpace(p.AddressLine1)) { <div>@p.AddressLine1</div> }
+                        @if (!string.IsNullOrWhiteSpace(p.AddressLine2)) { <div>@p.AddressLine2</div> }
+                        @{
+                            var cityLine = string.Join(", ", new[] { p.City, p.State, p.PostalCode }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                            if (!string.IsNullOrWhiteSpace(cityLine)) { <div>@cityLine</div> }
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.Country)) { <div>@p.Country</div> }
+                    </div>
+                </div>
+            }
+
+            <!-- Next of Kin card -->
+            @if (!string.IsNullOrWhiteSpace(p.EmergencyContactName))
+            {
+                <div class="dash-card p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing:.05em">Next of Kin</span>
+                    </div>
+                    <div class="fw-semibold">@p.EmergencyContactName</div>
+                    @if (!string.IsNullOrWhiteSpace(p.EmergencyContactRelationship))
+                    {
+                        <div class="text-muted small">@p.EmergencyContactRelationship</div>
+                    }
+                    <div class="d-flex flex-column gap-1 mt-2">
+                        @if (!string.IsNullOrWhiteSpace(p.EmergencyContactPhone))
+                        {
+                            <div class="small">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1 text-muted">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.08 4.18 2 2 0 0 1 5.09 2h3a2 2 0 0 1 2 1.72 12.05 12.05 0 0 0 .66 2.67 2 2 0 0 1-.45 2.11L9.09 9.91a16 16 0 0 0 6 6l1.41-1.41a2 2 0 0 1 2.11-.45 12.05 12.05 0 0 0 2.67.66A2 2 0 0 1 23 16.92z"/>
+                                </svg>
+                                @p.EmergencyContactPhone
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.EmergencyContactEmail))
+                        {
+                            <div class="small">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1 text-muted">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                                <a href="mailto:@p.EmergencyContactEmail" class="text-reset">@p.EmergencyContactEmail</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- ── Right column: medical background + activity tabs ── -->
+    <div class="col-xl-8">
+        <div class="d-flex flex-column gap-4">
+
+            <!-- Medical background -->
+            @if (!string.IsNullOrWhiteSpace(p.Allergies) || !string.IsNullOrWhiteSpace(p.ChronicConditions) || !string.IsNullOrWhiteSpace(p.Notes))
+            {
+                <div class="dash-card p-4">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                        <span class="fw-semibold text-uppercase text-muted small" style="letter-spacing:.05em">Medical Background</span>
+                    </div>
+                    <div class="d-flex flex-column gap-4">
+                        @if (!string.IsNullOrWhiteSpace(p.Allergies))
+                        {
+                            <div>
+                                <div class="small fw-semibold text-danger mb-1">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                    Known Allergies
+                                </div>
+                                <div class="small text-secondary" style="white-space:pre-line">@p.Allergies</div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.ChronicConditions))
+                        {
+                            <div>
+                                <div class="small fw-semibold text-warning mb-1">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    Existing / Chronic Conditions
+                                </div>
+                                <div class="small text-secondary" style="white-space:pre-line">@p.ChronicConditions</div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.Notes))
+                        {
+                            <div>
+                                <div class="small fw-semibold text-muted mb-1">Other Notes / Past Diagnoses</div>
+                                <div class="small text-secondary" style="white-space:pre-line">@p.Notes</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Activity tabs -->
+            <div class="dash-card">
+                <div class="border-bottom px-4 pt-3">
+                    <ul class="nav nav-tabs border-0 gap-1" id="activityTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active px-3 py-2" id="tab-appt" data-bs-toggle="tab" data-bs-target="#pane-appt" type="button">
+                                Appointments
+                                @if (Model.Appointments.Any())
+                                {
+                                    <span class="badge bg-primary bg-opacity-15 text-primary ms-1" style="font-size:.72rem">@Model.Appointments.Count</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3 py-2" id="tab-enc" data-bs-toggle="tab" data-bs-target="#pane-enc" type="button">
+                                Encounters
+                                @if (Model.Encounters.Any())
+                                {
+                                    <span class="badge bg-primary bg-opacity-15 text-primary ms-1" style="font-size:.72rem">@Model.Encounters.Count</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3 py-2" id="tab-rx" data-bs-toggle="tab" data-bs-target="#pane-rx" type="button">
+                                Prescriptions
+                                @if (Model.Prescriptions.Any())
+                                {
+                                    <span class="badge bg-primary bg-opacity-15 text-primary ms-1" style="font-size:.72rem">@Model.Prescriptions.Count</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3 py-2" id="tab-lab" data-bs-toggle="tab" data-bs-target="#pane-lab" type="button">
+                                Lab Orders
+                                @if (Model.LabOrders.Any())
+                                {
+                                    <span class="badge bg-primary bg-opacity-15 text-primary ms-1" style="font-size:.72rem">@Model.LabOrders.Count</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3 py-2" id="tab-img" data-bs-toggle="tab" data-bs-target="#pane-img" type="button">
+                                Imaging
+                                @if (Model.ImagingRequests.Any())
+                                {
+                                    <span class="badge bg-primary bg-opacity-15 text-primary ms-1" style="font-size:.72rem">@Model.ImagingRequests.Count</span>
+                                }
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link px-3 py-2" id="tab-inv" data-bs-toggle="tab" data-bs-target="#pane-inv" type="button">
+                                Invoices
+                                @if (Model.Invoices.Any())
+                                {
+                                    <span class="badge bg-primary bg-opacity-15 text-primary ms-1" style="font-size:.72rem">@Model.Invoices.Count</span>
+                                }
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tab-content">
+
+                    <!-- Appointments -->
+                    <div class="tab-pane fade show active" id="pane-appt" role="tabpanel">
+                        @if (!Model.Appointments.Any())
+                        {
+                            <div class="p-4 text-center text-muted small">No appointments recorded.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Doctor</th>
+                                            <th>Duration</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var a in Model.Appointments.OrderByDescending(x => x.ScheduledAtUtc))
+                                        {
+                                            <tr>
+                                                <td>@a.ScheduledAtUtc.ToString("dd MMM yyyy HH:mm")</td>
+                                                <td>@a.Type</td>
+                                                <td class="text-muted">@a.DoctorName</td>
+                                                <td>@a.DurationMinutes min</td>
+                                                <td><span class="badge @ApptStatusColor(a.Status)">@a.Status</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Encounters -->
+                    <div class="tab-pane fade" id="pane-enc" role="tabpanel">
+                        @if (!Model.Encounters.Any())
+                        {
+                            <div class="p-4 text-center text-muted small">No encounters recorded.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Doctor</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var e in Model.Encounters.OrderByDescending(x => x.CreatedAtUtc))
+                                        {
+                                            <tr>
+                                                <td>@e.CreatedAtUtc.ToString("dd MMM yyyy")</td>
+                                                <td>@e.EncounterType</td>
+                                                <td class="text-muted">@e.AttendingDoctorName</td>
+                                                <td>
+                                                    <span class="badge @(e.IsClosed ? "bg-secondary" : "bg-success")">
+                                                        @(e.IsClosed ? "Closed" : "Open")
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Prescriptions -->
+                    <div class="tab-pane fade" id="pane-rx" role="tabpanel">
+                        @if (!Model.Prescriptions.Any())
+                        {
+                            <div class="p-4 text-center text-muted small">No prescriptions recorded.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Medication</th>
+                                            <th>Dose / Freq</th>
+                                            <th>Prescribed By</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var rx in Model.Prescriptions.OrderByDescending(x => x.PrescribedAtUtc))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-semibold">@rx.MedicationGenericName</div>
+                                                    @if (!string.IsNullOrWhiteSpace(rx.MedicationBrandName))
+                                                    {
+                                                        <div class="text-muted">@rx.MedicationBrandName (@rx.Strength)</div>
+                                                    }
+                                                </td>
+                                                <td>@rx.Dose · @rx.Frequency</td>
+                                                <td class="text-muted">@rx.PrescribedByName</td>
+                                                <td><span class="badge @RxStatusColor(rx.Status)">@rx.Status</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Lab Orders -->
+                    <div class="tab-pane fade" id="pane-lab" role="tabpanel">
+                        @if (!Model.LabOrders.Any())
+                        {
+                            <div class="p-4 text-center text-muted small">No lab orders recorded.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Panel</th>
+                                            <th>Ordered By</th>
+                                            <th>Priority</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var lab in Model.LabOrders.OrderByDescending(x => x.OrderedAtUtc))
+                                        {
+                                            <tr>
+                                                <td>@lab.OrderedAtUtc.ToString("dd MMM yyyy")</td>
+                                                <td>@lab.PanelName</td>
+                                                <td class="text-muted">@lab.OrderedByName</td>
+                                                <td>
+                                                    <span class="badge @(lab.Priority == "Urgent" || lab.Priority == "STAT" ? "bg-danger" : "bg-secondary")">
+                                                        @lab.Priority
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge @(lab.Status == "Completed" ? "bg-success" : lab.Status == "Cancelled" ? "bg-danger" : "bg-warning text-dark")">
+                                                        @lab.Status
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Imaging -->
+                    <div class="tab-pane fade" id="pane-img" role="tabpanel">
+                        @if (!Model.ImagingRequests.Any())
+                        {
+                            <div class="p-4 text-center text-muted small">No imaging requests recorded.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Modality</th>
+                                            <th>Body Part</th>
+                                            <th>Requested By</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var img in Model.ImagingRequests.OrderByDescending(x => x.RequestedAtUtc))
+                                        {
+                                            <tr>
+                                                <td>@img.RequestedAtUtc.ToString("dd MMM yyyy")</td>
+                                                <td class="fw-semibold">@img.Modality</td>
+                                                <td class="text-muted">@(img.BodyPart ?? "—")</td>
+                                                <td class="text-muted">@img.RequestedByName</td>
+                                                <td>
+                                                    <span class="badge @(img.Status == "Reported" ? "bg-success" : img.Status == "Cancelled" ? "bg-danger" : "bg-warning text-dark")">
+                                                        @img.Status
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Invoices -->
+                    <div class="tab-pane fade" id="pane-inv" role="tabpanel">
+                        @if (!Model.Invoices.Any())
+                        {
+                            <div class="p-4 text-center text-muted small">No invoices recorded.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Invoice #</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Balance</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var inv in Model.Invoices.OrderByDescending(x => x.CreatedAtUtc))
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold">@inv.InvoiceNumber</td>
+                                                <td>@inv.TotalAmount.ToString("C")</td>
+                                                <td>@inv.PaidAmount.ToString("C")</td>
+                                                <td class="@(inv.BalanceDue > 0 ? "text-danger fw-semibold" : "text-success")">
+                                                    @inv.BalanceDue.ToString("C")
+                                                </td>
+                                                <td><span class="badge @InvStatusColor(inv.Status)">@inv.Status</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>

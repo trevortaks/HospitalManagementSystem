@@ -111,7 +111,9 @@
                                 <div class="pt-name-cell">
                                     <div class="pt-avatar" style="background:@color">@initials</div>
                                     <div>
-                                        <div class="pt-fullname">@p.FirstName @p.LastName</div>
+                                        <a asp-action="Details" asp-route-id="@p.Id" class="pt-fullname text-decoration-none text-reset">
+                                            @p.FirstName @p.LastName
+                                        </a>
                                         <div class="pt-mrn-sub">@p.MedicalRecordNumber</div>
                                     </div>
                                 </div>
@@ -135,6 +137,17 @@
                                         </svg>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end pt-dropdown shadow-sm">
+                                        <li>
+                                            <a class="dropdown-item pt-dropdown-item"
+                                               asp-action="Details" asp-route-id="@p.Id">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                    <circle cx="12" cy="12" r="3"/>
+                                                </svg>
+                                                View Profile
+                                            </a>
+                                        </li>
                                         <li>
                                             <a class="dropdown-item pt-dropdown-item"
                                                asp-action="Edit" asp-route-id="@p.Id">
