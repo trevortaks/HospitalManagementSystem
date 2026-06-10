@@ -37,6 +37,37 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpGet("{id:guid}/edit")]
+    public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
+    {
+        var client = CreateAuthorizedClient();
+        var doctor = await client.GetFromJsonAsync<UserSummary>($"/api/users/{id}", ct);
+        if (doctor is null) return NotFound();
+
+        ViewData["ActivePage"] = "Doctors";
+        ViewData["DoctorId"] = id;
+        ViewData["DoctorName"] = $"{doctor.FirstName} {doctor.LastName}".Trim().Length > 0
+            ? $"{doctor.FirstName} {doctor.LastName}".Trim()
+            : doctor.Username;
+
+        return View(new UpdateUserProfileRequest(
+            doctor.FirstName, doctor.LastName, doctor.PhoneNumber,
+            doctor.AddressLine1, doctor.City, doctor.PostalCode, doctor.Country,
+            doctor.Specialization, doctor.LicenseNumber, doctor.Bio));
+    }
+
+    [HttpPost("{id:guid}/edit")]
+    public async Task<IActionResult> Edit(Guid id, [FromForm] UpdateUserProfileRequest request, CancellationToken ct)
+    {
+        var client = CreateAuthorizedClient();
+        var response = await client.PutAsJsonAsync($"/api/users/{id}/profile", request, ct);
+
+        if (!response.IsSuccessStatusCode)
+            TempData["Error"] = "Failed to update doctor profile.";
+
+        return RedirectToAction(nameof(Index));
+    }
+
     [HttpPost("{id:guid}/toggle")]
     public async Task<IActionResult> Toggle(Guid id, CancellationToken ct)
     {

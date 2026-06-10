@@ -62,7 +62,8 @@
                 <thead class="table-light">
                     <tr>
                         <th>Username</th>
-                        <th>Email</th>
+                        <th>Email / Phone</th>
+                        <th>Specialization</th>
                         <th class="text-center">Status</th>
                         <th>Joined</th>
                         <th></th>
@@ -72,8 +73,30 @@
                     @foreach (var doc in Model.OrderBy(d => d.Username))
                     {
                         <tr class="@(doc.IsActive ? "" : "table-secondary opacity-75")">
-                            <td class="fw-semibold">@doc.Username</td>
-                            <td class="text-muted small">@doc.Email</td>
+                            <td>
+                                <div class="fw-semibold">@doc.Username</div>
+                                @if (!string.IsNullOrWhiteSpace(doc.FirstName) || !string.IsNullOrWhiteSpace(doc.LastName))
+                                {
+                                    <div class="small text-muted">@doc.FirstName @doc.LastName</div>
+                                }
+                            </td>
+                            <td class="text-muted small">
+                                <div>@doc.Email</div>
+                                @if (!string.IsNullOrWhiteSpace(doc.PhoneNumber))
+                                {
+                                    <div>@doc.PhoneNumber</div>
+                                }
+                            </td>
+                            <td class="text-muted small">
+                                @if (!string.IsNullOrWhiteSpace(doc.Specialization))
+                                {
+                                    <span class="badge bg-primary bg-opacity-10 text-primary">@doc.Specialization</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
                             <td class="text-center">
                                 <span class="badge @(doc.IsActive ? "bg-success" : "bg-secondary")">
                                     @(doc.IsActive ? "Active" : "Inactive")
@@ -81,12 +104,16 @@
                             </td>
                             <td class="small text-muted">@doc.CreatedAtUtc.ToString("dd MMM yyyy")</td>
                             <td class="text-end">
-                                <form asp-action="Toggle" asp-route-id="@doc.Id" method="post">
-                                    <button type="submit"
-                                            class="btn btn-sm @(doc.IsActive ? "btn-outline-secondary" : "btn-outline-success")">
-                                        @(doc.IsActive ? "Deactivate" : "Activate")
-                                    </button>
-                                </form>
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a asp-action="Edit" asp-route-id="@doc.Id"
+                                       class="btn btn-sm btn-outline-primary">Edit Profile</a>
+                                    <form asp-action="Toggle" asp-route-id="@doc.Id" method="post">
+                                        <button type="submit"
+                                                class="btn btn-sm @(doc.IsActive ? "btn-outline-secondary" : "btn-outline-success")">
+                                            @(doc.IsActive ? "Deactivate" : "Activate")
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     }

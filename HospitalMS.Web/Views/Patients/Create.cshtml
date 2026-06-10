@@ -4,7 +4,6 @@
     ViewData["ActivePage"] = "Patients";
 }
 
-<!-- Page header -->
 <div class="page-header">
     <div>
         <div class="pf-breadcrumb">
@@ -27,93 +26,236 @@
 <form asp-action="Create" method="post" novalidate>
     <div class="row g-4 align-items-start">
 
-        <!-- Main form card -->
         <div class="col-lg-8">
-            <div class="dash-card">
+            <div class="d-flex flex-column gap-4">
 
-                <div class="pf-section-header">
-                    <div class="pf-section-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="pf-section-title">Patient Information</div>
-                        <div class="pf-section-subtitle">Enter the patient's personal and contact details.</div>
-                    </div>
-                </div>
-
-                <div class="pf-body">
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4" role="alert"></div>
-
-                    <!-- MRN (full width) -->
-                    <div class="pf-field mb-4">
-                        <label asp-for="MedicalRecordNumber" class="pf-label">
-                            Medical Record Number
-                            <span class="pf-required">*</span>
-                        </label>
-                        <div class="pf-input-wrap">
-                            <span class="pf-input-prefix">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                </svg>
-                            </span>
-                            <input asp-for="MedicalRecordNumber" class="pf-input pf-input--prefixed"
-                                   placeholder="e.g. MRN-2026-001" autocomplete="off" />
+                <!-- Personal Information -->
+                <div class="dash-card">
+                    <div class="pf-section-header">
+                        <div class="pf-section-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                            </svg>
                         </div>
-                        <span asp-validation-for="MedicalRecordNumber" class="pf-error"></span>
-                        <span class="pf-hint">Must be unique across all patients.</span>
-                    </div>
-
-                    <!-- First / Last name (two columns) -->
-                    <div class="pf-grid-2 mb-4">
-                        <div class="pf-field">
-                            <label asp-for="FirstName" class="pf-label">First Name <span class="pf-required">*</span></label>
-                            <input asp-for="FirstName" class="pf-input" placeholder="e.g. Jane" />
-                            <span asp-validation-for="FirstName" class="pf-error"></span>
-                        </div>
-                        <div class="pf-field">
-                            <label asp-for="LastName" class="pf-label">Last Name <span class="pf-required">*</span></label>
-                            <input asp-for="LastName" class="pf-input" placeholder="e.g. Doe" />
-                            <span asp-validation-for="LastName" class="pf-error"></span>
+                        <div>
+                            <div class="pf-section-title">Personal Information</div>
+                            <div class="pf-section-subtitle">Basic identity and contact details.</div>
                         </div>
                     </div>
+                    <div class="pf-body">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4" role="alert"></div>
 
-                    <!-- DOB / Email (two columns) -->
-                    <div class="pf-grid-2">
-                        <div class="pf-field">
-                            <label asp-for="DateOfBirth" class="pf-label">Date of Birth <span class="pf-required">*</span></label>
-                            <input asp-for="DateOfBirth" type="date" class="pf-input" />
-                            <span asp-validation-for="DateOfBirth" class="pf-error"></span>
-                        </div>
-                        <div class="pf-field">
-                            <label asp-for="Email" class="pf-label">Email Address <span class="pf-required">*</span></label>
+                        <div class="pf-field mb-4">
+                            <label asp-for="MedicalRecordNumber" class="pf-label">Medical Record Number <span class="pf-required">*</span></label>
                             <div class="pf-input-wrap">
                                 <span class="pf-input-prefix">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                        <polyline points="22,6 12,13 2,6"/>
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                                     </svg>
                                 </span>
-                                <input asp-for="Email" type="email" class="pf-input pf-input--prefixed"
-                                       placeholder="patient@example.com" />
+                                <input asp-for="MedicalRecordNumber" class="pf-input pf-input--prefixed" placeholder="e.g. MRN-2026-001" autocomplete="off" />
                             </div>
-                            <span asp-validation-for="Email" class="pf-error"></span>
+                            <span asp-validation-for="MedicalRecordNumber" class="pf-error"></span>
+                            <span class="pf-hint">Must be unique across all patients.</span>
+                        </div>
+
+                        <div class="pf-grid-2 mb-4">
+                            <div class="pf-field">
+                                <label asp-for="FirstName" class="pf-label">First Name <span class="pf-required">*</span></label>
+                                <input asp-for="FirstName" class="pf-input" placeholder="e.g. Jane" />
+                                <span asp-validation-for="FirstName" class="pf-error"></span>
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="LastName" class="pf-label">Last Name <span class="pf-required">*</span></label>
+                                <input asp-for="LastName" class="pf-input" placeholder="e.g. Doe" />
+                                <span asp-validation-for="LastName" class="pf-error"></span>
+                            </div>
+                        </div>
+
+                        <div class="pf-grid-2 mb-4">
+                            <div class="pf-field">
+                                <label asp-for="DateOfBirth" class="pf-label">Date of Birth <span class="pf-required">*</span></label>
+                                <input asp-for="DateOfBirth" type="date" class="pf-input" />
+                                <span asp-validation-for="DateOfBirth" class="pf-error"></span>
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="Gender" class="pf-label">Gender</label>
+                                <select asp-for="Gender" class="pf-input">
+                                    <option value="">— select —</option>
+                                    <option>Male</option>
+                                    <option>Female</option>
+                                    <option>Other</option>
+                                    <option>Prefer not to say</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="pf-grid-2 mb-4">
+                            <div class="pf-field">
+                                <label asp-for="Email" class="pf-label">Email Address <span class="pf-required">*</span></label>
+                                <input asp-for="Email" type="email" class="pf-input" placeholder="patient@example.com" />
+                                <span asp-validation-for="Email" class="pf-error"></span>
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="PhoneNumber" class="pf-label">Cell / Phone</label>
+                                <input asp-for="PhoneNumber" class="pf-input" placeholder="+1 555 000 0000" />
+                            </div>
+                        </div>
+
+                        <div class="pf-grid-2">
+                            <div class="pf-field">
+                                <label asp-for="BloodGroup" class="pf-label">Blood Group</label>
+                                <select asp-for="BloodGroup" class="pf-input">
+                                    <option value="">— select —</option>
+                                    <option>A+</option><option>A-</option>
+                                    <option>B+</option><option>B-</option>
+                                    <option>AB+</option><option>AB-</option>
+                                    <option>O+</option><option>O-</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="pf-footer">
-                    <a asp-action="Index" class="pf-btn-cancel">Cancel</a>
-                    <button type="submit" class="btn-primary-dash">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                        Save Patient
-                    </button>
+                <!-- Address -->
+                <div class="dash-card">
+                    <div class="pf-section-header">
+                        <div class="pf-section-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="pf-section-title">Address</div>
+                            <div class="pf-section-subtitle">Residential or postal address.</div>
+                        </div>
+                    </div>
+                    <div class="pf-body">
+                        <div class="pf-field mb-4">
+                            <label asp-for="AddressLine1" class="pf-label">Address Line 1</label>
+                            <input asp-for="AddressLine1" class="pf-input" placeholder="Street address" />
+                        </div>
+                        <div class="pf-field mb-4">
+                            <label asp-for="AddressLine2" class="pf-label">Address Line 2</label>
+                            <input asp-for="AddressLine2" class="pf-input" placeholder="Apartment, suite, unit, building, floor, etc." />
+                        </div>
+                        <div class="pf-grid-2 mb-4">
+                            <div class="pf-field">
+                                <label asp-for="City" class="pf-label">City</label>
+                                <input asp-for="City" class="pf-input" placeholder="City" />
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="State" class="pf-label">State / Province</label>
+                                <input asp-for="State" class="pf-input" placeholder="State or province" />
+                            </div>
+                        </div>
+                        <div class="pf-grid-2">
+                            <div class="pf-field">
+                                <label asp-for="PostalCode" class="pf-label">Postal / ZIP Code</label>
+                                <input asp-for="PostalCode" class="pf-input" placeholder="Postal code" />
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="Country" class="pf-label">Country</label>
+                                <input asp-for="Country" class="pf-input" placeholder="Country" />
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Medical Background -->
+                <div class="dash-card">
+                    <div class="pf-section-header">
+                        <div class="pf-section-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="pf-section-title">Medical Background</div>
+                            <div class="pf-section-subtitle">Allergies, chronic conditions and clinical notes.</div>
+                        </div>
+                    </div>
+                    <div class="pf-body">
+                        <div class="pf-field mb-4">
+                            <label asp-for="Allergies" class="pf-label">Known Allergies</label>
+                            <textarea asp-for="Allergies" class="pf-input" rows="2"
+                                      placeholder="e.g. Penicillin, Sulfa drugs, Latex — or 'NKDA' if none"></textarea>
+                            <span class="pf-hint">Separate multiple entries with commas.</span>
+                        </div>
+                        <div class="pf-field mb-4">
+                            <label asp-for="ChronicConditions" class="pf-label">Existing / Chronic Conditions</label>
+                            <textarea asp-for="ChronicConditions" class="pf-input" rows="2"
+                                      placeholder="e.g. Type 2 Diabetes, Hypertension, Asthma"></textarea>
+                        </div>
+                        <div class="pf-field">
+                            <label asp-for="Notes" class="pf-label">Other Notes / Past Diagnoses</label>
+                            <textarea asp-for="Notes" class="pf-input" rows="3"
+                                      placeholder="Previous surgeries, notable diagnoses, medications history, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next of Kin -->
+                <div class="dash-card">
+                    <div class="pf-section-header">
+                        <div class="pf-section-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="pf-section-title">Next of Kin / Emergency Contact</div>
+                            <div class="pf-section-subtitle">Person to contact in case of emergency.</div>
+                        </div>
+                    </div>
+                    <div class="pf-body">
+                        <div class="pf-grid-2 mb-4">
+                            <div class="pf-field">
+                                <label asp-for="EmergencyContactName" class="pf-label">Full Name</label>
+                                <input asp-for="EmergencyContactName" class="pf-input" placeholder="Contact's full name" />
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="EmergencyContactRelationship" class="pf-label">Relationship</label>
+                                <select asp-for="EmergencyContactRelationship" class="pf-input">
+                                    <option value="">— select —</option>
+                                    <option>Spouse</option>
+                                    <option>Parent</option>
+                                    <option>Child</option>
+                                    <option>Sibling</option>
+                                    <option>Guardian</option>
+                                    <option>Friend</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="pf-grid-2">
+                            <div class="pf-field">
+                                <label asp-for="EmergencyContactPhone" class="pf-label">Phone / Cell</label>
+                                <input asp-for="EmergencyContactPhone" class="pf-input" placeholder="+1 555 000 0000" />
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="EmergencyContactEmail" class="pf-label">Email</label>
+                                <input asp-for="EmergencyContactEmail" type="email" class="pf-input" placeholder="contact@example.com" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dash-card">
+                    <div class="pf-footer">
+                        <a asp-action="Index" class="pf-btn-cancel">Cancel</a>
+                        <button type="submit" class="btn-primary-dash">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Save Patient
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -128,8 +270,10 @@
                 </div>
                 <ul class="pf-tips-list">
                     <li>The <strong>MRN</strong> must be unique — use a consistent format like <code>MRN-YYYY-NNN</code>.</li>
-                    <li>Double-check the <strong>date of birth</strong> before saving to avoid age calculation errors.</li>
-                    <li>A valid <strong>email</strong> allows future notifications to be sent to the patient.</li>
+                    <li>Record <strong>allergies</strong> accurately — this information is surfaced during prescribing and dispensing.</li>
+                    <li><strong>Blood group</strong> is critical for emergency transfusions.</li>
+                    <li><strong>Chronic conditions</strong> help clinicians make safer prescribing decisions.</li>
+                    <li>Always capture a <strong>next of kin</strong> contact before a patient undergoes any procedure.</li>
                 </ul>
             </div>
         </div>

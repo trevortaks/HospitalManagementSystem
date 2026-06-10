@@ -31,11 +31,18 @@ public sealed class PatientService(IRepository<Patient> repository) : IPatientSe
             Gender = request.Gender,
             BloodGroup = request.BloodGroup,
             AddressLine1 = request.AddressLine1,
+            AddressLine2 = request.AddressLine2,
             City = request.City,
+            State = request.State,
             PostalCode = request.PostalCode,
             Country = request.Country,
             EmergencyContactName = request.EmergencyContactName,
-            EmergencyContactPhone = request.EmergencyContactPhone
+            EmergencyContactPhone = request.EmergencyContactPhone,
+            EmergencyContactRelationship = request.EmergencyContactRelationship,
+            EmergencyContactEmail = request.EmergencyContactEmail,
+            Allergies = request.Allergies,
+            ChronicConditions = request.ChronicConditions,
+            Notes = request.Notes
         };
         await repository.AddAsync(patient, cancellationToken);
         return ToResponse(patient);
@@ -54,11 +61,18 @@ public sealed class PatientService(IRepository<Patient> repository) : IPatientSe
         patient.Gender = request.Gender;
         patient.BloodGroup = request.BloodGroup;
         patient.AddressLine1 = request.AddressLine1;
+        patient.AddressLine2 = request.AddressLine2;
         patient.City = request.City;
+        patient.State = request.State;
         patient.PostalCode = request.PostalCode;
         patient.Country = request.Country;
         patient.EmergencyContactName = request.EmergencyContactName;
         patient.EmergencyContactPhone = request.EmergencyContactPhone;
+        patient.EmergencyContactRelationship = request.EmergencyContactRelationship;
+        patient.EmergencyContactEmail = request.EmergencyContactEmail;
+        patient.Allergies = request.Allergies;
+        patient.ChronicConditions = request.ChronicConditions;
+        patient.Notes = request.Notes;
         patient.UpdatedAtUtc = DateTime.UtcNow;
 
         await repository.UpdateAsync(patient, cancellationToken);
@@ -83,11 +97,18 @@ public sealed class PatientService(IRepository<Patient> repository) : IPatientSe
         p.Gender,
         p.BloodGroup,
         p.AddressLine1,
+        p.AddressLine2,
         p.City,
+        p.State,
         p.PostalCode,
         p.Country,
         p.EmergencyContactName,
         p.EmergencyContactPhone,
+        p.EmergencyContactRelationship,
+        p.EmergencyContactEmail,
+        p.Allergies,
+        p.ChronicConditions,
+        p.Notes,
         p.CreatedAtUtc,
         p.UpdatedAtUtc);
 }

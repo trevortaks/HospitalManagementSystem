@@ -51,8 +51,11 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
         return View(new UpdatePatientRequest(
             patient.FirstName, patient.LastName, patient.DateOfBirth, patient.Email,
             patient.PhoneNumber, patient.Gender, patient.BloodGroup,
-            patient.AddressLine1, patient.City, patient.PostalCode, patient.Country,
-            patient.EmergencyContactName, patient.EmergencyContactPhone));
+            patient.AddressLine1, patient.AddressLine2, patient.City, patient.State,
+            patient.PostalCode, patient.Country,
+            patient.EmergencyContactName, patient.EmergencyContactPhone,
+            patient.EmergencyContactRelationship, patient.EmergencyContactEmail,
+            patient.Allergies, patient.ChronicConditions, patient.Notes));
     }
 
     [HttpPost("{id:guid}/edit")]

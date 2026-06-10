@@ -1,0 +1,152 @@
+@model HospitalMS.Business.Models.UpdateUserProfileRequest
+@{
+    ViewData["Title"] = "Edit Doctor Profile";
+    ViewData["ActivePage"] = "Doctors";
+    var doctorId   = ViewData["DoctorId"]?.ToString() ?? "";
+    var doctorName = ViewData["DoctorName"]?.ToString() ?? "Doctor";
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-controller="Dashboard" asp-action="Index" class="pf-breadcrumb-link">Dashboard</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <a asp-action="Index" class="pf-breadcrumb-link">Doctors</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">Edit Profile</span>
+        </div>
+        <h1 class="page-header-title">@doctorName</h1>
+    </div>
+    <a asp-action="Index" class="pf-back-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Back to Doctors
+    </a>
+</div>
+
+<form asp-action="Edit" asp-route-id="@doctorId" method="post" novalidate>
+    <div class="row g-4 align-items-start">
+
+        <div class="col-lg-8">
+            <div class="d-flex flex-column gap-4">
+
+                <!-- Personal Details -->
+                <div class="dash-card">
+                    <div class="pf-section-header">
+                        <div class="pf-section-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="pf-section-title">Personal Details</div>
+                            <div class="pf-section-subtitle">Name, contact, and location information.</div>
+                        </div>
+                    </div>
+                    <div class="pf-body">
+                        <div class="pf-grid-2 mb-4">
+                            <div class="pf-field">
+                                <label asp-for="FirstName" class="pf-label">First Name</label>
+                                <input asp-for="FirstName" class="pf-input" placeholder="e.g. Sarah" />
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="LastName" class="pf-label">Last Name</label>
+                                <input asp-for="LastName" class="pf-input" placeholder="e.g. Johnson" />
+                            </div>
+                        </div>
+                        <div class="pf-field mb-4">
+                            <label asp-for="PhoneNumber" class="pf-label">Cell / Phone</label>
+                            <input asp-for="PhoneNumber" class="pf-input" placeholder="+1 555 000 0000" />
+                        </div>
+                        <div class="pf-field mb-4">
+                            <label asp-for="AddressLine1" class="pf-label">Address</label>
+                            <input asp-for="AddressLine1" class="pf-input" placeholder="Street address" />
+                        </div>
+                        <div class="pf-grid-2 mb-4">
+                            <div class="pf-field">
+                                <label asp-for="City" class="pf-label">City</label>
+                                <input asp-for="City" class="pf-input" placeholder="City" />
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="PostalCode" class="pf-label">Postal Code</label>
+                                <input asp-for="PostalCode" class="pf-input" placeholder="Postal code" />
+                            </div>
+                        </div>
+                        <div class="pf-field">
+                            <label asp-for="Country" class="pf-label">Country</label>
+                            <input asp-for="Country" class="pf-input" placeholder="Country" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Details -->
+                <div class="dash-card">
+                    <div class="pf-section-header">
+                        <div class="pf-section-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="pf-section-title">Professional Details</div>
+                            <div class="pf-section-subtitle">Specialization, license and biography.</div>
+                        </div>
+                    </div>
+                    <div class="pf-body">
+                        <div class="pf-grid-2 mb-4">
+                            <div class="pf-field">
+                                <label asp-for="Specialization" class="pf-label">Specialization</label>
+                                <input asp-for="Specialization" class="pf-input" placeholder="e.g. Cardiology, Paediatrics" />
+                            </div>
+                            <div class="pf-field">
+                                <label asp-for="LicenseNumber" class="pf-label">License / Registration No.</label>
+                                <input asp-for="LicenseNumber" class="pf-input" placeholder="e.g. MD-2024-00123" />
+                            </div>
+                        </div>
+                        <div class="pf-field">
+                            <label asp-for="Bio" class="pf-label">Short Bio</label>
+                            <textarea asp-for="Bio" class="pf-input" rows="4"
+                                      placeholder="Qualifications, areas of expertise, years of experience, etc."></textarea>
+                            <span class="pf-hint">Max 1 000 characters. Shown on the doctor's profile.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dash-card">
+                    <div class="pf-footer">
+                        <a asp-action="Index" class="pf-btn-cancel">Cancel</a>
+                        <button type="submit" class="btn-primary-dash">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Save Profile
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="dash-card pf-tips-card">
+                <div class="pf-tips-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Tips
+                </div>
+                <ul class="pf-tips-list">
+                    <li>The <strong>license number</strong> should match the doctor's registration with the relevant medical council.</li>
+                    <li><strong>Specialization</strong> is used when assigning appointments and encounters.</li>
+                    <li>Keep the <strong>bio</strong> professional and concise — it is visible to patients via the portal.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

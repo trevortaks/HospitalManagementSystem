@@ -79,11 +79,18 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
             entity.Property(p => p.Gender).HasMaxLength(20);
             entity.Property(p => p.BloodGroup).HasMaxLength(5);
             entity.Property(p => p.AddressLine1).HasMaxLength(200);
+            entity.Property(p => p.AddressLine2).HasMaxLength(200);
             entity.Property(p => p.City).HasMaxLength(100);
+            entity.Property(p => p.State).HasMaxLength(100);
             entity.Property(p => p.PostalCode).HasMaxLength(20);
             entity.Property(p => p.Country).HasMaxLength(100);
             entity.Property(p => p.EmergencyContactName).HasMaxLength(200);
             entity.Property(p => p.EmergencyContactPhone).HasMaxLength(20);
+            entity.Property(p => p.EmergencyContactRelationship).HasMaxLength(100);
+            entity.Property(p => p.EmergencyContactEmail).HasMaxLength(256);
+            entity.Property(p => p.Allergies).HasMaxLength(2000);
+            entity.Property(p => p.ChronicConditions).HasMaxLength(2000);
+            entity.Property(p => p.Notes).HasMaxLength(4000);
             entity.HasIndex(p => p.MedicalRecordNumber).IsUnique();
         });
 
@@ -94,6 +101,16 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
             entity.Property(u => u.Email).HasMaxLength(256).IsRequired();
             entity.Property(u => u.Role).HasMaxLength(100).IsRequired();
             entity.Property(u => u.PasswordHash).HasMaxLength(100).IsRequired();
+            entity.Property(u => u.FirstName).HasMaxLength(100);
+            entity.Property(u => u.LastName).HasMaxLength(100);
+            entity.Property(u => u.PhoneNumber).HasMaxLength(20);
+            entity.Property(u => u.AddressLine1).HasMaxLength(200);
+            entity.Property(u => u.City).HasMaxLength(100);
+            entity.Property(u => u.PostalCode).HasMaxLength(20);
+            entity.Property(u => u.Country).HasMaxLength(100);
+            entity.Property(u => u.Specialization).HasMaxLength(200);
+            entity.Property(u => u.LicenseNumber).HasMaxLength(100);
+            entity.Property(u => u.Bio).HasMaxLength(1000);
             entity.HasIndex(u => u.Username).IsUnique();
 
             entity.HasOne(u => u.LinkedPatient)

@@ -10,11 +10,18 @@ public sealed record CreatePatientRequest(
     string? Gender = null,
     string? BloodGroup = null,
     string? AddressLine1 = null,
+    string? AddressLine2 = null,
     string? City = null,
+    string? State = null,
     string? PostalCode = null,
     string? Country = null,
     string? EmergencyContactName = null,
-    string? EmergencyContactPhone = null);
+    string? EmergencyContactPhone = null,
+    string? EmergencyContactRelationship = null,
+    string? EmergencyContactEmail = null,
+    string? Allergies = null,
+    string? ChronicConditions = null,
+    string? Notes = null);
 
 public sealed record UpdatePatientRequest(
     string FirstName,
@@ -25,11 +32,18 @@ public sealed record UpdatePatientRequest(
     string? Gender = null,
     string? BloodGroup = null,
     string? AddressLine1 = null,
+    string? AddressLine2 = null,
     string? City = null,
+    string? State = null,
     string? PostalCode = null,
     string? Country = null,
     string? EmergencyContactName = null,
-    string? EmergencyContactPhone = null);
+    string? EmergencyContactPhone = null,
+    string? EmergencyContactRelationship = null,
+    string? EmergencyContactEmail = null,
+    string? Allergies = null,
+    string? ChronicConditions = null,
+    string? Notes = null);
 
 public sealed record PatientResponse(
     Guid Id,
@@ -42,10 +56,17 @@ public sealed record PatientResponse(
     string? Gender,
     string? BloodGroup,
     string? AddressLine1,
+    string? AddressLine2,
     string? City,
+    string? State,
     string? PostalCode,
     string? Country,
     string? EmergencyContactName,
     string? EmergencyContactPhone,
+    string? EmergencyContactRelationship,
+    string? EmergencyContactEmail,
+    string? Allergies,
+    string? ChronicConditions,
+    string? Notes,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc);

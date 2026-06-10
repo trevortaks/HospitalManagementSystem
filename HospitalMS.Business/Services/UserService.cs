@@ -63,7 +63,35 @@ public sealed class UserService(
             .OrderByDescending(u => u.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
-        return users.Select(u => new UserSummary(u.Id, u.Username, u.Email, u.Role, u.IsActive, u.CreatedAtUtc)).ToArray();
+        return users.Select(ToSummary).ToArray();
+    }
+
+    public async Task<UserSummary?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(u => u.Id == id, cancellationToken);
+        return user is null ? null : ToSummary(user);
+    }
+
+    public async Task<UserSummary> UpdateProfileAsync(Guid id, UpdateUserProfileRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await dbContext.Users.FindAsync([id], cancellationToken)
+            ?? throw new KeyNotFoundException($"User {id} not found.");
+
+        user.FirstName = request.FirstName;
+        user.LastName = request.LastName;
+        user.PhoneNumber = request.PhoneNumber;
+        user.AddressLine1 = request.AddressLine1;
+        user.City = request.City;
+        user.PostalCode = request.PostalCode;
+        user.Country = request.Country;
+        user.Specialization = request.Specialization;
+        user.LicenseNumber = request.LicenseNumber;
+        user.Bio = request.Bio;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ToSummary(user);
     }
 
     public async Task<UserSummary> ToggleActiveAsync(Guid id, CancellationToken cancellationToken = default)
@@ -72,8 +100,14 @@ public sealed class UserService(
             ?? throw new KeyNotFoundException($"User {id} not found.");
         user.IsActive = !user.IsActive;
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new UserSummary(user.Id, user.Username, user.Email, user.Role, user.IsActive, user.CreatedAtUtc);
+        return ToSummary(user);
     }
+
+    private static UserSummary ToSummary(User u) => new(
+        u.Id, u.Username, u.Email, u.Role, u.IsActive, u.CreatedAtUtc,
+        u.FirstName, u.LastName, u.PhoneNumber,
+        u.AddressLine1, u.City, u.PostalCode, u.Country,
+        u.Specialization, u.LicenseNumber, u.Bio);
 
     private AuthResponse BuildAuthResponse(User user)
     {
