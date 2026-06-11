@@ -1,0 +1,331 @@
+@model HospitalMS.Web.Models.StaffDetailViewModel
+@{
+    ViewData["Title"] = Model.Staff.FirstName is not null
+        ? $"{Model.Staff.FirstName} {Model.Staff.LastName}".Trim()
+        : Model.Staff.Username;
+    ViewData["ActivePage"] = "Nurses";
+
+    var s = Model.Staff;
+    var displayName = (!string.IsNullOrWhiteSpace(s.FirstName) || !string.IsNullOrWhiteSpace(s.LastName))
+        ? $"{s.FirstName} {s.LastName}".Trim()
+        : s.Username;
+
+    string[] palette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626","#0e7490","#9333ea"];
+    int h = 0;
+    foreach (char c in displayName) h = c + ((h << 5) - h);
+    var avatarColor = palette[Math.Abs(h) % palette.Length];
+    var initials = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2).Select(w => w[0].ToString().ToUpper())
+        .Aggregate("", (a, b) => a + b);
+    if (string.IsNullOrEmpty(initials)) initials = s.Username[..1].ToUpper();
+
+    string LeaveStatusColor(string st) => st switch
+    {
+        "Approved"  => "bg-success",
+        "Rejected"  => "bg-danger",
+        "Cancelled" => "bg-secondary",
+        _           => "bg-warning text-dark"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <div class="pf-breadcrumb">
+            <a asp-controller="Dashboard" asp-action="Index" class="pf-breadcrumb-link">Dashboard</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <a asp-action="Index" class="pf-breadcrumb-link">Nurses</a>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="pf-breadcrumb-current">@displayName</span>
+        </div>
+        <h1 class="page-header-title">Nurse Profile</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-outline-primary btn-sm px-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit Profile
+        </a>
+        <a asp-action="Index" class="pf-back-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- ── Left column ── -->
+    <div class="col-xl-4">
+        <div class="d-flex flex-column gap-4">
+
+            <!-- Identity card -->
+            <div class="dash-card">
+                <div class="p-4 text-center border-bottom">
+                    <div style="width:72px;height:72px;border-radius:50%;background:@avatarColor;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;color:#fff;margin:0 auto 1rem;">
+                        @initials
+                    </div>
+                    <h5 class="fw-bold mb-1">@displayName</h5>
+                    <div class="text-muted small mb-2">@@@s.Username</div>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <span class="badge bg-success px-2 py-1" style="font-size:.8rem">Nurse</span>
+                        <span class="badge @(s.IsActive ? "bg-success" : "bg-secondary") px-2 py-1" style="font-size:.8rem">
+                            @(s.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(s.Specialization))
+                    {
+                        <div class="mt-2">
+                            <span class="badge bg-success bg-opacity-10 text-success px-2 py-1" style="font-size:.8rem">
+                                @s.Specialization
+                            </span>
+                        </div>
+                    }
+                </div>
+                <div class="p-4">
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Email</span>
+                            <a href="mailto:@s.Email" class="small text-truncate" style="max-width:200px">@s.Email</a>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(s.PhoneNumber))
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Phone</span>
+                                <span class="small fw-semibold">@s.PhoneNumber</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(s.LicenseNumber))
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">License</span>
+                                <span class="small fw-semibold">@s.LicenseNumber</span>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Joined</span>
+                            <span class="small fw-semibold">@s.CreatedAtUtc.ToString("dd MMM yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address -->
+            @if (!string.IsNullOrWhiteSpace(s.AddressLine1) || !string.IsNullOrWhiteSpace(s.City))
+            {
+                <div class="dash-card p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted">
+                            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing:.05em">Address</span>
+                    </div>
+                    <div class="small lh-lg text-secondary">
+                        @if (!string.IsNullOrWhiteSpace(s.AddressLine1)) { <div>@s.AddressLine1</div> }
+                        @{
+                            var cityLine = string.Join(", ", new[] { s.City, s.PostalCode }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                            if (!string.IsNullOrWhiteSpace(cityLine)) { <div>@cityLine</div> }
+                        }
+                        @if (!string.IsNullOrWhiteSpace(s.Country)) { <div>@s.Country</div> }
+                    </div>
+                </div>
+            }
+
+            <!-- Employee Record -->
+            @if (Model.EmployeeRecord is not null)
+            {
+                var emp = Model.EmployeeRecord;
+                <div class="dash-card p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                        <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing:.05em">Employment</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Employee #</span>
+                            <span class="small fw-semibold">@emp.EmployeeNumber</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Job Title</span>
+                            <span class="small fw-semibold">@emp.JobTitle</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(emp.DepartmentName))
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Department</span>
+                                <span class="small fw-semibold">@emp.DepartmentName</span>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Type</span>
+                            <span class="small">@emp.EmploymentType</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Status</span>
+                            <span class="badge @(emp.Status == "Active" ? "bg-success" : emp.Status == "OnLeave" ? "bg-warning text-dark" : "bg-secondary") small">
+                                @emp.Status
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Hired</span>
+                            <span class="small fw-semibold">@emp.HiredAtUtc.ToString("dd MMM yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- ── Right column ── -->
+    <div class="col-xl-8">
+        <div class="d-flex flex-column gap-4">
+
+            <!-- Bio -->
+            @if (!string.IsNullOrWhiteSpace(s.Bio))
+            {
+                <div class="dash-card p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing:.05em">Biography</span>
+                    </div>
+                    <p class="small text-secondary mb-0" style="white-space:pre-line">@s.Bio</p>
+                </div>
+            }
+
+            <!-- Activity tabs -->
+            <div class="dash-card">
+                <div class="border-bottom px-4 pt-3">
+                    <ul class="nav nav-tabs border-0 gap-1" id="activityTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active px-3 py-2" id="tab-enc" data-bs-toggle="tab"
+                                    data-bs-target="#pane-enc" type="button">
+                                Encounters
+                                @if (Model.Encounters.Any())
+                                {
+                                    <span class="badge bg-primary bg-opacity-15 text-primary ms-1" style="font-size:.72rem">@Model.Encounters.Count</span>
+                                }
+                            </button>
+                        </li>
+                        @if (Model.EmployeeRecord is not null)
+                        {
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-3 py-2" id="tab-leave" data-bs-toggle="tab"
+                                        data-bs-target="#pane-leave" type="button">
+                                    Leave Requests
+                                    @if (Model.LeaveRequests.Any())
+                                    {
+                                        <span class="badge bg-primary bg-opacity-15 text-primary ms-1" style="font-size:.72rem">@Model.LeaveRequests.Count</span>
+                                    }
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+
+                <div class="tab-content">
+
+                    <!-- Encounters -->
+                    <div class="tab-pane fade show active" id="pane-enc" role="tabpanel">
+                        @if (!Model.Encounters.Any())
+                        {
+                            <div class="p-4 text-center text-muted small">No encounters recorded.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Patient</th>
+                                            <th>Type</th>
+                                            <th>Chief Complaint</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var e in Model.Encounters.OrderByDescending(x => x.StartedAtUtc))
+                                        {
+                                            <tr>
+                                                <td>@e.StartedAtUtc.ToString("dd MMM yyyy")</td>
+                                                <td>
+                                                    <div class="fw-semibold">@e.PatientName</div>
+                                                    <div class="text-muted">@e.PatientMrn</div>
+                                                </td>
+                                                <td>@e.EncounterType</td>
+                                                <td class="text-muted" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                                                    @(e.ChiefComplaint ?? "—")
+                                                </td>
+                                                <td>
+                                                    <span class="badge @(e.IsClosed ? "bg-secondary" : "bg-success")">
+                                                        @(e.IsClosed ? "Closed" : "Open")
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Leave Requests (only if employee record exists) -->
+                    @if (Model.EmployeeRecord is not null)
+                    {
+                        <div class="tab-pane fade" id="pane-leave" role="tabpanel">
+                            @if (!Model.LeaveRequests.Any())
+                            {
+                                <div class="p-4 text-center text-muted small">No leave requests recorded.</div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0 small">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>From</th>
+                                                <th>To</th>
+                                                <th>Days</th>
+                                                <th>Requested</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var lr in Model.LeaveRequests.OrderByDescending(x => x.RequestedAtUtc))
+                                            {
+                                                <tr>
+                                                    <td>@lr.LeaveType</td>
+                                                    <td>@lr.StartDate.ToString("dd MMM yyyy")</td>
+                                                    <td>@lr.EndDate.ToString("dd MMM yyyy")</td>
+                                                    <td>@lr.DurationDays</td>
+                                                    <td class="text-muted">@lr.RequestedAtUtc.ToString("dd MMM yyyy")</td>
+                                                    <td><span class="badge @LeaveStatusColor(lr.Status)">@lr.Status</span></td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
