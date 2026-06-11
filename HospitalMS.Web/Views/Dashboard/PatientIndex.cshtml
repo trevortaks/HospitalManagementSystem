@@ -1,0 +1,393 @@
+@model HospitalMS.Web.Models.PatientDashboardViewModel?
+@using HospitalMS.Data.Persistence.Entities
+@{
+    ViewData["Title"]      = "My Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+
+    string ApptStatusColor(string s) => s switch
+    {
+        "Completed"  => "appt-badge--completed",
+        "Confirmed"  => "appt-badge--confirmed",
+        "InProgress" => "appt-badge--inprogress",
+        "Cancelled"  => "appt-badge--cancelled",
+        "NoShow"     => "appt-badge--noshow",
+        _            => "appt-badge--scheduled"
+    };
+
+    string RxStatusColor(string s) => s switch
+    {
+        "Dispensed" => "appt-badge--completed",
+        "Cancelled" => "appt-badge--cancelled",
+        "Expired"   => "appt-badge--noshow",
+        _           => "appt-badge--confirmed"
+    };
+
+    string BloodGroupColor(string? bg) => bg switch
+    {
+        "A+" or "A-"   => "bg-danger bg-opacity-15 text-danger",
+        "B+" or "B-"   => "bg-primary bg-opacity-15 text-primary",
+        "AB+" or "AB-" => "bg-warning text-dark bg-opacity-20",
+        "O+" or "O-"   => "bg-success bg-opacity-15 text-success",
+        _              => "bg-secondary bg-opacity-15 text-secondary"
+    };
+
+    int Age(DateTime dob) => (int)((DateTime.UtcNow - dob).TotalDays / 365.25);
+}
+
+@if (Model is null)
+{
+    <div class="page-header">
+        <div><h1 class="page-header-title">My Dashboard</h1></div>
+    </div>
+    <div class="dash-card text-center py-5">
+        <div style="width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+        </div>
+        <h3 style="font-size:1.1rem;font-weight:600;margin-bottom:.5rem">No patient record linked</h3>
+        <p class="text-muted small">Your account is not yet linked to a patient record.<br>Contact your care team to get this set up.</p>
+    </div>
+    return;
+}
+
+@{
+    var p    = Model.Dashboard.Profile;
+    var next = Model.NextAppointment;
+
+    string[] palette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626"];
+    int h = 0;
+    foreach (char c in $"{p.FirstName}{p.LastName}") h = c + ((h << 5) - h);
+    var avatarColor = palette[Math.Abs(h) % palette.Length];
+    var initials    = new[] { p.FirstName, p.LastName }
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Select(x => x![0].ToString().ToUpper())
+        .Aggregate("", (a, b) => a + b);
+    if (string.IsNullOrEmpty(initials)) initials = "??";
+
+    var greeting = DateTime.UtcNow.Hour < 12 ? "Good Morning"
+                 : DateTime.UtcNow.Hour < 17 ? "Good Afternoon"
+                 : "Good Evening";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">@greeting, @p.FirstName!</h1>
+        <div class="page-header-subtitle">@DateTime.UtcNow.ToString("dddd, MMMM d, yyyy")</div>
+    </div>
+    <a asp-controller="Portal" asp-action="Profile" class="btn btn-sm btn-outline-primary px-3">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1" style="vertical-align:-2px">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        My Profile
+    </a>
+</div>
+
+<div class="row g-4">
+
+    <!-- ── Left column ── -->
+    <div class="col-xl-4">
+        <div class="d-flex flex-column gap-4">
+
+            <!-- Identity card -->
+            <div class="dash-card">
+                <div class="p-4 text-center border-bottom">
+                    <div style="width:72px;height:72px;border-radius:50%;background:@avatarColor;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;color:#fff;margin:0 auto 1rem">
+                        @initials
+                    </div>
+                    <h5 class="fw-bold mb-1">@p.FirstName @p.LastName</h5>
+                    <div class="text-muted small mb-3">MRN: <strong>@p.MedicalRecordNumber</strong></div>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        @if (!string.IsNullOrWhiteSpace(p.BloodGroup))
+                        {
+                            <span class="badge @BloodGroupColor(p.BloodGroup) px-2 py-1" style="font-size:.8rem">@p.BloodGroup</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.Gender))
+                        {
+                            <span class="badge bg-secondary bg-opacity-15 text-secondary px-2 py-1" style="font-size:.8rem">@p.Gender</span>
+                        }
+                        <span class="badge bg-info bg-opacity-15 text-info px-2 py-1" style="font-size:.8rem">Age @Age(p.DateOfBirth)</span>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Date of Birth</span>
+                            <span class="small fw-semibold">@p.DateOfBirth.ToString("MMM d, yyyy")</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(p.Email))
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Email</span>
+                                <a href="mailto:@p.Email" class="small text-truncate" style="max-width:180px">@p.Email</a>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.PhoneNumber))
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Phone</span>
+                                <span class="small fw-semibold">@p.PhoneNumber</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(p.EmergencyContactName))
+                        {
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Emergency</span>
+                                <span class="small fw-semibold">@p.EmergencyContactName</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next appointment highlight -->
+            @if (next is not null)
+            {
+                var daysUntil   = (int)(next.ScheduledAtUtc.Date - DateTime.UtcNow.Date).TotalDays;
+                var urgencyColor = daysUntil == 0 ? "#dc2626" : daysUntil <= 3 ? "#ea5c0a" : "#2e37a4";
+                <div class="dash-card p-4" style="border-left:4px solid @urgencyColor">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="@urgencyColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing:.05em">Next Appointment</span>
+                    </div>
+                    <div class="fw-bold" style="font-size:1.1rem;color:@urgencyColor">
+                        @(daysUntil == 0 ? "Today" : daysUntil == 1 ? "Tomorrow" : $"In {daysUntil} days")
+                    </div>
+                    <div class="fw-semibold mt-1">@next.ScheduledAtUtc.ToString("dddd, MMM d")</div>
+                    <div class="text-muted small">@next.ScheduledAtUtc.ToString("HH:mm") · @next.DurationMinutes min</div>
+                    <div class="text-muted small mt-1">Dr. @next.DoctorName</div>
+                    <div class="mt-2">
+                        <span class="badge bg-primary bg-opacity-15 text-primary" style="font-size:.75rem">@next.Type</span>
+                        @if (!string.IsNullOrWhiteSpace(next.Reason))
+                        {
+                            <div class="text-muted mt-1" style="font-size:.78rem">@next.Reason</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Quick links -->
+            <div class="dash-card p-4">
+                <div class="fw-semibold small text-uppercase text-muted mb-3" style="letter-spacing:.05em">Quick Access</div>
+                <div class="d-flex flex-column gap-2">
+                    <a asp-controller="Portal" asp-action="Appointments"
+                       class="d-flex align-items-center gap-3 p-2 rounded text-decoration-none"
+                       style="transition:.15s;color:inherit" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">
+                        <div style="width:34px;height:34px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="fw-semibold small">My Appointments</div>
+                            <div class="text-muted" style="font-size:.75rem">@Model.Dashboard.UpcomingAppointments.Count upcoming</div>
+                        </div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ms-auto text-muted"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                    <a asp-controller="Portal" asp-action="Prescriptions"
+                       class="d-flex align-items-center gap-3 p-2 rounded text-decoration-none"
+                       style="transition:.15s;color:inherit" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">
+                        <div style="width:34px;height:34px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="fw-semibold small">My Prescriptions</div>
+                            <div class="text-muted" style="font-size:.75rem">@Model.Dashboard.ActivePrescriptions.Count active</div>
+                        </div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ms-auto text-muted"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                    <a asp-controller="Portal" asp-action="Profile"
+                       class="d-flex align-items-center gap-3 p-2 rounded text-decoration-none"
+                       style="transition:.15s;color:inherit" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">
+                        <div style="width:34px;height:34px;border-radius:8px;background:#fdf4ff;display:flex;align-items:center;justify-content:center">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="fw-semibold small">My Profile</div>
+                            <div class="text-muted" style="font-size:.75rem">Update personal details</div>
+                        </div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ms-auto text-muted"><polyline points="9 18 15 12 9 6"/></svg>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── Right column ── -->
+    <div class="col-xl-8">
+        <div class="d-flex flex-column gap-4">
+
+            <!-- Stat cards -->
+            <div class="row g-3">
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon--blue">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                        </div>
+                        <div class="stat-body">
+                            <div class="stat-value">@Model.Dashboard.UpcomingAppointments.Count</div>
+                            <div class="stat-label">Upcoming</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon--green">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
+                        </div>
+                        <div class="stat-body">
+                            <div class="stat-value">@Model.Dashboard.ActivePrescriptions.Count</div>
+                            <div class="stat-label">Active Rx</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon stat-icon--purple">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                        </div>
+                        <div class="stat-body">
+                            <div class="stat-value">@Model.Dashboard.TotalEncounters</div>
+                            <div class="stat-label">Total Visits</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming appointments -->
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h2 class="dash-card-title">Upcoming Appointments</h2>
+                    <a asp-controller="Portal" asp-action="Appointments" class="dash-card-action">View all</a>
+                </div>
+                @if (!Model.Dashboard.UpcomingAppointments.Any())
+                {
+                    <div class="dash-empty py-4">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <p>No upcoming appointments.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>Date &amp; Time</th>
+                                    <th>Doctor</th>
+                                    <th>Type</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in Model.Dashboard.UpcomingAppointments.OrderBy(x => x.ScheduledAtUtc))
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@a.ScheduledAtUtc.ToString("MMM d, yyyy")</div>
+                                            <div class="text-muted small">@a.ScheduledAtUtc.ToString("HH:mm")</div>
+                                        </td>
+                                        <td class="fw-semibold small">Dr. @a.DoctorName</td>
+                                        <td><span class="pt-mrn-badge">@a.Type</span></td>
+                                        <td class="text-muted small">@a.DurationMinutes min</td>
+                                        <td><span class="appt-status-badge @ApptStatusColor(a.Status)">@a.Status</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- Active prescriptions -->
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h2 class="dash-card-title">Active Prescriptions</h2>
+                    <a asp-controller="Portal" asp-action="Prescriptions" class="dash-card-action">View all</a>
+                </div>
+                @if (!Model.Dashboard.ActivePrescriptions.Any())
+                {
+                    <div class="dash-empty py-4">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <p>No active prescriptions.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>Medication</th>
+                                    <th>Dose / Frequency</th>
+                                    <th>Duration</th>
+                                    <th>Prescribed</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var rx in Model.Dashboard.ActivePrescriptions)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">
+                                                @rx.MedicationGenericName
+                                                @if (rx.IsControlled)
+                                                {
+                                                    <span class="badge ms-1" style="background:#fef3c7;color:#b45309;font-size:.65rem">Ctrl</span>
+                                                }
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(rx.MedicationBrandName))
+                                            {
+                                                <div class="text-muted small">@rx.MedicationBrandName</div>
+                                            }
+                                            <div class="text-muted small">@rx.MedicationForm@(rx.Strength is not null ? " · " + rx.Strength : "")</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold small">@rx.Dose</div>
+                                            <div class="text-muted small">@rx.Frequency</div>
+                                        </td>
+                                        <td class="text-muted small">
+                                            @(rx.DurationDays.HasValue ? $"{rx.DurationDays} days" : "—")
+                                        </td>
+                                        <td class="text-muted small">@rx.PrescribedAtUtc.ToString("MMM d, yyyy")</td>
+                                        <td><span class="appt-status-badge @RxStatusColor(rx.Status)">@rx.Status</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+
+</div>
