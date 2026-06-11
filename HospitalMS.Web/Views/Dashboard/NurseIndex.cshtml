@@ -1,0 +1,288 @@
+@model HospitalMS.Web.Models.NurseDashboardViewModel
+@{
+    ViewData["Title"]      = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+
+    string ApptStatusColor(string st) => st switch
+    {
+        "Completed"  => "bg-success",
+        "Cancelled"  => "bg-danger",
+        "InProgress" => "bg-primary",
+        _            => "bg-secondary"
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Triage Dashboard</h1>
+        <div class="page-header-subtitle">@DateTime.UtcNow.ToString("dddd, MMMM d, yyyy") — Today's Queue</div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">@Model.TriageQueue.Count</div>
+                <div class="stat-label">In Today's Queue</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--orange">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">@Model.PendingTriage</div>
+                <div class="stat-label">Awaiting Vitals</div>
+                <div class="stat-sub text-warning">Needs triage</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--green">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">@Model.VitalsRecordedToday</div>
+                <div class="stat-label">Vitals Recorded Today</div>
+                <div class="stat-sub text-success">Triage complete</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Triage Queue -->
+<div class="dash-card">
+    <div class="dash-card-header">
+        <h2 class="dash-card-title">Triage Queue</h2>
+        <a asp-controller="Appointments" asp-action="Index" class="dash-card-action">All appointments</a>
+    </div>
+
+    @if (!Model.TriageQueue.Any())
+    {
+        <div class="dash-empty py-5">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <p>All done! No patients waiting for triage today.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Type</th>
+                        <th>Pre-Consult Vitals</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model.TriageQueue)
+                    {
+                        var hasVitals = a.PreConsultVitals is not null;
+                        <tr class="@(hasVitals ? "" : "table-warning bg-opacity-10")">
+                            <td class="fw-semibold" style="white-space:nowrap">@a.ScheduledAtUtc.ToString("HH:mm")</td>
+                            <td>
+                                <a asp-controller="Patients" asp-action="Details" asp-route-id="@a.PatientId"
+                                   class="fw-semibold text-decoration-none">@a.PatientName</a>
+                                <div class="text-muted" style="font-size:.78rem">@a.PatientMrn</div>
+                            </td>
+                            <td class="text-muted small">@a.DoctorName</td>
+                            <td class="text-muted small">@a.Type</td>
+                            <td>
+                                @if (hasVitals)
+                                {
+                                    var v = a.PreConsultVitals!;
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @if (v.BloodPressureSystolic.HasValue)
+                                        {
+                                            <span class="badge bg-danger bg-opacity-15 text-danger" style="font-size:.7rem">
+                                                BP @v.BloodPressureSystolic/@v.BloodPressureDiastolic
+                                            </span>
+                                        }
+                                        @if (v.TemperatureCelsius.HasValue)
+                                        {
+                                            <span class="badge bg-warning text-dark bg-opacity-20" style="font-size:.7rem">
+                                                @v.TemperatureCelsius.Value.ToString("0.0")°C
+                                            </span>
+                                        }
+                                        @if (v.WeightKg.HasValue)
+                                        {
+                                            <span class="badge bg-info bg-opacity-15 text-info" style="font-size:.7rem">
+                                                @v.WeightKg.Value.ToString("0.0") kg
+                                            </span>
+                                        }
+                                        @if (v.HeartRateBpm.HasValue)
+                                        {
+                                            <span class="badge bg-primary bg-opacity-15 text-primary" style="font-size:.7rem">
+                                                @v.HeartRateBpm bpm
+                                            </span>
+                                        }
+                                        @if (v.OxygenSaturationPct.HasValue)
+                                        {
+                                            <span class="badge bg-success bg-opacity-15 text-success" style="font-size:.7rem">
+                                                SpO₂ @v.OxygenSaturationPct.Value.ToString("0")%
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="text-muted mt-1" style="font-size:.72rem">
+                                        by @v.RecordedByName at @v.RecordedAtUtc.ToString("HH:mm")
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-warning small fw-semibold">Not recorded</span>
+                                }
+                            </td>
+                            <td><span class="badge @ApptStatusColor(a.Status)" style="font-size:.72rem">@a.Status</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm @(hasVitals ? "btn-outline-secondary" : "btn-primary")"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#vitalsModal"
+                                        data-appt-id="@a.Id"
+                                        data-patient-name="@a.PatientName"
+                                        data-return-url="/dashboard"
+                                        data-existing-height="@a.PreConsultVitals?.HeightCm"
+                                        data-existing-weight="@a.PreConsultVitals?.WeightKg"
+                                        data-existing-temp="@a.PreConsultVitals?.TemperatureCelsius"
+                                        data-existing-sbp="@a.PreConsultVitals?.BloodPressureSystolic"
+                                        data-existing-dbp="@a.PreConsultVitals?.BloodPressureDiastolic"
+                                        data-existing-hr="@a.PreConsultVitals?.HeartRateBpm"
+                                        data-existing-rr="@a.PreConsultVitals?.RespiratoryRate"
+                                        data-existing-spo2="@a.PreConsultVitals?.OxygenSaturationPct"
+                                        data-existing-notes="@a.PreConsultVitals?.Notes">
+                                    @(hasVitals ? "Update Vitals" : "Record Vitals")
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Vitals Modal -->
+<div class="modal fade" id="vitalsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form id="vitalsForm" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="/dashboard" />
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2" style="vertical-align:-3px">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                        Pre-Consultation Vitals — <span id="vitalsPatientName"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Blood Pressure (mmHg)</label>
+                            <div class="input-group">
+                                <input name="BloodPressureSystolic" id="fSbp" type="number" class="form-control"
+                                       placeholder="Systolic" min="50" max="250" />
+                                <span class="input-group-text">/</span>
+                                <input name="BloodPressureDiastolic" id="fDbp" type="number" class="form-control"
+                                       placeholder="Diastolic" min="30" max="150" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Temperature (°C)</label>
+                            <input name="TemperatureCelsius" id="fTemp" type="number" step="0.1"
+                                   class="form-control" placeholder="e.g. 36.6" min="32" max="43" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Heart Rate (bpm)</label>
+                            <input name="HeartRateBpm" id="fHr" type="number"
+                                   class="form-control" placeholder="e.g. 72" min="20" max="250" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Weight (kg)</label>
+                            <input name="WeightKg" id="fWeight" type="number" step="0.1"
+                                   class="form-control" placeholder="e.g. 70.5" min="1" max="300" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Height (cm)</label>
+                            <input name="HeightCm" id="fHeight" type="number" step="0.1"
+                                   class="form-control" placeholder="e.g. 170" min="30" max="250" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Respiratory Rate (breaths/min)</label>
+                            <input name="RespiratoryRate" id="fRr" type="number"
+                                   class="form-control" placeholder="e.g. 16" min="4" max="60" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Oxygen Saturation (%)</label>
+                            <input name="OxygenSaturationPct" id="fSpo2" type="number" step="0.1"
+                                   class="form-control" placeholder="e.g. 98.5" min="50" max="100" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">Nurse Notes</label>
+                            <textarea name="Notes" id="fNotes" class="form-control" rows="2"
+                                      placeholder="Any observations before the doctor sees the patient..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="me-1">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Save Vitals
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('vitalsModal').addEventListener('show.bs.modal', function (e) {
+        var btn = e.relatedTarget;
+        var apptId   = btn.dataset.apptId;
+        var name     = btn.dataset.patientName;
+        var returnUrl = btn.dataset.returnUrl || '/dashboard';
+
+        document.getElementById('vitalsPatientName').textContent = name;
+        document.getElementById('vitalsForm').action = '/appointments/' + apptId + '/vitals';
+        document.querySelector('#vitalsForm input[name="returnUrl"]').value = returnUrl;
+
+        document.getElementById('fHeight').value  = btn.dataset.existingHeight  || '';
+        document.getElementById('fWeight').value  = btn.dataset.existingWeight  || '';
+        document.getElementById('fTemp').value    = btn.dataset.existingTemp    || '';
+        document.getElementById('fSbp').value     = btn.dataset.existingSbp     || '';
+        document.getElementById('fDbp').value     = btn.dataset.existingDbp     || '';
+        document.getElementById('fHr').value      = btn.dataset.existingHr      || '';
+        document.getElementById('fRr').value      = btn.dataset.existingRr      || '';
+        document.getElementById('fSpo2').value    = btn.dataset.existingSpo2    || '';
+        document.getElementById('fNotes').value   = btn.dataset.existingNotes   || '';
+    });
+</script>
+}

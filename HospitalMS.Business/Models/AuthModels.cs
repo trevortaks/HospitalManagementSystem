@@ -14,4 +14,5 @@ public sealed record AuthResponse(
     string Token,
     string Username,
     string Role,
-    DateTime ExpiresAt);
+    DateTime ExpiresAt,
+    Guid UserId = default);

@@ -96,4 +96,30 @@ public sealed class AppointmentsController(IAppointmentService appointmentServic
             return NotFound();
         }
     }
+
+    [HttpGet("{id:guid}/vitals")]
+    public async Task<IActionResult> GetVitals(Guid id, CancellationToken cancellationToken)
+    {
+        var vitals = await appointmentService.GetVitalsAsync(id, cancellationToken);
+        return vitals is null ? NotFound() : Ok(vitals);
+    }
+
+    [HttpPost("{id:guid}/vitals")]
+    [RoleBasedAuth(UserRoles.Admin, UserRoles.Nurse, UserRoles.Doctor)]
+    public async Task<IActionResult> RecordVitals(Guid id, [FromBody] RecordAppointmentVitalsRequest request, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst("sub")?.Value;
+        if (!Guid.TryParse(userId, out var recordedByUserId))
+            return Unauthorized();
+
+        try
+        {
+            var vitals = await appointmentService.RecordVitalsAsync(id, recordedByUserId, request, cancellationToken);
+            return Ok(vitals);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
 }

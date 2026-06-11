@@ -11,4 +11,6 @@ public interface IAppointmentService
     Task<AppointmentResponse> CancelAsync(Guid id, CancelAppointmentRequest request, CancellationToken cancellationToken = default);
     Task<AppointmentResponse> PatchStatusAsync(Guid id, PatchAppointmentStatusRequest request, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<AppointmentVitalsResponse> RecordVitalsAsync(Guid appointmentId, Guid recordedByUserId, RecordAppointmentVitalsRequest request, CancellationToken cancellationToken = default);
+    Task<AppointmentVitalsResponse?> GetVitalsAsync(Guid appointmentId, CancellationToken cancellationToken = default);
 }

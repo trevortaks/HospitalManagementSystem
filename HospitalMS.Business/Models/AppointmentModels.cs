@@ -20,6 +20,33 @@ public sealed record CancelAppointmentRequest(string? Reason);
 
 public sealed record PatchAppointmentStatusRequest(string Status);
 
+public sealed record RecordAppointmentVitalsRequest(
+    decimal? HeightCm = null,
+    decimal? WeightKg = null,
+    decimal? TemperatureCelsius = null,
+    int? BloodPressureSystolic = null,
+    int? BloodPressureDiastolic = null,
+    int? HeartRateBpm = null,
+    int? RespiratoryRate = null,
+    decimal? OxygenSaturationPct = null,
+    string? Notes = null);
+
+public sealed record AppointmentVitalsResponse(
+    Guid Id,
+    Guid AppointmentId,
+    Guid RecordedByUserId,
+    string RecordedByName,
+    DateTime RecordedAtUtc,
+    decimal? HeightCm,
+    decimal? WeightKg,
+    decimal? TemperatureCelsius,
+    int? BloodPressureSystolic,
+    int? BloodPressureDiastolic,
+    int? HeartRateBpm,
+    int? RespiratoryRate,
+    decimal? OxygenSaturationPct,
+    string? Notes);
+
 public sealed record AppointmentResponse(
     Guid Id,
     Guid PatientId,
@@ -35,4 +62,5 @@ public sealed record AppointmentResponse(
     string? Notes,
     string? CancelledReason,
     DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc);
+    DateTime? UpdatedAtUtc,
+    AppointmentVitalsResponse? PreConsultVitals = null);

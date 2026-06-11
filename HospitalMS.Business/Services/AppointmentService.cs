@@ -17,6 +17,7 @@ public sealed class AppointmentService(HospitalDbContext dbContext) : IAppointme
             .AsNoTracking()
             .Include(a => a.Patient)
             .Include(a => a.DoctorUser)
+            .Include(a => a.PreConsultVitals).ThenInclude(v => v!.RecordedByUser)
             .AsQueryable();
 
         if (patientId.HasValue)
@@ -39,6 +40,7 @@ public sealed class AppointmentService(HospitalDbContext dbContext) : IAppointme
             .AsNoTracking()
             .Include(a => a.Patient)
             .Include(a => a.DoctorUser)
+            .Include(a => a.PreConsultVitals).ThenInclude(v => v!.RecordedByUser)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
         return appointment is null ? null : ToResponse(appointment);
@@ -121,6 +123,87 @@ public sealed class AppointmentService(HospitalDbContext dbContext) : IAppointme
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<AppointmentVitalsResponse> RecordVitalsAsync(
+        Guid appointmentId, Guid recordedByUserId,
+        RecordAppointmentVitalsRequest request, CancellationToken cancellationToken = default)
+    {
+        var appointment = await dbContext.Appointments.FindAsync([appointmentId], cancellationToken)
+            ?? throw new KeyNotFoundException($"Appointment '{appointmentId}' was not found.");
+
+        var existing = await dbContext.AppointmentVitals
+            .FirstOrDefaultAsync(v => v.AppointmentId == appointmentId, cancellationToken);
+
+        if (existing is not null)
+        {
+            existing.HeightCm              = request.HeightCm ?? existing.HeightCm;
+            existing.WeightKg              = request.WeightKg ?? existing.WeightKg;
+            existing.TemperatureCelsius    = request.TemperatureCelsius ?? existing.TemperatureCelsius;
+            existing.BloodPressureSystolic = request.BloodPressureSystolic ?? existing.BloodPressureSystolic;
+            existing.BloodPressureDiastolic= request.BloodPressureDiastolic ?? existing.BloodPressureDiastolic;
+            existing.HeartRateBpm          = request.HeartRateBpm ?? existing.HeartRateBpm;
+            existing.RespiratoryRate       = request.RespiratoryRate ?? existing.RespiratoryRate;
+            existing.OxygenSaturationPct   = request.OxygenSaturationPct ?? existing.OxygenSaturationPct;
+            existing.Notes                 = request.Notes ?? existing.Notes;
+            existing.RecordedAtUtc         = DateTime.UtcNow;
+            existing.RecordedByUserId      = recordedByUserId;
+        }
+        else
+        {
+            existing = new AppointmentVitals
+            {
+                AppointmentId         = appointmentId,
+                RecordedByUserId      = recordedByUserId,
+                HeightCm              = request.HeightCm,
+                WeightKg              = request.WeightKg,
+                TemperatureCelsius    = request.TemperatureCelsius,
+                BloodPressureSystolic = request.BloodPressureSystolic,
+                BloodPressureDiastolic= request.BloodPressureDiastolic,
+                HeartRateBpm          = request.HeartRateBpm,
+                RespiratoryRate       = request.RespiratoryRate,
+                OxygenSaturationPct   = request.OxygenSaturationPct,
+                Notes                 = request.Notes
+            };
+            dbContext.AppointmentVitals.Add(existing);
+
+            if (appointment.Status == AppointmentStatus.Scheduled || appointment.Status == AppointmentStatus.Confirmed)
+            {
+                appointment.Status = AppointmentStatus.InProgress;
+                appointment.UpdatedAtUtc = DateTime.UtcNow;
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetVitalsResponseAsync(existing.Id, cancellationToken);
+    }
+
+    public async Task<AppointmentVitalsResponse?> GetVitalsAsync(Guid appointmentId, CancellationToken cancellationToken = default)
+    {
+        var vitals = await dbContext.AppointmentVitals
+            .AsNoTracking()
+            .Include(v => v.RecordedByUser)
+            .FirstOrDefaultAsync(v => v.AppointmentId == appointmentId, cancellationToken);
+
+        return vitals is null ? null : ToVitalsResponse(vitals);
+    }
+
+    private async Task<AppointmentVitalsResponse> GetVitalsResponseAsync(Guid vitalsId, CancellationToken ct)
+    {
+        var vitals = await dbContext.AppointmentVitals
+            .AsNoTracking()
+            .Include(v => v.RecordedByUser)
+            .FirstAsync(v => v.Id == vitalsId, ct);
+        return ToVitalsResponse(vitals);
+    }
+
+    private static AppointmentVitalsResponse ToVitalsResponse(AppointmentVitals v) => new(
+        v.Id, v.AppointmentId, v.RecordedByUserId,
+        v.RecordedByUser?.Username ?? string.Empty,
+        v.RecordedAtUtc,
+        v.HeightCm, v.WeightKg, v.TemperatureCelsius,
+        v.BloodPressureSystolic, v.BloodPressureDiastolic,
+        v.HeartRateBpm, v.RespiratoryRate, v.OxygenSaturationPct, v.Notes);
+
     private static AppointmentResponse ToResponse(Appointment a) => new(
         a.Id,
         a.PatientId,
@@ -136,5 +219,6 @@ public sealed class AppointmentService(HospitalDbContext dbContext) : IAppointme
         a.Notes,
         a.CancelledReason,
         a.CreatedAtUtc,
-        a.UpdatedAtUtc);
+        a.UpdatedAtUtc,
+        a.PreConsultVitals is null ? null : ToVitalsResponse(a.PreConsultVitals));
 }

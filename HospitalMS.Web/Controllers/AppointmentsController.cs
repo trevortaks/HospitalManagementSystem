@@ -102,6 +102,15 @@ public sealed class AppointmentsController(IHttpClientFactory httpClientFactory)
         return RedirectToAction("Index");
     }
 
+    [HttpPost("{id:guid}/vitals")]
+    public async Task<IActionResult> RecordVitals(Guid id, [FromForm] RecordAppointmentVitalsRequest request, CancellationToken cancellationToken)
+    {
+        var client = CreateAuthorizedClient();
+        await client.PostAsJsonAsync($"/api/appointments/{id}/vitals", request, cancellationToken);
+        var returnUrl = Request.Form["returnUrl"].FirstOrDefault();
+        return Redirect(string.IsNullOrEmpty(returnUrl) ? "/appointments" : returnUrl);
+    }
+
     [HttpPost("{id:guid}/cancel")]
     public async Task<IActionResult> Cancel(Guid id, string? reason, CancellationToken cancellationToken)
     {

@@ -120,6 +120,7 @@ public sealed class UserService(
             Token: token,
             Username: user.Username,
             Role: user.Role,
-            ExpiresAt: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes));
+            ExpiresAt: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+            UserId: user.Id);
     }
 }

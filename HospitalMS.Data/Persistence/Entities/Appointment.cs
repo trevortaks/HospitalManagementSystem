@@ -17,6 +17,7 @@ public sealed class Appointment
 
     public Patient Patient { get; set; } = null!;
     public User DoctorUser { get; set; } = null!;
+    public AppointmentVitals? PreConsultVitals { get; set; }
 }
 
 public static class AppointmentStatus

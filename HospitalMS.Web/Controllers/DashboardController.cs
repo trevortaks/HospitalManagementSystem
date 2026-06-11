@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
+using HospitalMS.Common.Constants;
+using HospitalMS.Data.Persistence.Entities;
 using HospitalMS.Web.Filters;
 using HospitalMS.Web.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -15,33 +17,130 @@ public sealed class DashboardController(IHttpClientFactory httpClientFactory) : 
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
+        var role   = HttpContext.Session.GetString("role") ?? string.Empty;
+        var userId = HttpContext.Session.GetString("userId") ?? string.Empty;
+
+        ViewData["Title"]      = "Dashboard";
+        ViewData["ActivePage"] = "Dashboard";
+
+        return role switch
+        {
+            UserRoles.Doctor => await DoctorDashboard(userId, cancellationToken),
+            UserRoles.Nurse  => await NurseDashboard(cancellationToken),
+            _                => await AdminDashboard(cancellationToken)
+        };
+    }
+
+    // ── Admin / HR Manager / default ────────────────────────────────────────
+
+    private async Task<IActionResult> AdminDashboard(CancellationToken ct)
+    {
         var client = CreateAuthorizedClient();
 
-        var patients = await client.GetFromJsonAsync<IReadOnlyList<PatientResponse>>(
-            "/api/patients", cancellationToken) ?? [];
+        var patientsTask = client.GetFromJsonAsync<IReadOnlyList<PatientResponse>>("/api/patients", ct);
+        var usersTask    = client.GetFromJsonAsync<IReadOnlyList<UserSummary>>("/api/users", ct);
+        var summaryTask  = client.GetFromJsonAsync<DashboardSummary>("/api/analytics/dashboard", ct);
+        var hrTask       = client.GetFromJsonAsync<HRSummary>("/api/hr/summary", ct);
 
-        IReadOnlyList<UserSummary> staff = [];
-        var usersResponse = await client.GetAsync("/api/users", cancellationToken);
-        if (usersResponse.IsSuccessStatusCode)
-            staff = await usersResponse.Content.ReadFromJsonAsync<IReadOnlyList<UserSummary>>(cancellationToken) ?? [];
+        await Task.WhenAll(patientsTask, usersTask, summaryTask, hrTask);
+
+        var patients = await patientsTask ?? [];
+        var staff    = await usersTask    ?? [];
 
         var vm = new DashboardViewModel
         {
-            TotalPatients = patients.Count,
-            TotalDoctors = staff.Count(u => u.Role == "Doctor"),
-            TotalNurses = staff.Count(u => u.Role == "Nurse"),
-            TotalStaff = staff.Count,
+            TotalPatients  = patients.Count,
+            TotalDoctors   = staff.Count(u => u.Role == UserRoles.Doctor),
+            TotalNurses    = staff.Count(u => u.Role == UserRoles.Nurse),
+            TotalStaff     = staff.Count,
             RecentPatients = [.. patients.OrderByDescending(p => p.CreatedAtUtc).Take(6)],
-            RecentStaff = [.. staff.Take(6)]
+            RecentStaff    = [.. staff.Take(8)],
+            Summary        = await summaryTask,
+            HRSummary      = await hrTask
         };
 
-        return View(vm);
+        return View("AdminIndex", vm);
+    }
+
+    // ── Doctor ──────────────────────────────────────────────────────────────
+
+    private async Task<IActionResult> DoctorDashboard(string userId, CancellationToken ct)
+    {
+        if (!Guid.TryParse(userId, out var doctorId))
+            return await AdminDashboard(ct);
+
+        var client = CreateAuthorizedClient();
+        var today  = DateTime.UtcNow.Date;
+
+        var staffTask      = client.GetFromJsonAsync<UserSummary>($"/api/users/{doctorId}", ct);
+        var appointTask    = client.GetFromJsonAsync<IReadOnlyList<AppointmentResponse>>($"/api/appointments?doctorUserId={doctorId}", ct);
+        var encountersTask = client.GetFromJsonAsync<IReadOnlyList<EncounterResponse>>($"/api/encounters?attendingDoctorId={doctorId}&isClosed=false", ct);
+
+        await Task.WhenAll(staffTask, appointTask, encountersTask);
+
+        var allAppts   = await appointTask    ?? [];
+        var encounters = await encountersTask ?? [];
+
+        var todayAppts = allAppts
+            .Where(a => a.ScheduledAtUtc.Date == today
+                     && a.Status != AppointmentStatus.Cancelled
+                     && a.Status != AppointmentStatus.NoShow)
+            .OrderBy(a => a.ScheduledAtUtc)
+            .ToList();
+
+        var completedToday = allAppts.Count(a =>
+            a.ScheduledAtUtc.Date == today && a.Status == AppointmentStatus.Completed);
+
+        var allEncounters = await client.GetFromJsonAsync<IReadOnlyList<EncounterResponse>>(
+            $"/api/encounters?attendingDoctorId={doctorId}", ct) ?? [];
+
+        var vm = new DoctorDashboardViewModel
+        {
+            Doctor            = await staffTask ?? new UserSummary(doctorId, userId, string.Empty, UserRoles.Doctor, true, DateTime.UtcNow),
+            TodayAppointments = todayAppts,
+            OpenEncounters    = encounters,
+            TotalPatientsSeen = allEncounters.Select(e => e.PatientId).Distinct().Count(),
+            CompletedToday    = completedToday
+        };
+
+        return View("DoctorIndex", vm);
+    }
+
+    // ── Nurse ────────────────────────────────────────────────────────────────
+
+    private async Task<IActionResult> NurseDashboard(CancellationToken ct)
+    {
+        var client = CreateAuthorizedClient();
+        var today  = DateTime.UtcNow.Date;
+
+        var appointments = await client.GetFromJsonAsync<IReadOnlyList<AppointmentResponse>>(
+            "/api/appointments", ct) ?? [];
+
+        var queue = appointments
+            .Where(a => a.ScheduledAtUtc.Date == today
+                     && a.Status != AppointmentStatus.Cancelled
+                     && a.Status != AppointmentStatus.NoShow
+                     && a.Status != AppointmentStatus.Completed)
+            .OrderBy(a => a.ScheduledAtUtc)
+            .ToList();
+
+        var vitalsRecorded = appointments.Count(a =>
+            a.ScheduledAtUtc.Date == today && a.PreConsultVitals is not null);
+
+        var vm = new NurseDashboardViewModel
+        {
+            TriageQueue        = queue,
+            VitalsRecordedToday = vitalsRecorded,
+            PendingTriage      = queue.Count(a => a.PreConsultVitals is null)
+        };
+
+        return View("NurseIndex", vm);
     }
 
     private HttpClient CreateAuthorizedClient()
     {
         var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
+        var token  = HttpContext.Session.GetString(TokenSessionKey);
         if (!string.IsNullOrEmpty(token))
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;

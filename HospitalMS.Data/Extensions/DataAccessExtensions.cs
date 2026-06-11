@@ -943,6 +943,36 @@ public static class DataAccessExtensions
         INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
         VALUES ('20260610120000_AddExtendedProfileFields', '10.0.8')
         ON CONFLICT ("MigrationId") DO NOTHING
+        """,
+
+        """
+        CREATE TABLE IF NOT EXISTS "AppointmentVitals" (
+            "Id" uuid NOT NULL DEFAULT gen_random_uuid(),
+            "AppointmentId" uuid NOT NULL,
+            "RecordedByUserId" uuid NOT NULL,
+            "RecordedAtUtc" timestamp with time zone NOT NULL DEFAULT now(),
+            "HeightCm" numeric(5,2),
+            "WeightKg" numeric(6,2),
+            "TemperatureCelsius" numeric(4,1),
+            "BloodPressureSystolic" integer,
+            "BloodPressureDiastolic" integer,
+            "HeartRateBpm" integer,
+            "RespiratoryRate" integer,
+            "OxygenSaturationPct" numeric(5,2),
+            "Notes" character varying(1000),
+            CONSTRAINT "PK_AppointmentVitals" PRIMARY KEY ("Id"),
+            CONSTRAINT "FK_AppointmentVitals_Appointments_AppointmentId"
+                FOREIGN KEY ("AppointmentId") REFERENCES "Appointments"("Id") ON DELETE CASCADE,
+            CONSTRAINT "FK_AppointmentVitals_Users_RecordedByUserId"
+                FOREIGN KEY ("RecordedByUserId") REFERENCES "Users"("Id") ON DELETE RESTRICT
+        )
+        """,
+        """CREATE UNIQUE INDEX IF NOT EXISTS "IX_AppointmentVitals_AppointmentId" ON "AppointmentVitals" ("AppointmentId")""",
+
+        """
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260611100000_AddAppointmentVitals', '10.0.8')
+        ON CONFLICT ("MigrationId") DO NOTHING
         """
     ];
 }

@@ -1,0 +1,197 @@
+@model HospitalMS.Web.Models.DoctorDashboardViewModel
+@{
+    ViewData["Title"]      = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+
+    var s = Model.Doctor;
+    var displayName = (!string.IsNullOrWhiteSpace(s.FirstName) || !string.IsNullOrWhiteSpace(s.LastName))
+        ? $"Dr. {s.FirstName} {s.LastName}".Trim()
+        : $"Dr. {s.Username}";
+
+    string ApptStatusColor(string st) => st switch
+    {
+        "Completed"  => "bg-success",
+        "Cancelled"  => "bg-danger",
+        "NoShow"     => "bg-warning text-dark",
+        "InProgress" => "bg-primary",
+        _            => "bg-secondary"
+    };
+
+    string VitalsIndicator(HospitalMS.Business.Models.AppointmentVitalsResponse? v)
+    {
+        if (v is null) return "<span class=\"badge bg-warning text-dark\" style=\"font-size:.7rem\">No vitals</span>";
+        var parts = new List<string>();
+        if (v.BloodPressureSystolic.HasValue) parts.Add($"{v.BloodPressureSystolic}/{v.BloodPressureDiastolic}");
+        if (v.TemperatureCelsius.HasValue) parts.Add($"{v.TemperatureCelsius:0.0}°C");
+        if (v.HeartRateBpm.HasValue) parts.Add($"{v.HeartRateBpm} bpm");
+        return parts.Any()
+            ? $"<span class=\"badge bg-success bg-opacity-15 text-success\" style=\"font-size:.7rem\">{string.Join(" · ", parts)}</span>"
+            : "<span class=\"badge bg-success\" style=\"font-size:.7rem\">Recorded</span>";
+    }
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-header-title">Good @(DateTime.UtcNow.Hour < 12 ? "Morning" : DateTime.UtcNow.Hour < 17 ? "Afternoon" : "Evening"), @displayName</h1>
+        <div class="page-header-subtitle">@DateTime.UtcNow.ToString("dddd, MMMM d, yyyy")</div>
+    </div>
+    <a asp-controller="Appointments" asp-action="Create" class="btn btn-sm"
+       style="background:linear-gradient(135deg,#2e37a4,#0e9fd4);color:white;border:none;border-radius:8px;padding:.5rem 1rem;font-weight:600;font-size:.85rem">
+        + New Appointment
+    </a>
+</div>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">@Model.TodayAppointments.Count</div>
+                <div class="stat-label">Today's Appointments</div>
+                <div class="stat-sub text-muted">@Model.CompletedToday completed</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--orange">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">@Model.OpenEncounters.Count</div>
+                <div class="stat-label">Open Encounters</div>
+                <div class="stat-sub text-warning">Awaiting closure</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--teal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                </svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">@Model.TotalPatientsSeen</div>
+                <div class="stat-label">Patients Seen</div>
+                <div class="stat-sub text-muted">Total unique</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--green">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">@Model.TodayAppointments.Count(a => a.PreConsultVitals is not null)</div>
+                <div class="stat-label">Vitals Recorded</div>
+                <div class="stat-sub text-muted">Triage complete</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Today's schedule -->
+    <div class="col-lg-8">
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h2 class="dash-card-title">Today's Schedule</h2>
+                <a asp-controller="Appointments" asp-action="Index" class="dash-card-action">All appointments</a>
+            </div>
+            @if (!Model.TodayAppointments.Any())
+            {
+                <div class="dash-empty">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <p>No appointments scheduled for today.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="dash-table">
+                        <thead>
+                            <tr><th>Time</th><th>Patient</th><th>Type</th><th>Pre-Consult Vitals</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.TodayAppointments)
+                            {
+                                <tr>
+                                    <td class="fw-semibold" style="white-space:nowrap">@a.ScheduledAtUtc.ToString("HH:mm")</td>
+                                    <td>
+                                        <a asp-controller="Patients" asp-action="Details" asp-route-id="@a.PatientId"
+                                           class="fw-semibold text-decoration-none">@a.PatientName</a>
+                                        <div class="text-muted" style="font-size:.78rem">@a.PatientMrn</div>
+                                    </td>
+                                    <td class="text-muted small">@a.Type</td>
+                                    <td>@Html.Raw(VitalsIndicator(a.PreConsultVitals))</td>
+                                    <td><span class="badge @ApptStatusColor(a.Status)" style="font-size:.72rem">@a.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Open encounters -->
+    <div class="col-lg-4">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <h2 class="dash-card-title">Open Encounters</h2>
+                <a asp-controller="Encounters" asp-action="Index" class="dash-card-action">View all</a>
+            </div>
+            @if (!Model.OpenEncounters.Any())
+            {
+                <div class="dash-empty py-3">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    <p class="small">No open encounters.</p>
+                </div>
+            }
+            else
+            {
+                <div class="px-3 pb-2">
+                    @foreach (var e in Model.OpenEncounters.Take(6))
+                    {
+                        <div class="d-flex align-items-center gap-2 py-2 border-bottom">
+                            <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0"></div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="fw-semibold small text-truncate">@e.PatientName</div>
+                                <div class="text-muted" style="font-size:.75rem">@e.EncounterType · @e.StartedAtUtc.ToString("HH:mm")</div>
+                            </div>
+                            <a asp-controller="Encounters" asp-action="Details" asp-route-id="@e.Id"
+                               class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.72rem">Open</a>
+                        </div>
+                    }
+                    @if (Model.OpenEncounters.Count > 6)
+                    {
+                        <div class="text-center pt-2">
+                            <a asp-controller="Encounters" asp-action="Index" class="small text-muted">
+                                +@(Model.OpenEncounters.Count - 6) more
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+</div>

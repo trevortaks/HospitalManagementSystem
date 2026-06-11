@@ -27,6 +27,7 @@ public sealed class AuthController(IHttpClientFactory httpClientFactory) : Contr
         HttpContext.Session.SetString(TokenSessionKey, auth!.Token);
         HttpContext.Session.SetString("username", auth.Username);
         HttpContext.Session.SetString("role", auth.Role);
+        HttpContext.Session.SetString("userId", auth.UserId.ToString());
 
         return RedirectToAction("Index", "Dashboard");
     }

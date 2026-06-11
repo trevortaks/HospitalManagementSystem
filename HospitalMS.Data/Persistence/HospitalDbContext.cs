@@ -25,6 +25,7 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<AppointmentVitals> AppointmentVitals => Set<AppointmentVitals>();
     public DbSet<ClinicalEncounter> ClinicalEncounters => Set<ClinicalEncounter>();
     public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
     public DbSet<VitalSigns> VitalSigns => Set<VitalSigns>();
@@ -141,6 +142,28 @@ public class HospitalDbContext(DbContextOptions<HospitalDbContext> options) : Db
             entity.HasIndex(a => a.PatientId);
             entity.HasIndex(a => a.DoctorUserId);
             entity.HasIndex(a => a.ScheduledAtUtc);
+        });
+
+        modelBuilder.Entity<AppointmentVitals>(entity =>
+        {
+            entity.HasKey(v => v.Id);
+            entity.Property(v => v.HeightCm).HasColumnType("numeric(5,2)");
+            entity.Property(v => v.WeightKg).HasColumnType("numeric(6,2)");
+            entity.Property(v => v.TemperatureCelsius).HasColumnType("numeric(4,1)");
+            entity.Property(v => v.OxygenSaturationPct).HasColumnType("numeric(5,2)");
+            entity.Property(v => v.Notes).HasMaxLength(1000);
+
+            entity.HasOne(v => v.Appointment)
+                .WithOne(a => a.PreConsultVitals)
+                .HasForeignKey<AppointmentVitals>(v => v.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(v => v.RecordedByUser)
+                .WithMany()
+                .HasForeignKey(v => v.RecordedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(v => v.AppointmentId).IsUnique();
         });
 
         modelBuilder.Entity<ClinicalEncounter>(entity =>
