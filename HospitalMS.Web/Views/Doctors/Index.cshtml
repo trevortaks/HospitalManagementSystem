@@ -74,7 +74,7 @@
                     {
                         <tr class="@(doc.IsActive ? "" : "table-secondary opacity-75")">
                             <td>
-                                <div class="fw-semibold">@doc.Username</div>
+                                <a asp-action="Details" asp-route-id="@doc.Id" class="fw-semibold text-decoration-none">@doc.Username</a>
                                 @if (!string.IsNullOrWhiteSpace(doc.FirstName) || !string.IsNullOrWhiteSpace(doc.LastName))
                                 {
                                     <div class="small text-muted">@doc.FirstName @doc.LastName</div>
@@ -105,8 +105,10 @@
                             <td class="small text-muted">@doc.CreatedAtUtc.ToString("dd MMM yyyy")</td>
                             <td class="text-end">
                                 <div class="d-flex gap-2 justify-content-end">
+                                    <a asp-action="Details" asp-route-id="@doc.Id"
+                                       class="btn btn-sm btn-outline-secondary">View</a>
                                     <a asp-action="Edit" asp-route-id="@doc.Id"
-                                       class="btn btn-sm btn-outline-primary">Edit Profile</a>
+                                       class="btn btn-sm btn-outline-primary">Edit</a>
                                     <form asp-action="Toggle" asp-route-id="@doc.Id" method="post">
                                         <button type="submit"
                                                 class="btn btn-sm @(doc.IsActive ? "btn-outline-secondary" : "btn-outline-success")">

@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Common.Constants;
 using HospitalMS.Web.Filters;
+using HospitalMS.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalMS.Web.Controllers;
@@ -22,6 +23,39 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
         ViewData["Title"]      = "Doctors";
         ViewData["ActivePage"] = "Doctors";
         return View(doctors);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+    {
+        var client = CreateAuthorizedClient();
+
+        var staffTask       = client.GetFromJsonAsync<UserSummary>($"/api/users/{id}", ct);
+        var appointmentsTask= client.GetFromJsonAsync<IReadOnlyList<AppointmentResponse>>($"/api/appointments?doctorUserId={id}", ct);
+        var encountersTask  = client.GetFromJsonAsync<IReadOnlyList<EncounterResponse>>($"/api/encounters?attendingDoctorId={id}", ct);
+        var employeesTask   = client.GetFromJsonAsync<IReadOnlyList<EmployeeRecordResponse>>($"/api/hr/employees?userId={id}", ct);
+
+        await Task.WhenAll(staffTask, appointmentsTask, encountersTask, employeesTask);
+
+        var staff = await staffTask;
+        if (staff is null) return NotFound();
+
+        var employeeRecord = (await employeesTask ?? []).FirstOrDefault();
+
+        IReadOnlyList<LeaveRequestResponse> leaveRequests = [];
+        if (employeeRecord is not null)
+            leaveRequests = await client.GetFromJsonAsync<IReadOnlyList<LeaveRequestResponse>>(
+                $"/api/hr/leave-requests?employeeRecordId={employeeRecord.Id}", ct) ?? [];
+
+        ViewData["ActivePage"] = "Doctors";
+        return View(new StaffDetailViewModel
+        {
+            Staff          = staff,
+            EmployeeRecord = employeeRecord,
+            Appointments   = await appointmentsTask ?? [],
+            Encounters     = await encountersTask ?? [],
+            LeaveRequests  = leaveRequests
+        });
     }
 
     [HttpPost("create")]

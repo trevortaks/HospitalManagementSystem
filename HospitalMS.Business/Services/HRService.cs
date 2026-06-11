@@ -83,7 +83,7 @@ public sealed class HRService(HospitalDbContext dbContext) : IHRService
     }
 
     public async Task<IReadOnlyList<EmployeeRecordResponse>> GetEmployeesAsync(
-        string? status = null, Guid? departmentId = null, CancellationToken ct = default)
+        string? status = null, Guid? departmentId = null, Guid? userId = null, CancellationToken ct = default)
     {
         var query = dbContext.EmployeeRecords
             .Include(e => e.User)
@@ -95,6 +95,8 @@ public sealed class HRService(HospitalDbContext dbContext) : IHRService
             query = query.Where(e => e.Status == status);
         if (departmentId.HasValue)
             query = query.Where(e => e.DepartmentId == departmentId.Value);
+        if (userId.HasValue)
+            query = query.Where(e => e.UserId == userId.Value);
 
         var list = await query.OrderBy(e => e.EmployeeNumber).ToListAsync(ct);
         return list.Select(ToEmpResponse).ToArray();

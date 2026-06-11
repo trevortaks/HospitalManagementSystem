@@ -9,7 +9,7 @@ public interface IHRService
     Task<DepartmentResponse> ToggleDepartmentActiveAsync(Guid id, CancellationToken ct = default);
 
     Task<EmployeeRecordResponse> CreateEmployeeRecordAsync(CreateEmployeeRecordRequest request, CancellationToken ct = default);
-    Task<IReadOnlyList<EmployeeRecordResponse>> GetEmployeesAsync(string? status = null, Guid? departmentId = null, CancellationToken ct = default);
+    Task<IReadOnlyList<EmployeeRecordResponse>> GetEmployeesAsync(string? status = null, Guid? departmentId = null, Guid? userId = null, CancellationToken ct = default);
     Task<EmployeeRecordResponse> GetEmployeeByIdAsync(Guid id, CancellationToken ct = default);
     Task<EmployeeRecordResponse> UpdateEmployeeStatusAsync(Guid id, UpdateEmployeeStatusRequest request, CancellationToken ct = default);
 

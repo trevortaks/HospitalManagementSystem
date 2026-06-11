@@ -10,6 +10,7 @@ public sealed class EncounterService(HospitalDbContext dbContext) : IEncounterSe
     public async Task<IReadOnlyList<EncounterResponse>> GetAllAsync(
         Guid? patientId = null,
         bool? isClosed = null,
+        Guid? attendingDoctorId = null,
         CancellationToken cancellationToken = default)
     {
         var query = dbContext.ClinicalEncounters
@@ -24,6 +25,8 @@ public sealed class EncounterService(HospitalDbContext dbContext) : IEncounterSe
             query = query.Where(e => e.PatientId == patientId.Value);
         if (isClosed.HasValue)
             query = query.Where(e => e.IsClosed == isClosed.Value);
+        if (attendingDoctorId.HasValue)
+            query = query.Where(e => e.AttendingDoctorId == attendingDoctorId.Value);
 
         var encounters = await query
             .OrderByDescending(e => e.StartedAtUtc)

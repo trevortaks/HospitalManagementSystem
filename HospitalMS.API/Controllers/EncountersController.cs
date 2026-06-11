@@ -16,9 +16,10 @@ public sealed class EncountersController(IEncounterService encounterService) : C
     public async Task<IActionResult> GetAll(
         [FromQuery] Guid? patientId,
         [FromQuery] bool? isClosed,
+        [FromQuery] Guid? attendingDoctorId,
         CancellationToken cancellationToken)
     {
-        var encounters = await encounterService.GetAllAsync(patientId, isClosed, cancellationToken);
+        var encounters = await encounterService.GetAllAsync(patientId, isClosed, attendingDoctorId, cancellationToken);
         return Ok(encounters);
     }
 

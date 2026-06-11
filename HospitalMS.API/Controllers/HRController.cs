@@ -40,8 +40,8 @@ public sealed class HRController(IHRService hrService) : ControllerBase
 
     [HttpGet("employees")]
     public async Task<IActionResult> GetEmployees(
-        [FromQuery] string? status, [FromQuery] Guid? departmentId, CancellationToken ct)
-        => Ok(await hrService.GetEmployeesAsync(status, departmentId, ct));
+        [FromQuery] string? status, [FromQuery] Guid? departmentId, [FromQuery] Guid? userId, CancellationToken ct)
+        => Ok(await hrService.GetEmployeesAsync(status, departmentId, userId, ct));
 
     [HttpGet("employees/{id:guid}")]
     public async Task<IActionResult> GetEmployee(Guid id, CancellationToken ct)

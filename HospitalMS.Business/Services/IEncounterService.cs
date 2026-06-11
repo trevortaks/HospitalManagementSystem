@@ -4,7 +4,7 @@ namespace HospitalMS.Business.Services;
 
 public interface IEncounterService
 {
-    Task<IReadOnlyList<EncounterResponse>> GetAllAsync(Guid? patientId = null, bool? isClosed = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<EncounterResponse>> GetAllAsync(Guid? patientId = null, bool? isClosed = null, Guid? attendingDoctorId = null, CancellationToken cancellationToken = default);
     Task<EncounterResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<EncounterResponse> CreateAsync(CreateEncounterRequest request, CancellationToken cancellationToken = default);
     Task<EncounterResponse> UpdateAsync(Guid id, UpdateEncounterRequest request, CancellationToken cancellationToken = default);
