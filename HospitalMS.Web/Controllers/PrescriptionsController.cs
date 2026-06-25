@@ -82,6 +82,7 @@ public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory
             return View(request);
         }
 
+        TempData["SuccessMessage"] = "Prescription created.";
         return RedirectToAction(nameof(Index), new { patientId = request.PatientId });
     }
 
@@ -91,6 +92,7 @@ public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory
         var client = CreateAuthorizedClient();
         var request = new DispensePrescriptionRequest(QuantityDispensed, DispensedByUserId);
         await client.PatchAsJsonAsync($"/api/prescriptions/{id}/dispense", request, cancellationToken);
+        TempData["SuccessMessage"] = "Prescription dispensed.";
         return RedirectToAction(nameof(Queue));
     }
 

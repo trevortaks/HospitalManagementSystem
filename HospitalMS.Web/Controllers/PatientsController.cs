@@ -68,6 +68,7 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
             return View(request);
         }
 
+        TempData["SuccessMessage"] = "Patient record created.";
         return RedirectToAction("Index");
     }
 
@@ -103,6 +104,7 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
             return View(request);
         }
 
+        TempData["SuccessMessage"] = "Patient record updated.";
         return RedirectToAction("Index");
     }
 
@@ -111,6 +113,7 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
     {
         var client = CreateAuthorizedClient();
         await client.DeleteAsync($"/api/patients/{id}", cancellationToken);
+        TempData["SuccessMessage"] = "Patient record deleted.";
         return RedirectToAction("Index");
     }
 

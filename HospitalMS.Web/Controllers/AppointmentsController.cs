@@ -57,6 +57,7 @@ public sealed class AppointmentsController(IHttpClientFactory httpClientFactory)
             return View(request);
         }
 
+        TempData["SuccessMessage"] = "Appointment scheduled.";
         return RedirectToAction("Index");
     }
 
@@ -99,6 +100,7 @@ public sealed class AppointmentsController(IHttpClientFactory httpClientFactory)
             return View(request);
         }
 
+        TempData["SuccessMessage"] = "Appointment updated.";
         return RedirectToAction("Index");
     }
 
@@ -117,6 +119,7 @@ public sealed class AppointmentsController(IHttpClientFactory httpClientFactory)
         var client = CreateAuthorizedClient();
         await client.PatchAsJsonAsync($"/api/appointments/{id}/cancel",
             new CancelAppointmentRequest(reason), cancellationToken);
+        TempData["SuccessMessage"] = "Appointment cancelled.";
         return RedirectToAction("Index");
     }
 

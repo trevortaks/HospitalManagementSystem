@@ -3,6 +3,35 @@
     var username = Context.Session.GetString("username") ?? "User";
     var role = Context.Session.GetString("role") ?? "";
     var initials = username.Length >= 2 ? username[..2].ToUpper() : username.ToUpper();
+
+    // Mirrors the RoleBasedAuth rules on the API controllers
+    bool Can(params string[] roles) => roles.Contains(role);
+
+    var canPatients      = Can("Admin", "Doctor", "Nurse", "Receptionist");
+    var canStaffAdmin    = Can("Admin");
+    var canAppointments  = Can("Admin", "Doctor", "Nurse", "Receptionist");
+    var canEncounters    = Can("Admin", "Doctor", "Nurse");
+    var canMedications   = Can("Admin", "Doctor", "Nurse", "Pharmacist");
+    var canPrescriptions = Can("Admin", "Doctor", "Pharmacist");
+    var canLab           = Can("Admin", "Doctor", "Nurse", "LabTechnician");
+    var canImaging       = Can("Admin", "Doctor", "Nurse", "Radiologist");
+    var canInvoices      = Can("Admin", "AccountsManager", "Doctor", "Receptionist");
+    var canChargeItems   = Can("Admin", "AccountsManager");
+    var canInsurance     = Can("Admin", "AccountsManager");
+    var canBeds          = Can("Admin", "Nurse", "Doctor", "Receptionist");
+    var canInventory     = Can("Admin", "Pharmacist", "Nurse");
+    var canSupplyChain   = Can("Admin", "Pharmacist", "AccountsManager");
+    var canFacilities    = Can("Admin", "Nurse", "Doctor");
+    var canQuality       = Can("Admin", "Doctor", "Nurse");
+    var canHR            = Can("Admin", "HRManager");
+    var canAudit         = Can("Admin");
+    var canPredictive    = Can("Admin", "Doctor");
+    var canReports       = Can("Admin", "Doctor", "AccountsManager");
+
+    var showClinic   = canPatients || canStaffAdmin || canAppointments || canEncounters || canMedications || canPrescriptions || canLab || canImaging;
+    var showFinance  = canInvoices || canChargeItems || canInsurance;
+    var showFacility = canBeds || canInventory || canSupplyChain || canFacilities || canQuality;
+    var showAdmin    = canAudit || canPredictive || canReports;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -49,9 +78,13 @@
             </div>
 
             <!-- Clinic -->
+            @if (showClinic)
+            {
             <div class="sidebar-group">
                 <div class="sidebar-group-label">Clinic</div>
 
+                @if (canPatients)
+                {
                 <a asp-controller="Patients" asp-action="Index"
                    class="sidebar-link @(activePage == "Patients" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -62,7 +95,10 @@
                     </svg>
                     <span class="sidebar-link-text">Patients</span>
                 </a>
+                }
 
+                @if (canStaffAdmin)
+                {
                 <a asp-controller="Doctors" asp-action="Index"
                    class="sidebar-link @(activePage == "Doctors" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -80,7 +116,10 @@
                     </svg>
                     <span class="sidebar-link-text">Nurses</span>
                 </a>
+                }
 
+                @if (canAppointments)
+                {
                 <a asp-controller="Appointments" asp-action="Index"
                    class="sidebar-link @(activePage == "Appointments" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -90,7 +129,10 @@
                     </svg>
                     <span class="sidebar-link-text">Appointments</span>
                 </a>
+                }
 
+                @if (canEncounters)
+                {
                 <a asp-controller="Encounters" asp-action="Index"
                    class="sidebar-link @(activePage == "Encounters" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -98,7 +140,10 @@
                     </svg>
                     <span class="sidebar-link-text">Encounters</span>
                 </a>
+                }
 
+                @if (canMedications)
+                {
                 <a asp-controller="Medications" asp-action="Index"
                    class="sidebar-link @(activePage == "Medications" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -106,7 +151,10 @@
                     </svg>
                     <span class="sidebar-link-text">Medications</span>
                 </a>
+                }
 
+                @if (canPrescriptions)
+                {
                 <a asp-controller="Prescriptions" asp-action="Index"
                    class="sidebar-link @(activePage == "Prescriptions" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -117,7 +165,10 @@
                     </svg>
                     <span class="sidebar-link-text">Prescriptions</span>
                 </a>
+                }
 
+                @if (canLab)
+                {
                 <a asp-controller="Lab" asp-action="Orders"
                    class="sidebar-link @(activePage == "Lab" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -126,7 +177,10 @@
                     </svg>
                     <span class="sidebar-link-text">Lab Orders</span>
                 </a>
+                }
 
+                @if (canImaging)
+                {
                 <a asp-controller="Imaging" asp-action="Index"
                    class="sidebar-link @(activePage == "Imaging" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -136,7 +190,9 @@
                     </svg>
                     <span class="sidebar-link-text">Imaging</span>
                 </a>
+                }
             </div>
+            }
 
             <!-- My Health (Patient self-service) -->
             @if (role == "Patient")
@@ -185,9 +241,13 @@
             }
 
             <!-- Finance -->
+            @if (showFinance)
+            {
             <div class="sidebar-group">
                 <div class="sidebar-group-label">Finance</div>
 
+                @if (canInvoices)
+                {
                 <a asp-controller="Billing" asp-action="Invoices"
                    class="sidebar-link @(activePage == "Billing" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -197,7 +257,10 @@
                     </svg>
                     <span class="sidebar-link-text">Invoices</span>
                 </a>
+                }
 
+                @if (canChargeItems)
+                {
                 <a asp-controller="Billing" asp-action="ChargeItems"
                    class="sidebar-link @(activePage == "Billing" && ViewData["Title"]?.ToString() == "Charge Items" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -206,7 +269,10 @@
                     </svg>
                     <span class="sidebar-link-text">Charge Items</span>
                 </a>
+                }
 
+                @if (canInsurance)
+                {
                 <a asp-controller="InsuranceWeb" asp-action="Providers"
                    class="sidebar-link @(activePage == "Insurance" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -214,12 +280,18 @@
                     </svg>
                     <span class="sidebar-link-text">Insurance</span>
                 </a>
+                }
             </div>
+            }
 
             <!-- Facility -->
+            @if (showFacility)
+            {
             <div class="sidebar-group">
                 <div class="sidebar-group-label">Facility</div>
 
+                @if (canBeds)
+                {
                 <a asp-controller="BedManagement" asp-action="Wards"
                    class="sidebar-link @(activePage == "Beds" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -228,7 +300,10 @@
                     </svg>
                     <span class="sidebar-link-text">Wards &amp; Beds</span>
                 </a>
+                }
 
+                @if (canInventory)
+                {
                 <a asp-controller="Inventory" asp-action="Items"
                    class="sidebar-link @(activePage == "Inventory" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -239,7 +314,10 @@
                     </svg>
                     <span class="sidebar-link-text">Inventory</span>
                 </a>
+                }
 
+                @if (canSupplyChain)
+                {
                 <a asp-controller="SupplyChain" asp-action="Suppliers"
                    class="sidebar-link @(activePage == "SupplyChain" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -248,7 +326,10 @@
                     </svg>
                     <span class="sidebar-link-text">Supply Chain</span>
                 </a>
+                }
 
+                @if (canFacilities)
+                {
                 <a asp-controller="Facilities" asp-action="Rooms"
                    class="sidebar-link @(activePage == "Facilities" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -257,7 +338,10 @@
                     </svg>
                     <span class="sidebar-link-text">Facilities</span>
                 </a>
+                }
 
+                @if (canQuality)
+                {
                 <a asp-controller="Quality" asp-action="Incidents"
                    class="sidebar-link @(activePage == "Quality" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -266,9 +350,13 @@
                     </svg>
                     <span class="sidebar-link-text">Quality</span>
                 </a>
+                }
             </div>
+            }
 
             <!-- HR -->
+            @if (canHR)
+            {
             <div class="sidebar-group">
                 <div class="sidebar-group-label">Human Resources</div>
 
@@ -282,11 +370,16 @@
                     <span class="sidebar-link-text">HR</span>
                 </a>
             </div>
+            }
 
             <!-- Administration -->
+            @if (showAdmin)
+            {
             <div class="sidebar-group">
                 <div class="sidebar-group-label">Administration</div>
 
+                @if (canAudit)
+                {
                 <a asp-controller="Audit" asp-action="Index"
                    class="sidebar-link @(activePage == "Audit" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -294,7 +387,10 @@
                     </svg>
                     <span class="sidebar-link-text">Audit Log</span>
                 </a>
+                }
 
+                @if (canPredictive)
+                {
                 <a asp-controller="Predictive" asp-action="Summary"
                    class="sidebar-link @(activePage == "Predictive" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -302,7 +398,10 @@
                     </svg>
                     <span class="sidebar-link-text">Predictive</span>
                 </a>
+                }
 
+                @if (canReports)
+                {
                 <a asp-controller="Reports" asp-action="Dashboard"
                    class="sidebar-link @(activePage == "Reports" ? "active" : "")">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -311,7 +410,10 @@
                     </svg>
                     <span class="sidebar-link-text">Reports</span>
                 </a>
+                }
 
+                @if (canAudit)
+                {
                 <a href="#" class="sidebar-link">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"/>
@@ -320,7 +422,9 @@
                     <span class="sidebar-link-text">Settings</span>
                     <span class="sidebar-badge">Soon</span>
                 </a>
+                }
             </div>
+            }
         </div>
 
         <!-- Sidebar footer: logged-in user -->
@@ -427,5 +531,38 @@
         }
     </script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    @{
+        var toastSuccess = TempData["SuccessMessage"] as string;
+        var toastError   = TempData["Error"] as string;
+    }
+    @if (toastSuccess is not null || toastError is not null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1100" aria-live="polite">
+            @if (toastSuccess is not null)
+            {
+                <div class="toast align-items-center text-bg-success border-0" role="alert" data-bs-autohide="true" data-bs-delay="4000">
+                    <div class="d-flex">
+                        <div class="toast-body">@toastSuccess</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            }
+            @if (toastError is not null)
+            {
+                <div class="toast align-items-center text-bg-danger border-0" role="alert" data-bs-autohide="true" data-bs-delay="6000">
+                    <div class="d-flex">
+                        <div class="toast-body">@toastError</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            }
+        </div>
+        <script>
+            document.querySelectorAll('.toast').forEach(function(el) {
+                bootstrap.Toast.getOrCreateInstance(el).show();
+            });
+        </script>
+    }
 </body>
 </html>

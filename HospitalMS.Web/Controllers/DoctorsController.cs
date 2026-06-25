@@ -63,10 +63,12 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
     {
         var client   = CreateAuthorizedClient();
         var payload  = request with { Role = UserRoles.Doctor };
-        var response = await client.PostAsJsonAsync("/api/auth/register", payload, ct);
+        var response = await client.PostAsJsonAsync("/api/users", payload, ct);
 
         if (!response.IsSuccessStatusCode)
             TempData["Error"] = "Failed to create doctor account. Username may already be taken.";
+        else
+            TempData["SuccessMessage"] = "Doctor account created successfully.";
 
         return RedirectToAction(nameof(Index));
     }
@@ -98,6 +100,8 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
 
         if (!response.IsSuccessStatusCode)
             TempData["Error"] = "Failed to update doctor profile.";
+        else
+            TempData["SuccessMessage"] = "Doctor profile updated.";
 
         return RedirectToAction(nameof(Index));
     }
@@ -107,6 +111,7 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
     {
         var client = CreateAuthorizedClient();
         await client.PostAsJsonAsync($"/api/users/{id}/toggle-active", new { }, ct);
+        TempData["SuccessMessage"] = "Doctor status updated.";
         return RedirectToAction(nameof(Index));
     }
 

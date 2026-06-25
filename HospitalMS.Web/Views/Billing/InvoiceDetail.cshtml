@@ -1,5 +1,23 @@
 @model HospitalMS.Business.Models.InvoiceResponse
 @using HospitalMS.Data.Persistence.Entities
+<style>
+@@media print {
+    .dash-sidebar, .dash-topbar, .no-print, .pf-breadcrumb,
+    form[method="post"], .add-line-item-form, .record-payment-form { display: none !important; }
+    .dash-content { margin: 0 !important; padding: 0 !important; }
+    .dash-body { display: block !important; }
+    .print-header { display: block !important; }
+    .col-md-3 { width: 25% !important; float: left; }
+    .col-md-8 { width: 100% !important; }
+    .col-md-4 { display: none !important; }
+    body { background: white !important; }
+    .dash-card { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+    .page-header { border-bottom: 2px solid #111 !important; margin-bottom: 1rem !important; }
+    .page-header-title { font-size: 1.4rem !important; }
+    a[href] { text-decoration: none !important; color: inherit !important; }
+}
+.print-header { display: none; }
+</style>
 @{
     ViewData["Title"] = $"Invoice {Model.InvoiceNumber}";
     ViewData["ActivePage"] = "Billing";
@@ -17,6 +35,20 @@
     };
 }
 
+<div class="print-header mb-3 pb-2" style="border-bottom:2px solid #111">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+            <div style="font-size:1.4rem;font-weight:700">Hospital Management System</div>
+            <div style="color:#6b7280;font-size:.85rem">Tax Invoice</div>
+        </div>
+        <div style="text-align:right">
+            <div style="font-size:1.1rem;font-weight:600">@Model.InvoiceNumber</div>
+            <div style="color:#6b7280;font-size:.8rem">@Model.CreatedAtUtc.ToString("dd MMM yyyy")</div>
+        </div>
+    </div>
+    <div style="margin-top:.5rem;font-size:.85rem"><strong>Patient:</strong> @Model.PatientName (@Model.PatientMrn)</div>
+</div>
+
 <div class="page-header">
     <div>
         <div class="pf-breadcrumb">
@@ -27,8 +59,12 @@
         <h1 class="page-header-title">@Model.InvoiceNumber</h1>
         <div class="page-header-subtitle">@Model.PatientName — @Model.PatientMrn</div>
     </div>
-    <div class="d-flex gap-2 align-items-center">
+    <div class="d-flex gap-2 align-items-center no-print">
         <span class="appt-status-badge @StatusClass(Model.Status)" style="font-size:.85rem">@Model.Status</span>
+        <button type="button" class="pf-back-btn no-print" onclick="window.print()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print
+        </button>
         @if (Model.Status == InvoiceStatus.Draft)
         {
             <form asp-action="IssueInvoice" asp-route-id="@Model.Id" method="post" class="d-inline">
@@ -53,11 +89,6 @@
         </a>
     </div>
 </div>
-
-@if (TempData["Error"] is string err)
-{
-    <div class="alert alert-danger py-2 small mb-3">@err</div>
-}
 
 <!-- Summary cards -->
 <div class="row g-4 mb-4">
@@ -243,8 +274,3 @@
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        @using HospitalMS.Data.Persistence.Entities
-    </script>
-}

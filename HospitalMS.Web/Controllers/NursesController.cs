@@ -62,10 +62,12 @@ public sealed class NursesController(IHttpClientFactory httpClientFactory) : Con
     {
         var client   = CreateAuthorizedClient();
         var payload  = request with { Role = UserRoles.Nurse };
-        var response = await client.PostAsJsonAsync("/api/auth/register", payload, ct);
+        var response = await client.PostAsJsonAsync("/api/users", payload, ct);
 
         if (!response.IsSuccessStatusCode)
             TempData["Error"] = "Failed to create nurse account. Username may already be taken.";
+        else
+            TempData["SuccessMessage"] = "Nurse account created successfully.";
 
         return RedirectToAction(nameof(Index));
     }
@@ -97,6 +99,8 @@ public sealed class NursesController(IHttpClientFactory httpClientFactory) : Con
 
         if (!response.IsSuccessStatusCode)
             TempData["Error"] = "Failed to update nurse profile.";
+        else
+            TempData["SuccessMessage"] = "Nurse profile updated.";
 
         return RedirectToAction(nameof(Index));
     }
@@ -106,6 +110,7 @@ public sealed class NursesController(IHttpClientFactory httpClientFactory) : Con
     {
         var client = CreateAuthorizedClient();
         await client.PostAsJsonAsync($"/api/users/{id}/toggle-active", new { }, ct);
+        TempData["SuccessMessage"] = "Nurse status updated.";
         return RedirectToAction(nameof(Index));
     }
 

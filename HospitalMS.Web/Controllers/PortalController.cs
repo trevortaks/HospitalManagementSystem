@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
+using HospitalMS.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HospitalMS.Web.Controllers;
@@ -38,6 +39,56 @@ public sealed class PortalController(IHttpClientFactory httpClientFactory) : Con
         var appointments = await client.GetFromJsonAsync<IReadOnlyList<PortalAppointmentResponse>>(
             "/api/portal/appointments", cancellationToken) ?? [];
         return View(appointments);
+    }
+
+    [HttpGet("doctors")]
+    public async Task<IActionResult> Doctors(CancellationToken cancellationToken)
+    {
+        var client = CreateAuthorizedClient();
+        var users = await client.GetFromJsonAsync<IReadOnlyList<UserSummary>>("/api/users", cancellationToken) ?? [];
+        var doctors = users
+            .Where(u => u.Role == "Doctor")
+            .Select(u => new { u.Id, Name = $"{u.FirstName} {u.LastName}".Trim().Length > 0 ? $"{u.FirstName} {u.LastName}".Trim() : u.Username })
+            .ToList();
+        return Json(doctors);
+    }
+
+    [HttpPost("book-appointment")]
+    public async Task<IActionResult> BookAppointment([FromForm] BookPortalAppointmentRequest request, CancellationToken cancellationToken)
+    {
+        var client = CreateAuthorizedClient();
+
+        // Resolve the patient's own PatientId from the portal profile
+        var profileResponse = await client.GetAsync("/api/portal/profile", cancellationToken);
+        if (!profileResponse.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Unable to retrieve your patient profile. Please try again.";
+            return RedirectToAction(nameof(Appointments));
+        }
+
+        var profile = await profileResponse.Content.ReadFromJsonAsync<PortalProfileResponse>(cancellationToken);
+        if (profile is null)
+        {
+            TempData["Error"] = "Unable to retrieve your patient profile. Please try again.";
+            return RedirectToAction(nameof(Appointments));
+        }
+
+        var apptRequest = new CreateAppointmentRequest(
+            profile.PatientId,
+            request.DoctorUserId,
+            request.ScheduledAtUtc,
+            request.DurationMinutes,
+            request.Type,
+            request.Reason);
+
+        var response = await client.PostAsJsonAsync("/api/appointments", apptRequest, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+            TempData["Error"] = "Failed to book appointment. Please check the selected date and try again.";
+        else
+            TempData["SuccessMessage"] = "Appointment requested successfully.";
+
+        return RedirectToAction(nameof(Appointments));
     }
 
     [HttpGet("prescriptions")]

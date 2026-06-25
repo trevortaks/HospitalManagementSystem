@@ -24,12 +24,18 @@
         <h1 class="page-header-title">My Appointments</h1>
         <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
     </div>
-    <a asp-action="Index" class="pf-back-btn">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-        </svg>
-        Portal Home
-    </a>
+    <div class="d-flex gap-2 align-items-center">
+        <button type="button" class="btn-primary-dash" data-bs-toggle="modal" data-bs-target="#bookApptModal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Book Appointment
+        </button>
+        <a asp-action="Index" class="pf-back-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Portal Home
+        </a>
+    </div>
 </div>
 
 <div class="dash-card">
@@ -84,3 +90,83 @@
         </div>
     }
 </div>
+
+<!-- Book Appointment Modal -->
+<div class="modal fade" id="bookApptModal" tabindex="-1" aria-labelledby="bookApptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form asp-controller="Portal" asp-action="BookAppointment" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookApptModalLabel">Book New Appointment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Doctor <span class="text-danger">*</span></label>
+                            <select name="DoctorUserId" id="doctorSelect" class="form-select" required>
+                                <option value="">Loading doctors…</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date &amp; Time <span class="text-danger">*</span></label>
+                            <input type="datetime-local" name="ScheduledAtUtc" class="form-control" required
+                                   min="@DateTime.Today.ToString("yyyy-MM-dd")T00:00" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Duration</label>
+                            <select name="DurationMinutes" class="form-select">
+                                <option value="15">15 minutes</option>
+                                <option value="30" selected>30 minutes</option>
+                                <option value="45">45 minutes</option>
+                                <option value="60">60 minutes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Type</label>
+                            <select name="Type" class="form-select">
+                                <option value="General">General</option>
+                                <option value="FollowUp">Follow-Up</option>
+                                <option value="Emergency">Emergency</option>
+                                <option value="Procedure">Procedure</option>
+                                <option value="Teleconsult">Teleconsult</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Reason for visit</label>
+                            <textarea name="Reason" class="form-control" rows="3" placeholder="Briefly describe your symptoms or reason for the appointment…"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="pf-back-btn" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-primary-dash">Request Appointment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('bookApptModal').addEventListener('show.bs.modal', function () {
+        var sel = document.getElementById('doctorSelect');
+        if (sel.options.length > 1) return; // already loaded
+        fetch('/portal/doctors')
+            .then(function(r) { return r.json(); })
+            .then(function(doctors) {
+                sel.innerHTML = '<option value="">Select a doctor…</option>';
+                doctors.forEach(function(d) {
+                    var opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = d.name;
+                    sel.appendChild(opt);
+                });
+            })
+            .catch(function() {
+                sel.innerHTML = '<option value="">Failed to load doctors</option>';
+            });
+    });
+</script>
+}

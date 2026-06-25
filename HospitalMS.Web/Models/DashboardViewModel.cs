@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using HospitalMS.Business.Models;
 
 namespace HospitalMS.Web.Models;
@@ -28,4 +29,19 @@ public sealed class NurseDashboardViewModel
     public IReadOnlyList<AppointmentResponse> TriageQueue { get; init; } = [];
     public int VitalsRecordedToday { get; init; }
     public int PendingTriage { get; init; }
+}
+
+public sealed class PatientDashboardViewModel
+{
+    public PortalDashboardResponse Dashboard { get; init; } = null!;
+    public PortalAppointmentResponse? NextAppointment { get; init; }
+}
+
+public sealed class BookPortalAppointmentRequest
+{
+    [Required] public Guid DoctorUserId { get; init; }
+    [Required] public DateTime ScheduledAtUtc { get; init; }
+    public int DurationMinutes { get; init; } = 30;
+    public string Type { get; init; } = "General";
+    public string? Reason { get; init; }
 }

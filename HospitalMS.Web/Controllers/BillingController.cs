@@ -99,6 +99,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
             return RedirectToAction(nameof(Invoices));
         }
         var invoice = await response.Content.ReadFromJsonAsync<InvoiceResponse>(cancellationToken);
+        TempData["SuccessMessage"] = "Invoice created.";
         return RedirectToAction(nameof(InvoiceDetail), new { id = invoice!.Id });
     }
 
@@ -125,6 +126,8 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
         var response = await client.PatchAsync($"/api/invoices/{id}/issue", null, cancellationToken);
         if (!response.IsSuccessStatusCode)
             TempData["Error"] = "Cannot issue invoice — ensure it has at least one line item.";
+        else
+            TempData["SuccessMessage"] = "Invoice issued.";
         return RedirectToAction(nameof(InvoiceDetail), new { id });
     }
 
@@ -133,6 +136,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     {
         var client = CreateAuthorizedClient();
         await client.PatchAsync($"/api/invoices/{id}/void", null, cancellationToken);
+        TempData["SuccessMessage"] = "Invoice voided.";
         return RedirectToAction(nameof(InvoiceDetail), new { id });
     }
 
@@ -145,6 +149,8 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
         var response = await client.PostAsJsonAsync($"/api/invoices/{id}/payments", request, cancellationToken);
         if (!response.IsSuccessStatusCode)
             TempData["Error"] = "Failed to record payment.";
+        else
+            TempData["SuccessMessage"] = "Payment recorded.";
         return RedirectToAction(nameof(InvoiceDetail), new { id });
     }
 
