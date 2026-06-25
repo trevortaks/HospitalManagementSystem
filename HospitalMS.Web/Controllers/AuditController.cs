@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,9 +6,8 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("audit")]
 [RequireSession]
-public sealed class AuditController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class AuditController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet("")]
     public async Task<IActionResult> Index(
@@ -20,7 +18,7 @@ public sealed class AuditController(IHttpClientFactory httpClientFactory) : Cont
         [FromQuery] DateTime? to,
         CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
 
         var qs = new List<string>();
         if (!string.IsNullOrWhiteSpace(entityType)) qs.Add($"entityType={Uri.EscapeDataString(entityType)}");
@@ -43,12 +41,4 @@ public sealed class AuditController(IHttpClientFactory httpClientFactory) : Cont
         return View(entries);
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

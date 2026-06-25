@@ -5,13 +5,6 @@
 
     var patient = ViewBag.Patient as HospitalMS.Business.Models.PatientResponse;
 
-    string[] palette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626","#0e7490","#9333ea"];
-    string AvatarColor(string name)
-    {
-        int h = 0;
-        foreach (char c in name) h = c + ((h << 5) - h);
-        return palette[Math.Abs(h) % palette.Length];
-    }
 }
 
 <div class="page-header">
@@ -69,7 +62,7 @@
                         var initials = e.PatientName.Split(' ') is { Length: >= 2 } p2
                             ? $"{p2[0][0]}{p2[1][0]}".ToUpper()
                             : e.PatientName[..Math.Min(2, e.PatientName.Length)].ToUpper();
-                        var color = AvatarColor(e.PatientName);
+                        var color = ViewHelpers.AvatarColor(e.PatientName);
                         <tr>
                             <td>
                                 <div class="pt-name-cell">

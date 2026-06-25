@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using HospitalMS.Web.Models;
@@ -8,14 +7,13 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("patients")]
 [RequireSession]
-public sealed class PatientsController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class PatientsController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var patients = await client.GetFromJsonAsync<IReadOnlyList<PatientResponse>>(
             "/api/patients", cancellationToken) ?? [];
         return View(patients);
@@ -24,7 +22,7 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
 
         var patientTask      = client.GetFromJsonAsync<PatientResponse>($"/api/patients/{id}", cancellationToken);
         var appointmentsTask = client.GetFromJsonAsync<IReadOnlyList<AppointmentResponse>>($"/api/appointments?patientId={id}", cancellationToken);
@@ -59,7 +57,7 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
     [HttpPost("create")]
     public async Task<IActionResult> Create(CreatePatientRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/patients", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -75,7 +73,7 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
     [HttpGet("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var patient = await client.GetFromJsonAsync<PatientResponse>(
             $"/api/patients/{id}", cancellationToken);
 
@@ -95,7 +93,7 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
     [HttpPost("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, UpdatePatientRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PutAsJsonAsync($"/api/patients/{id}", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -111,18 +109,10 @@ public sealed class PatientsController(IHttpClientFactory httpClientFactory) : C
     [HttpPost("{id:guid}/delete")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.DeleteAsync($"/api/patients/{id}", cancellationToken);
         TempData["SuccessMessage"] = "Patient record deleted.";
         return RedirectToAction("Index");
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

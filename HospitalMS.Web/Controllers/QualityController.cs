@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,15 +6,14 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("quality")]
 [RequireSession]
-public sealed class QualityController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class QualityController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet("")]
     public async Task<IActionResult> Incidents(
         [FromQuery] string? status, [FromQuery] string? severity, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var qs = new List<string>();
         if (!string.IsNullOrEmpty(status))   qs.Add($"status={Uri.EscapeDataString(status)}");
         if (!string.IsNullOrEmpty(severity)) qs.Add($"severity={Uri.EscapeDataString(severity)}");
@@ -33,7 +31,7 @@ public sealed class QualityController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("feedback")]
     public async Task<IActionResult> Feedback(CancellationToken ct)
     {
-        var client   = CreateAuthorizedClient();
+        var client   = Api();
         var feedback = await client.GetFromJsonAsync<List<PatientFeedbackResponse>>("/api/quality/feedback", ct)
                        ?? [];
         var summary  = await client.GetFromJsonAsync<QualitySummary>("/api/quality/summary", ct);
@@ -47,7 +45,7 @@ public sealed class QualityController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("incidents/create")]
     public async Task<IActionResult> CreateIncident([FromForm] CreateQualityIncidentRequest request, CancellationToken ct)
     {
-        var client   = CreateAuthorizedClient();
+        var client   = Api();
         var response = await client.PostAsJsonAsync("/api/quality/incidents", request, ct);
         return RedirectToAction(nameof(Incidents));
     }
@@ -55,7 +53,7 @@ public sealed class QualityController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("incidents/{id:guid}/assign")]
     public async Task<IActionResult> Assign(Guid id, [FromForm] AssignQualityIncidentRequest request, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync($"/api/quality/incidents/{id}/assign", request, ct);
         return RedirectToAction(nameof(Incidents));
     }
@@ -63,7 +61,7 @@ public sealed class QualityController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("incidents/{id:guid}/resolve")]
     public async Task<IActionResult> Resolve(Guid id, [FromForm] ResolveQualityIncidentRequest request, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync($"/api/quality/incidents/{id}/resolve", request, ct);
         return RedirectToAction(nameof(Incidents));
     }
@@ -71,7 +69,7 @@ public sealed class QualityController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("incidents/{id:guid}/close")]
     public async Task<IActionResult> Close(Guid id, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync($"/api/quality/incidents/{id}/close", new { }, ct);
         return RedirectToAction(nameof(Incidents));
     }
@@ -79,17 +77,9 @@ public sealed class QualityController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("feedback/submit")]
     public async Task<IActionResult> SubmitFeedback([FromForm] CreatePatientFeedbackRequest request, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync("/api/quality/feedback", request, ct);
         return RedirectToAction(nameof(Feedback));
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token  = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

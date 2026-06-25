@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,9 +6,8 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("imaging")]
 [RequireSession]
-public sealed class ImagingController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class ImagingController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet]
     public async Task<IActionResult> Index(
@@ -18,7 +16,7 @@ public sealed class ImagingController(IHttpClientFactory httpClientFactory) : Co
         [FromQuery] string? status,
         CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var qs = BuildQueryString(
             ("patientId", patientId?.ToString()),
             ("encounterId", encounterId?.ToString()),
@@ -36,7 +34,7 @@ public sealed class ImagingController(IHttpClientFactory httpClientFactory) : Co
         [FromQuery] Guid? patientId,
         CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var users = await client.GetFromJsonAsync<IReadOnlyList<UserSummary>>("/api/users", cancellationToken) ?? [];
         ViewBag.Doctors = users.Where(u => u.Role is "Doctor" or "Administrator").ToList();
         ViewBag.PreselectedEncounterId = encounterId;
@@ -52,7 +50,7 @@ public sealed class ImagingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("create")]
     public async Task<IActionResult> Create(CreateImagingRequestRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/imaging-requests", request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
@@ -67,7 +65,7 @@ public sealed class ImagingController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> RequestDetail(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var request = await client.GetFromJsonAsync<ImagingRequestResponse>($"/api/imaging-requests/{id}", cancellationToken);
         if (request is null) return NotFound();
 
@@ -79,7 +77,7 @@ public sealed class ImagingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("{id:guid}/report")]
     public async Task<IActionResult> CreateReport(Guid id, CreateImagingReportRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync($"/api/imaging-requests/{id}/report", request, cancellationToken);
         return RedirectToAction(nameof(RequestDetail), new { id });
     }
@@ -87,7 +85,7 @@ public sealed class ImagingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("{id:guid}/cancel")]
     public async Task<IActionResult> Cancel(Guid id, Guid? patientId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/imaging-requests/{id}/cancel", null, cancellationToken);
         return RedirectToAction(nameof(Index), new { patientId });
     }
@@ -95,26 +93,10 @@ public sealed class ImagingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("{id:guid}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromForm] string status, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsJsonAsync($"/api/imaging-requests/{id}/status", status, cancellationToken);
         return RedirectToAction(nameof(RequestDetail), new { id });
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 
-    private static string BuildQueryString(params (string key, string? value)[] pairs)
-    {
-        var parts = pairs
-            .Where(p => !string.IsNullOrEmpty(p.value))
-            .Select(p => $"{p.key}={Uri.EscapeDataString(p.value!)}");
-        var qs = string.Join("&", parts);
-        return string.IsNullOrEmpty(qs) ? string.Empty : $"?{qs}";
-    }
 }

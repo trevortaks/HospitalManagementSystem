@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,14 +6,13 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("predictive")]
 [RequireSession]
-public sealed class PredictiveController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class PredictiveController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet("")]
     public async Task<IActionResult> Summary(CancellationToken ct)
     {
-        var client  = CreateAuthorizedClient();
+        var client  = Api();
         var summary = await client.GetFromJsonAsync<PredictiveInsightsSummary>("/api/predictive/summary", ct);
 
         ViewData["Title"]      = "Predictive Insights";
@@ -25,7 +23,7 @@ public sealed class PredictiveController(IHttpClientFactory httpClientFactory) :
     [HttpGet("readmission")]
     public async Task<IActionResult> Readmission(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var risks  = await client.GetFromJsonAsync<List<ReadmissionRiskScore>>("/api/predictive/readmission-risks?topN=50", ct)
                      ?? [];
 
@@ -37,7 +35,7 @@ public sealed class PredictiveController(IHttpClientFactory httpClientFactory) :
     [HttpGet("stock")]
     public async Task<IActionResult> Stock(CancellationToken ct)
     {
-        var client      = CreateAuthorizedClient();
+        var client      = Api();
         var predictions = await client.GetFromJsonAsync<List<LowStockPrediction>>("/api/predictive/low-stock-predictions", ct)
                           ?? [];
 
@@ -46,12 +44,4 @@ public sealed class PredictiveController(IHttpClientFactory httpClientFactory) :
         return View(predictions);
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token  = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

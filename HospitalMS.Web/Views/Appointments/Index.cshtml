@@ -4,14 +4,6 @@
     ViewData["Title"] = "Appointments";
     ViewData["ActivePage"] = "Appointments";
 
-    string[] palette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626","#0e7490","#9333ea"];
-    string AvatarColor(string name)
-    {
-        int h = 0;
-        foreach (char c in name) h = c + ((h << 5) - h);
-        return palette[Math.Abs(h) % palette.Length];
-    }
-
     string StatusClass(string s) => s switch {
         AppointmentStatus.Completed  => "appt-badge--completed",
         AppointmentStatus.Confirmed  => "appt-badge--confirmed",
@@ -110,7 +102,7 @@
                         var initials = a.PatientName.Split(' ') is { Length: >= 2 } p
                             ? $"{p[0][0]}{p[1][0]}".ToUpper()
                             : a.PatientName[..Math.Min(2, a.PatientName.Length)].ToUpper();
-                        var color = AvatarColor(a.PatientName);
+                        var color = ViewHelpers.AvatarColor(a.PatientName);
                         <tr class="patient-row appt-row"
                             data-patient="@a.PatientName.ToLower()"
                             data-doctor="@a.DoctorName.ToLower()"

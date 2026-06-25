@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,14 +6,13 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("reports")]
 [RequireSession]
-public sealed class ReportsController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class ReportsController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet("")]
     public async Task<IActionResult> Dashboard(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var summary = await client.GetFromJsonAsync<DashboardSummary>("/api/analytics/dashboard", ct);
 
         ViewData["Title"]      = "Dashboard";
@@ -25,7 +23,7 @@ public sealed class ReportsController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("patients")]
     public async Task<IActionResult> Patients(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var report = await client.GetFromJsonAsync<PatientDemographicsReport>("/api/analytics/patients", ct);
 
         ViewData["Title"]      = "Patient Demographics";
@@ -36,7 +34,7 @@ public sealed class ReportsController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("revenue")]
     public async Task<IActionResult> Revenue(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var report = await client.GetFromJsonAsync<RevenueReport>("/api/analytics/revenue", ct);
 
         ViewData["Title"]      = "Revenue Report";
@@ -47,7 +45,7 @@ public sealed class ReportsController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("occupancy")]
     public async Task<IActionResult> Occupancy(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var report = await client.GetFromJsonAsync<BedOccupancyReport>("/api/analytics/bed-occupancy", ct);
 
         ViewData["Title"]      = "Bed Occupancy";
@@ -58,7 +56,7 @@ public sealed class ReportsController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("inventory")]
     public async Task<IActionResult> Inventory(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var report = await client.GetFromJsonAsync<InventoryStatusReport>("/api/analytics/inventory", ct);
 
         ViewData["Title"]      = "Inventory Status";
@@ -66,12 +64,4 @@ public sealed class ReportsController(IHttpClientFactory httpClientFactory) : Co
         return View(report);
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

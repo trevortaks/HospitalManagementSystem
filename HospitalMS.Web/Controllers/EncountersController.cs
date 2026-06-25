@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,14 +6,13 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("encounters")]
 [RequireSession]
-public sealed class EncountersController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class EncountersController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] Guid? patientId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var qs = patientId.HasValue ? $"?patientId={patientId}" : string.Empty;
         var encounters = await client.GetFromJsonAsync<IReadOnlyList<EncounterResponse>>(
             $"/api/encounters{qs}", cancellationToken) ?? [];
@@ -32,7 +30,7 @@ public sealed class EncountersController(IHttpClientFactory httpClientFactory) :
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Detail(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var encounter = await client.GetFromJsonAsync<EncounterResponse>(
             $"/api/encounters/{id}", cancellationToken);
 
@@ -43,7 +41,7 @@ public sealed class EncountersController(IHttpClientFactory httpClientFactory) :
     [HttpGet("create")]
     public async Task<IActionResult> Create([FromQuery] Guid? patientId, [FromQuery] Guid? appointmentId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var patients = await client.GetFromJsonAsync<IReadOnlyList<PatientResponse>>("/api/patients", cancellationToken) ?? [];
         var users = await client.GetFromJsonAsync<IReadOnlyList<UserSummary>>("/api/users", cancellationToken) ?? [];
 
@@ -62,7 +60,7 @@ public sealed class EncountersController(IHttpClientFactory httpClientFactory) :
     [HttpPost("create")]
     public async Task<IActionResult> Create(CreateEncounterRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/encounters", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -82,7 +80,7 @@ public sealed class EncountersController(IHttpClientFactory httpClientFactory) :
     [HttpGet("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var encounter = await client.GetFromJsonAsync<EncounterResponse>(
             $"/api/encounters/{id}", cancellationToken);
 
@@ -102,7 +100,7 @@ public sealed class EncountersController(IHttpClientFactory httpClientFactory) :
     [HttpPost("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, UpdateEncounterRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PutAsJsonAsync($"/api/encounters/{id}", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -119,17 +117,9 @@ public sealed class EncountersController(IHttpClientFactory httpClientFactory) :
     [HttpPost("{id:guid}/close")]
     public async Task<IActionResult> Close(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsync($"/api/encounters/{id}/close", null, cancellationToken);
         return RedirectToAction("Detail", new { id });
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

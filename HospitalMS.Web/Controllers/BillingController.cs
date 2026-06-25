@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,16 +6,15 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("billing")]
 [RequireSession]
-public sealed class BillingController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class BillingController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     // ── Invoices ─────────────────────────────────────────────────────────────
 
     [HttpGet("invoices")]
     public async Task<IActionResult> Invoices([FromQuery] Guid? patientId, [FromQuery] string? status, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var url = "/api/invoices";
         var qs = new List<string>();
         if (patientId.HasValue) qs.Add($"patientId={patientId}");
@@ -38,7 +36,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("invoices/{id:guid}")]
     public async Task<IActionResult> InvoiceDetail(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.GetAsync($"/api/invoices/{id}", cancellationToken);
         if (!response.IsSuccessStatusCode) return NotFound();
         var invoice = await response.Content.ReadFromJsonAsync<InvoiceResponse>(cancellationToken);
@@ -71,7 +69,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("invoices/create")]
     public async Task<IActionResult> CreateInvoice([FromQuery] Guid? patientId, [FromQuery] Guid? encounterId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var usersResponse = await client.GetAsync("/api/users", cancellationToken);
         IReadOnlyList<UserSummary> staff = [];
         if (usersResponse.IsSuccessStatusCode)
@@ -91,7 +89,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("invoices/create")]
     public async Task<IActionResult> CreateInvoice(CreateInvoiceRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/invoices", request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
@@ -106,7 +104,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("invoices/{id:guid}/line-items")]
     public async Task<IActionResult> AddLineItem(Guid id, [FromForm] Guid chargeItemId, [FromForm] int quantity, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync($"/api/invoices/{id}/line-items", new AddLineItemRequest(chargeItemId, quantity), cancellationToken);
         return RedirectToAction(nameof(InvoiceDetail), new { id });
     }
@@ -114,7 +112,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("invoices/{id:guid}/line-items/{lineItemId:guid}/remove")]
     public async Task<IActionResult> RemoveLineItem(Guid id, Guid lineItemId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.DeleteAsync($"/api/invoices/{id}/line-items/{lineItemId}", cancellationToken);
         return RedirectToAction(nameof(InvoiceDetail), new { id });
     }
@@ -122,7 +120,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("invoices/{id:guid}/issue")]
     public async Task<IActionResult> IssueInvoice(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PatchAsync($"/api/invoices/{id}/issue", null, cancellationToken);
         if (!response.IsSuccessStatusCode)
             TempData["Error"] = "Cannot issue invoice — ensure it has at least one line item.";
@@ -134,7 +132,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("invoices/{id:guid}/void")]
     public async Task<IActionResult> VoidInvoice(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/invoices/{id}/void", null, cancellationToken);
         TempData["SuccessMessage"] = "Invoice voided.";
         return RedirectToAction(nameof(InvoiceDetail), new { id });
@@ -144,7 +142,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     public async Task<IActionResult> RecordPayment(Guid id, [FromForm] decimal amount, [FromForm] string method,
         [FromForm] Guid recordedByUserId, [FromForm] string? referenceNumber, [FromForm] string? notes, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var request = new RecordPaymentRequest(id, amount, method, recordedByUserId, referenceNumber, notes);
         var response = await client.PostAsJsonAsync($"/api/invoices/{id}/payments", request, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -159,7 +157,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("charge-items")]
     public async Task<IActionResult> ChargeItems(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var items = await client.GetFromJsonAsync<IReadOnlyList<ChargeItemResponse>>("/api/charge-items", cancellationToken) ?? [];
         ViewData["Title"] = "Charge Items";
         ViewData["ActivePage"] = "Billing";
@@ -177,7 +175,7 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("charge-items/create")]
     public async Task<IActionResult> CreateChargeItem(CreateChargeItemRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync("/api/charge-items", request, cancellationToken);
         return RedirectToAction(nameof(ChargeItems));
     }
@@ -185,19 +183,11 @@ public sealed class BillingController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("charge-items/{id:guid}/toggle")]
     public async Task<IActionResult> ToggleChargeItem(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/charge-items/{id}/toggle-active", null, cancellationToken);
         return RedirectToAction(nameof(ChargeItems));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

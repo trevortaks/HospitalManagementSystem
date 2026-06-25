@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,16 +6,15 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("supply-chain")]
 [RequireSession]
-public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class SupplyChainController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     // ── Suppliers ─────────────────────────────────────────────────────────────
 
     [HttpGet("suppliers")]
     public async Task<IActionResult> Suppliers(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var suppliers = await client.GetFromJsonAsync<IReadOnlyList<SupplierResponse>>(
             "/api/suppliers", cancellationToken) ?? [];
 
@@ -36,7 +34,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
     [HttpPost("suppliers/create")]
     public async Task<IActionResult> CreateSupplier(CreateSupplierRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/suppliers", request, cancellationToken);
         if (response.IsSuccessStatusCode) return RedirectToAction(nameof(Suppliers));
 
@@ -49,7 +47,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
     [HttpPost("suppliers/{id:guid}/toggle")]
     public async Task<IActionResult> ToggleSupplier(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/suppliers/{id}/toggle-active", null, cancellationToken);
         return RedirectToAction(nameof(Suppliers));
     }
@@ -59,7 +57,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
     [HttpGet("purchase-orders")]
     public async Task<IActionResult> PurchaseOrders([FromQuery] string? status, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var url = "/api/purchase-orders" + (string.IsNullOrWhiteSpace(status) ? "" : $"?status={status}");
         var orders = await client.GetFromJsonAsync<IReadOnlyList<PurchaseOrderResponse>>(url, cancellationToken) ?? [];
 
@@ -72,7 +70,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
     [HttpGet("purchase-orders/create")]
     public async Task<IActionResult> CreatePurchaseOrder(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var suppliers = await client.GetFromJsonAsync<IReadOnlyList<SupplierResponse>>(
             "/api/suppliers?activeOnly=true", cancellationToken) ?? [];
         var items = await client.GetFromJsonAsync<IReadOnlyList<InventoryItemResponse>>(
@@ -107,7 +105,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
             .ToList();
 
         var request = new CreatePurchaseOrderRequest(SupplierId, OrderedByUserId, lines, Notes, ExpectedDeliveryDate);
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/purchase-orders", request, cancellationToken);
 
         if (response.IsSuccessStatusCode)
@@ -123,7 +121,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
     [HttpGet("purchase-orders/{id:guid}")]
     public async Task<IActionResult> PurchaseOrderDetail(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var poResponse = await client.GetAsync($"/api/purchase-orders/{id}", cancellationToken);
         if (!poResponse.IsSuccessStatusCode) return NotFound();
         var po = await poResponse.Content.ReadFromJsonAsync<PurchaseOrderResponse>(cancellationToken);
@@ -147,7 +145,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
     [HttpPost("purchase-orders/{id:guid}/submit")]
     public async Task<IActionResult> SubmitOrder(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/purchase-orders/{id}/submit", null, cancellationToken);
         return RedirectToAction(nameof(PurchaseOrderDetail), new { id });
     }
@@ -155,7 +153,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
     [HttpPost("purchase-orders/{id:guid}/approve")]
     public async Task<IActionResult> ApproveOrder(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/purchase-orders/{id}/approve", null, cancellationToken);
         return RedirectToAction(nameof(PurchaseOrderDetail), new { id });
     }
@@ -163,7 +161,7 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
     [HttpPost("purchase-orders/{id:guid}/cancel")]
     public async Task<IActionResult> CancelOrder(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/purchase-orders/{id}/cancel", null, cancellationToken);
         return RedirectToAction(nameof(PurchaseOrderDetail), new { id });
     }
@@ -183,17 +181,9 @@ public sealed class SupplyChainController(IHttpClientFactory httpClientFactory) 
             .ToList();
 
         var request = new ReceiveGoodsRequest(id, ReceivedByUserId, lines, Notes);
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync($"/api/purchase-orders/{id}/receive", request, cancellationToken);
         return RedirectToAction(nameof(PurchaseOrderDetail), new { id });
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

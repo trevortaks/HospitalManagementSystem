@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,9 +6,8 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("prescriptions")]
 [RequireSession]
-public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class PrescriptionsController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet]
     public async Task<IActionResult> Index(
@@ -17,7 +15,7 @@ public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory
         [FromQuery] Guid? encounterId,
         CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var qs = BuildQueryString(("patientId", patientId?.ToString()), ("encounterId", encounterId?.ToString()));
         var prescriptions = await client.GetFromJsonAsync<IReadOnlyList<PrescriptionResponse>>(
             $"/api/prescriptions{qs}", cancellationToken) ?? [];
@@ -36,7 +34,7 @@ public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory
     [HttpGet("queue")]
     public async Task<IActionResult> Queue(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var prescriptions = await client.GetFromJsonAsync<IReadOnlyList<PrescriptionResponse>>(
             "/api/prescriptions?status=Active", cancellationToken) ?? [];
         return View(prescriptions);
@@ -48,7 +46,7 @@ public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory
         [FromQuery] Guid? patientId,
         CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var meds = await client.GetFromJsonAsync<IReadOnlyList<MedicationResponse>>(
             "/api/medications?activeOnly=true", cancellationToken) ?? [];
         var users = await client.GetFromJsonAsync<IReadOnlyList<UserSummary>>(
@@ -69,7 +67,7 @@ public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory
     [HttpPost("create")]
     public async Task<IActionResult> Create(CreatePrescriptionRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/prescriptions", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -89,7 +87,7 @@ public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory
     [HttpPost("{id:guid}/dispense")]
     public async Task<IActionResult> Dispense(Guid id, [FromForm] int QuantityDispensed, [FromForm] Guid DispensedByUserId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var request = new DispensePrescriptionRequest(QuantityDispensed, DispensedByUserId);
         await client.PatchAsJsonAsync($"/api/prescriptions/{id}/dispense", request, cancellationToken);
         TempData["SuccessMessage"] = "Prescription dispensed.";
@@ -99,26 +97,10 @@ public sealed class PrescriptionsController(IHttpClientFactory httpClientFactory
     [HttpPost("{id:guid}/cancel")]
     public async Task<IActionResult> Cancel(Guid id, Guid? patientId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/prescriptions/{id}/cancel", null, cancellationToken);
         return RedirectToAction(nameof(Index), new { patientId });
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 
-    private static string BuildQueryString(params (string key, string? value)[] pairs)
-    {
-        var parts = pairs
-            .Where(p => !string.IsNullOrEmpty(p.value))
-            .Select(p => $"{p.key}={Uri.EscapeDataString(p.value!)}");
-        var qs = string.Join("&", parts);
-        return string.IsNullOrEmpty(qs) ? string.Empty : $"?{qs}";
-    }
 }

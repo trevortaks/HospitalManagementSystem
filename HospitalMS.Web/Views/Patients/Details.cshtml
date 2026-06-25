@@ -89,10 +89,7 @@
                 <div class="p-4 text-center border-bottom">
                     @{
                         var initials = $"{p.FirstName[0]}{p.LastName[0]}".ToUpper();
-                        string[] palette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626","#0e7490","#9333ea"];
-                        int h = 0;
-                        foreach (char c in p.FirstName + p.LastName) h = c + ((h << 5) - h);
-                        var color = palette[Math.Abs(h) % palette.Length];
+                        var color = ViewHelpers.AvatarColor(p.FirstName + p.LastName);
                     }
                     <div style="width:72px;height:72px;border-radius:50%;background:@color;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;color:#fff;margin:0 auto 1rem;">
                         @initials

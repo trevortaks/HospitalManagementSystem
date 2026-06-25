@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Common.Constants;
 using HospitalMS.Data.Persistence.Entities;
@@ -10,9 +9,8 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("dashboard")]
 [RequireSession]
-public sealed class DashboardController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class DashboardController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -25,9 +23,10 @@ public sealed class DashboardController(IHttpClientFactory httpClientFactory) : 
 
         return role switch
         {
-            UserRoles.Doctor => await DoctorDashboard(userId, cancellationToken),
-            UserRoles.Nurse  => await NurseDashboard(cancellationToken),
-            _                => await AdminDashboard(cancellationToken)
+            UserRoles.Doctor  => await DoctorDashboard(userId, cancellationToken),
+            UserRoles.Nurse   => await NurseDashboard(cancellationToken),
+            UserRoles.Patient => await PatientDashboard(cancellationToken),
+            _                 => await AdminDashboard(cancellationToken)
         };
     }
 
@@ -35,7 +34,7 @@ public sealed class DashboardController(IHttpClientFactory httpClientFactory) : 
 
     private async Task<IActionResult> AdminDashboard(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
 
         var patientsTask = client.GetFromJsonAsync<IReadOnlyList<PatientResponse>>("/api/patients", ct);
         var usersTask    = client.GetFromJsonAsync<IReadOnlyList<UserSummary>>("/api/users", ct);
@@ -69,7 +68,7 @@ public sealed class DashboardController(IHttpClientFactory httpClientFactory) : 
         if (!Guid.TryParse(userId, out var doctorId))
             return await AdminDashboard(ct);
 
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var today  = DateTime.UtcNow.Date;
 
         var staffTask      = client.GetFromJsonAsync<UserSummary>($"/api/users/{doctorId}", ct);
@@ -106,11 +105,56 @@ public sealed class DashboardController(IHttpClientFactory httpClientFactory) : 
         return View("DoctorIndex", vm);
     }
 
+    // ── Patient ─────────────────────────────────────────────────────────────
+
+    private async Task<IActionResult> PatientDashboard(CancellationToken ct)
+    {
+        var client   = Api();
+        var response = await client.GetAsync("/api/portal/dashboard", ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            ViewData["NoLinkedPatient"] = true;
+            return View("PatientIndex", (PatientDashboardViewModel?)null);
+        }
+
+        var dashboard = await response.Content.ReadFromJsonAsync<PortalDashboardResponse>(cancellationToken: ct);
+        if (dashboard is null)
+        {
+            ViewData["NoLinkedPatient"] = true;
+            return View("PatientIndex", (PatientDashboardViewModel?)null);
+        }
+
+        var next = dashboard.UpcomingAppointments
+            .Where(a => a.ScheduledAtUtc >= DateTime.UtcNow
+                     && a.Status != "Cancelled" && a.Status != "NoShow")
+            .OrderBy(a => a.ScheduledAtUtc)
+            .FirstOrDefault();
+
+        await TryLogPortalSessionAsync(client, dashboard.Profile.PatientId, ct);
+
+        return View("PatientIndex", new PatientDashboardViewModel
+        {
+            Dashboard       = dashboard,
+            NextAppointment = next
+        });
+    }
+
+    private async Task TryLogPortalSessionAsync(HttpClient client, Guid patientId, CancellationToken ct)
+    {
+        try
+        {
+            await client.PostAsJsonAsync("/api/portal/session",
+                new { UserId = Guid.Empty, PatientId = patientId, IpAddress = (string?)null, UserAgent = (string?)null }, ct);
+        }
+        catch { }
+    }
+
     // ── Nurse ────────────────────────────────────────────────────────────────
 
     private async Task<IActionResult> NurseDashboard(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var today  = DateTime.UtcNow.Date;
 
         var appointments = await client.GetFromJsonAsync<IReadOnlyList<AppointmentResponse>>(
@@ -137,12 +181,4 @@ public sealed class DashboardController(IHttpClientFactory httpClientFactory) : 
         return View("NurseIndex", vm);
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token  = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

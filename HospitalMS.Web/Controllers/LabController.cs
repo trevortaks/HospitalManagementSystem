@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,16 +6,15 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("lab")]
 [RequireSession]
-public sealed class LabController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class LabController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     // ── Panels ───────────────────────────────────────────────────────────────
 
     [HttpGet("panels")]
     public async Task<IActionResult> Panels(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var panels = await client.GetFromJsonAsync<IReadOnlyList<LabOrderPanelResponse>>(
             "/api/lab-panels", cancellationToken) ?? [];
         return View(panels);
@@ -29,7 +27,7 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
     [HttpPost("panels/create")]
     public async Task<IActionResult> CreatePanel(CreateLabOrderPanelRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/lab-panels", request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
@@ -42,7 +40,7 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
     [HttpPost("panels/{id:guid}/toggle-active")]
     public async Task<IActionResult> TogglePanelActive(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/lab-panels/{id}/toggle-active", null, cancellationToken);
         return RedirectToAction(nameof(Panels));
     }
@@ -56,7 +54,7 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
         [FromQuery] string? status,
         CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var qs = BuildQueryString(
             ("patientId", patientId?.ToString()),
             ("encounterId", encounterId?.ToString()),
@@ -74,7 +72,7 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
         [FromQuery] Guid? patientId,
         CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var panels = await client.GetFromJsonAsync<IReadOnlyList<LabOrderPanelResponse>>(
             "/api/lab-panels?activeOnly=true", cancellationToken) ?? [];
         var users = await client.GetFromJsonAsync<IReadOnlyList<UserSummary>>(
@@ -94,7 +92,7 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
     [HttpPost("orders/create")]
     public async Task<IActionResult> CreateOrder(CreateLabOrderRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/lab-orders", request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
@@ -111,7 +109,7 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
     [HttpGet("orders/{id:guid}")]
     public async Task<IActionResult> OrderDetail(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var order = await client.GetFromJsonAsync<LabOrderResponse>($"/api/lab-orders/{id}", cancellationToken);
         if (order is null) return NotFound();
 
@@ -123,7 +121,7 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
     [HttpPost("orders/{id:guid}/collect")]
     public async Task<IActionResult> CollectOrder(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/lab-orders/{id}/collect", null, cancellationToken);
         return RedirectToAction(nameof(OrderDetail), new { id });
     }
@@ -131,7 +129,7 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
     [HttpPost("orders/{id:guid}/cancel")]
     public async Task<IActionResult> CancelOrder(Guid id, Guid? patientId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/lab-orders/{id}/cancel", null, cancellationToken);
         return RedirectToAction(nameof(Orders), new { patientId });
     }
@@ -139,26 +137,10 @@ public sealed class LabController(IHttpClientFactory httpClientFactory) : Contro
     [HttpPost("orders/{id:guid}/results")]
     public async Task<IActionResult> AddResult(Guid id, AddLabResultRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync($"/api/lab-orders/{id}/results", request, cancellationToken);
         return RedirectToAction(nameof(OrderDetail), new { id });
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 
-    private static string BuildQueryString(params (string key, string? value)[] pairs)
-    {
-        var parts = pairs
-            .Where(p => !string.IsNullOrEmpty(p.value))
-            .Select(p => $"{p.key}={Uri.EscapeDataString(p.value!)}");
-        var qs = string.Join("&", parts);
-        return string.IsNullOrEmpty(qs) ? string.Empty : $"?{qs}";
-    }
 }

@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Common.Constants;
 using HospitalMS.Web.Filters;
@@ -9,14 +8,13 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("doctors")]
 [RequireSession]
-public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class DoctorsController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var client  = CreateAuthorizedClient();
+        var client  = Api();
         var allUsers = await client.GetFromJsonAsync<List<UserSummary>>("/api/users", ct) ?? [];
         var doctors  = allUsers.Where(u => u.Role == UserRoles.Doctor).ToList();
 
@@ -28,7 +26,7 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Details(Guid id, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
 
         var staffTask       = client.GetFromJsonAsync<UserSummary>($"/api/users/{id}", ct);
         var appointmentsTask= client.GetFromJsonAsync<IReadOnlyList<AppointmentResponse>>($"/api/appointments?doctorUserId={id}", ct);
@@ -61,7 +59,7 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("create")]
     public async Task<IActionResult> Create([FromForm] RegisterRequest request, CancellationToken ct)
     {
-        var client   = CreateAuthorizedClient();
+        var client   = Api();
         var payload  = request with { Role = UserRoles.Doctor };
         var response = await client.PostAsJsonAsync("/api/users", payload, ct);
 
@@ -76,7 +74,7 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
     [HttpGet("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var doctor = await client.GetFromJsonAsync<UserSummary>($"/api/users/{id}", ct);
         if (doctor is null) return NotFound();
 
@@ -95,7 +93,7 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("{id:guid}/edit")]
     public async Task<IActionResult> Edit(Guid id, [FromForm] UpdateUserProfileRequest request, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PutAsJsonAsync($"/api/users/{id}/profile", request, ct);
 
         if (!response.IsSuccessStatusCode)
@@ -109,18 +107,10 @@ public sealed class DoctorsController(IHttpClientFactory httpClientFactory) : Co
     [HttpPost("{id:guid}/toggle")]
     public async Task<IActionResult> Toggle(Guid id, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync($"/api/users/{id}/toggle-active", new { }, ct);
         TempData["SuccessMessage"] = "Doctor status updated.";
         return RedirectToAction(nameof(Index));
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token  = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

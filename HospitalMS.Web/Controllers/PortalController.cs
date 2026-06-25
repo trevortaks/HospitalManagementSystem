@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using HospitalMS.Web.Models;
@@ -8,14 +7,13 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("portal")]
 [RequireSession]
-public sealed class PortalController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class PortalController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.GetAsync("/api/portal/dashboard", cancellationToken);
 
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -35,7 +33,7 @@ public sealed class PortalController(IHttpClientFactory httpClientFactory) : Con
     [HttpGet("appointments")]
     public async Task<IActionResult> Appointments(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var appointments = await client.GetFromJsonAsync<IReadOnlyList<PortalAppointmentResponse>>(
             "/api/portal/appointments", cancellationToken) ?? [];
         return View(appointments);
@@ -44,7 +42,7 @@ public sealed class PortalController(IHttpClientFactory httpClientFactory) : Con
     [HttpGet("doctors")]
     public async Task<IActionResult> Doctors(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var users = await client.GetFromJsonAsync<IReadOnlyList<UserSummary>>("/api/users", cancellationToken) ?? [];
         var doctors = users
             .Where(u => u.Role == "Doctor")
@@ -56,7 +54,7 @@ public sealed class PortalController(IHttpClientFactory httpClientFactory) : Con
     [HttpPost("book-appointment")]
     public async Task<IActionResult> BookAppointment([FromForm] BookPortalAppointmentRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
 
         // Resolve the patient's own PatientId from the portal profile
         var profileResponse = await client.GetAsync("/api/portal/profile", cancellationToken);
@@ -94,7 +92,7 @@ public sealed class PortalController(IHttpClientFactory httpClientFactory) : Con
     [HttpGet("prescriptions")]
     public async Task<IActionResult> Prescriptions(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var prescriptions = await client.GetFromJsonAsync<IReadOnlyList<PortalPrescriptionResponse>>(
             "/api/portal/prescriptions", cancellationToken) ?? [];
         return View(prescriptions);
@@ -103,7 +101,7 @@ public sealed class PortalController(IHttpClientFactory httpClientFactory) : Con
     [HttpGet("profile")]
     public async Task<IActionResult> Profile(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.GetAsync("/api/portal/profile", cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -119,7 +117,7 @@ public sealed class PortalController(IHttpClientFactory httpClientFactory) : Con
     [HttpPost("profile")]
     public async Task<IActionResult> Profile(UpdatePortalProfileRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PatchAsJsonAsync("/api/portal/profile", request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -151,12 +149,4 @@ public sealed class PortalController(IHttpClientFactory httpClientFactory) : Con
         }
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

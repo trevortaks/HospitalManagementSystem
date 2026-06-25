@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,14 +6,13 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("facilities")]
 [RequireSession]
-public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class FacilitiesController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     [HttpGet("rooms")]
     public async Task<IActionResult> Rooms(CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var rooms = await client.GetFromJsonAsync<IReadOnlyList<RoomResponse>>(
             "/api/facilities/rooms", ct) ?? [];
 
@@ -30,7 +28,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
         [FromForm] string? Notes, CancellationToken ct)
     {
         var request = new CreateRoomRequest(Name, RoomNumber, RoomType, FloorNumber, Building, CapacityPersons, Notes);
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync("/api/facilities/rooms", request, ct);
         return RedirectToAction(nameof(Rooms));
     }
@@ -38,7 +36,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     [HttpPost("rooms/{id:guid}/toggle")]
     public async Task<IActionResult> ToggleRoom(Guid id, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/facilities/rooms/{id}/toggle-active", null, ct);
         return RedirectToAction(nameof(Rooms));
     }
@@ -46,7 +44,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     [HttpGet("equipment")]
     public async Task<IActionResult> Equipment([FromQuery] string? status, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var url = "/api/facilities/equipment" + (string.IsNullOrWhiteSpace(status) ? "" : $"?status={status}");
         var equipment = await client.GetFromJsonAsync<IReadOnlyList<EquipmentResponse>>(url, ct) ?? [];
         var rooms     = await client.GetFromJsonAsync<IReadOnlyList<RoomResponse>>("/api/facilities/rooms?activeOnly=true", ct) ?? [];
@@ -66,7 +64,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     {
         var request = new CreateEquipmentRequest(Name, Code, EquipmentType, SerialNumber,
             Manufacturer, Model, LocationRoomId, Notes: Notes);
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync("/api/facilities/equipment", request, ct);
         return RedirectToAction(nameof(Equipment));
     }
@@ -74,7 +72,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     [HttpPost("equipment/{id:guid}/status")]
     public async Task<IActionResult> UpdateEquipmentStatus(Guid id, [FromForm] string Status, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsJsonAsync($"/api/facilities/equipment/{id}/status",
             new UpdateEquipmentStatusRequest(Status), ct);
         return RedirectToAction(nameof(Equipment));
@@ -83,7 +81,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     [HttpGet("maintenance")]
     public async Task<IActionResult> MaintenanceRequests([FromQuery] string? status, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var url = "/api/facilities/maintenance-requests" + (string.IsNullOrWhiteSpace(status) ? "" : $"?status={status}");
         var requests = await client.GetFromJsonAsync<IReadOnlyList<MaintenanceRequestResponse>>(url, ct) ?? [];
         var rooms    = await client.GetFromJsonAsync<IReadOnlyList<RoomResponse>>("/api/facilities/rooms?activeOnly=true", ct) ?? [];
@@ -107,7 +105,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     {
         var request = new CreateMaintenanceRequestRequest(
             Title, Description, RequestedByUserId, RequestType, Priority, RoomId, EquipmentId);
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync("/api/facilities/maintenance-requests", request, ct);
         return RedirectToAction(nameof(MaintenanceRequests));
     }
@@ -115,7 +113,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     [HttpPost("maintenance/{id:guid}/assign")]
     public async Task<IActionResult> AssignRequest(Guid id, [FromForm] Guid AssignedToUserId, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsJsonAsync($"/api/facilities/maintenance-requests/{id}/assign",
             new AssignMaintenanceRequestRequest(AssignedToUserId), ct);
         return RedirectToAction(nameof(MaintenanceRequests));
@@ -124,7 +122,7 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     [HttpPost("maintenance/{id:guid}/resolve")]
     public async Task<IActionResult> ResolveRequest(Guid id, [FromForm] string ResolutionNotes, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsJsonAsync($"/api/facilities/maintenance-requests/{id}/resolve",
             new ResolveMaintenanceRequestRequest(ResolutionNotes), ct);
         return RedirectToAction(nameof(MaintenanceRequests));
@@ -133,17 +131,9 @@ public sealed class FacilitiesController(IHttpClientFactory httpClientFactory) :
     [HttpPost("maintenance/{id:guid}/close")]
     public async Task<IActionResult> CloseRequest(Guid id, CancellationToken ct)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/facilities/maintenance-requests/{id}/close", null, ct);
         return RedirectToAction(nameof(MaintenanceRequests));
     }
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }

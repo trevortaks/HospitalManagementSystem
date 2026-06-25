@@ -4,14 +4,6 @@
     ViewData["ActivePage"] = "Patients";
 
     // Deterministic avatar colour from name
-    string[] avatarPalette = ["#2e37a4","#0891b2","#7c3aed","#ea5c0a","#16a34a","#dc2626","#0e7490","#9333ea"];
-    string AvatarColor(string name)
-    {
-        int h = 0;
-        foreach (char c in name) h = c + ((h << 5) - h);
-        return avatarPalette[Math.Abs(h) % avatarPalette.Length];
-    }
-
     int Age(DateTime dob)
     {
         var today = DateTime.UtcNow;
@@ -101,7 +93,7 @@
                     @foreach (var p in Model)
                     {
                         var initials = $"{p.FirstName[0]}{p.LastName[0]}".ToUpper();
-                        var color    = AvatarColor(p.FirstName + p.LastName);
+                        var color    = ViewHelpers.AvatarColor(p.FirstName + p.LastName);
                         var age      = Age(p.DateOfBirth);
                         <tr class="patient-row"
                             data-name="@($"{p.FirstName} {p.LastName}".ToLower())"

@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using HospitalMS.Business.Models;
 using HospitalMS.Web.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -7,16 +6,15 @@ namespace HospitalMS.Web.Controllers;
 
 [Route("beds")]
 [RequireSession]
-public sealed class BedManagementController(IHttpClientFactory httpClientFactory) : Controller
+public sealed class BedManagementController(IHttpClientFactory f) : AppController(f)
 {
-    private const string TokenSessionKey = "jwt_token";
 
     // ── Wards ─────────────────────────────────────────────────────────────────
 
     [HttpGet("wards")]
     public async Task<IActionResult> Wards(CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var wards = await client.GetFromJsonAsync<IReadOnlyList<WardResponse>>("/api/wards", cancellationToken) ?? [];
 
         ViewData["Title"] = "Wards";
@@ -35,7 +33,7 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpPost("wards/create")]
     public async Task<IActionResult> CreateWard(CreateWardRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/wards", request, cancellationToken);
         if (response.IsSuccessStatusCode) return RedirectToAction(nameof(Wards));
 
@@ -48,7 +46,7 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpPost("wards/{id:guid}/toggle")]
     public async Task<IActionResult> ToggleWard(Guid id, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/wards/{id}/toggle-active", null, cancellationToken);
         return RedirectToAction(nameof(Wards));
     }
@@ -58,7 +56,7 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpGet("wards/{wardId:guid}")]
     public async Task<IActionResult> WardDetail(Guid wardId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
 
         var wardResponse = await client.GetAsync($"/api/wards/{wardId}", cancellationToken);
         if (!wardResponse.IsSuccessStatusCode) return NotFound();
@@ -85,7 +83,7 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpGet("wards/{wardId:guid}/beds/create")]
     public async Task<IActionResult> CreateBed(Guid wardId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var wardResponse = await client.GetAsync($"/api/wards/{wardId}", cancellationToken);
         if (!wardResponse.IsSuccessStatusCode) return NotFound();
         var ward = await wardResponse.Content.ReadFromJsonAsync<WardResponse>(cancellationToken);
@@ -99,7 +97,7 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpPost("wards/{wardId:guid}/beds/create")]
     public async Task<IActionResult> CreateBed(Guid wardId, CreateBedRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync($"/api/wards/{wardId}/beds", request with { WardId = wardId }, cancellationToken);
         if (response.IsSuccessStatusCode) return RedirectToAction(nameof(WardDetail), new { wardId });
 
@@ -112,7 +110,7 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpPost("beds/{id:guid}/toggle")]
     public async Task<IActionResult> ToggleBed(Guid id, Guid wardId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PatchAsync($"/api/beds/{id}/toggle-active", null, cancellationToken);
         return RedirectToAction(nameof(WardDetail), new { wardId });
     }
@@ -122,7 +120,7 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpGet("allocate/{bedId:guid}")]
     public async Task<IActionResult> Allocate(Guid bedId, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var bedResponse = await client.GetAsync($"/api/beds/{bedId}", cancellationToken);
         if (!bedResponse.IsSuccessStatusCode) return NotFound();
         var bed = await bedResponse.Content.ReadFromJsonAsync<BedResponse>(cancellationToken);
@@ -142,7 +140,7 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpPost("allocate/{bedId:guid}")]
     public async Task<IActionResult> Allocate(Guid bedId, AllocateBedRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         var response = await client.PostAsJsonAsync("/api/beds/allocate", request with { BedId = bedId }, cancellationToken);
         if (response.IsSuccessStatusCode) return RedirectToAction(nameof(WardDetail), new { wardId = (await response.Content.ReadFromJsonAsync<BedAllocationResponse>(cancellationToken))?.BedId });
 
@@ -155,19 +153,11 @@ public sealed class BedManagementController(IHttpClientFactory httpClientFactory
     [HttpPost("discharge/{allocationId:guid}")]
     public async Task<IActionResult> Discharge(Guid allocationId, DischargePatientRequest request, CancellationToken cancellationToken)
     {
-        var client = CreateAuthorizedClient();
+        var client = Api();
         await client.PostAsJsonAsync("/api/beds/discharge", request with { AllocationId = allocationId }, cancellationToken);
         return RedirectToAction(nameof(Wards));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private HttpClient CreateAuthorizedClient()
-    {
-        var client = httpClientFactory.CreateClient("HospitalAPI");
-        var token = HttpContext.Session.GetString(TokenSessionKey);
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
 }
