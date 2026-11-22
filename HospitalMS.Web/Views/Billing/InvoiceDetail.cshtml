@@ -24,6 +24,26 @@
     var chargeItems  = ViewBag.ChargeItems  as IReadOnlyList<HospitalMS.Business.Models.ChargeItemResponse> ?? [];
     var accountsStaff = ViewBag.AccountsStaff as IReadOnlyList<HospitalMS.Business.Models.UserSummary> ?? [];
     var claims       = ViewBag.Claims        as IReadOnlyList<HospitalMS.Business.Models.InsuranceClaimResponse> ?? [];
+    var policies     = ViewBag.Policies      as IReadOnlyList<HospitalMS.Business.Models.PatientInsuranceResponse> ?? [];
+    var canManageClaims = ViewBag.CanManageClaims as bool? ?? false;
+    var canFileClaim    = canManageClaims && Model.Status is not (InvoiceStatus.Draft or InvoiceStatus.Voided);
+
+    string ClaimClass(string s) => s switch {
+        ClaimStatus.Paid      => "appt-badge--completed",
+        ClaimStatus.Approved  => "appt-badge--confirmed",
+        ClaimStatus.Rejected  => "appt-badge--cancelled",
+        ClaimStatus.Submitted => "appt-badge--inprogress",
+        _                     => "appt-badge--scheduled"
+    };
+
+    // Statuses a claim can move to next. Paid is final; a rejected claim can be resubmitted on appeal.
+    string[] NextClaimStatuses(string s) => s switch {
+        ClaimStatus.Pending   => [ClaimStatus.Submitted, ClaimStatus.Approved, ClaimStatus.Rejected],
+        ClaimStatus.Submitted => [ClaimStatus.Approved, ClaimStatus.Rejected],
+        ClaimStatus.Approved  => [ClaimStatus.Paid, ClaimStatus.Rejected],
+        ClaimStatus.Rejected  => [ClaimStatus.Submitted],
+        _                     => []
+    };
 
     string StatusClass(string s) => s switch {
         InvoiceStatus.Paid          => "appt-badge--completed",
@@ -260,17 +280,79 @@
             </div>
             @foreach (var c in claims)
             {
-                <div style="padding:.5rem 1.5rem;border-bottom:1px solid #f1f5f9">
-                    <div style="font-size:.85rem;font-weight:600;color:#1e293b">@c.ClaimNumber</div>
-                    <div style="font-size:.78rem;color:#64748b">@c.ProviderName · @c.PolicyNumber</div>
-                    <div style="font-size:.78rem;color:#64748b">Status: <strong>@c.Status</strong>@(c.ApprovedAmount.HasValue ? $" · Approved: {c.ApprovedAmount:N2}" : "")</div>
+                var next = canManageClaims ? NextClaimStatuses(c.Status) : [];
+                <div style="padding:.6rem 1.5rem;border-bottom:1px solid #f1f5f9">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div style="font-size:.85rem;font-weight:600;color:#1e293b">@c.ClaimNumber</div>
+                            <div style="font-size:.78rem;color:#64748b">@c.ProviderName · @c.PolicyNumber</div>
+                        </div>
+                        <span class="appt-status-badge @ClaimClass(c.Status)" style="font-size:.7rem">@c.Status</span>
+                    </div>
+                    <div style="font-size:.78rem;color:#64748b" class="mt-1">
+                        Filed @c.SubmittedAtUtc.ToString("dd MMM yyyy")
+                        @if (c.ApprovedAmount.HasValue) { <text> · Approved: <strong>@c.ApprovedAmount.Value.ToString("N2")</strong></text> }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(c.RejectionReason))
+                    {
+                        <div style="font-size:.78rem;color:#dc2626">Rejected: @c.RejectionReason</div>
+                    }
+                    @if (next.Length > 0)
+                    {
+                        <details class="mt-2 no-print">
+                            <summary style="font-size:.78rem;color:#2563eb;cursor:pointer">Update status</summary>
+                            <form asp-action="UpdateClaimStatus" asp-route-id="@Model.Id" asp-route-claimId="@c.Id" method="post"
+                                  class="mt-2 claim-status-form">
+                                <select name="status" class="form-select form-select-sm mb-2 claim-status-select" aria-label="New status">
+                                    @foreach (var n in next) { <option value="@n">@n</option> }
+                                </select>
+                                <div class="claim-field claim-field--amount mb-2">
+                                    <label class="form-label small mb-1">Approved amount</label>
+                                    <input name="approvedAmount" type="number" step="0.01" min="0.01" class="form-control form-control-sm"
+                                           value="@((c.ApprovedAmount ?? Model.TotalAmount).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))" />
+                                </div>
+                                <div class="claim-field claim-field--reason mb-2">
+                                    <label class="form-label small mb-1">Rejection reason</label>
+                                    <input name="rejectionReason" class="form-control form-control-sm" maxlength="500" />
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm w-100">Save</button>
+                            </form>
+                        </details>
+                    }
                 </div>
             }
             @if (!claims.Any())
             {
                 <div style="padding:.75rem 1.5rem 1rem;color:#94a3b8;font-size:.875rem">No claims filed.</div>
             }
+            @if (canFileClaim)
+            {
+                <div class="no-print" style="padding:1rem 1.5rem 1.25rem;border-top:1px solid #f1f5f9">
+                    @if (!policies.Any())
+                    {
+                        <div style="font-size:.85rem;color:#64748b">
+                            No active insurance on file for this patient.
+                            <a asp-controller="InsuranceWeb" asp-action="PatientCoverage" asp-route-patientId="@Model.PatientId">Add coverage</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <form asp-action="FileClaim" asp-route-id="@Model.Id" method="post">
+                            <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:.5rem">File a Claim</div>
+                            <label class="form-label small fw-semibold mb-1" for="claimPolicy">Policy</label>
+                            <select id="claimPolicy" name="patientInsuranceId" class="form-select form-select-sm mb-2" required>
+                                @foreach (var p in policies)
+                                {
+                                    <option value="@p.Id">@p.ProviderName · @p.PolicyNumber@(p.IsPrimary ? " (primary)" : "")</option>
+                                }
+                            </select>
+                            <label class="form-label small fw-semibold mb-1" for="claimNumber">Insurer claim number</label>
+                            <input id="claimNumber" name="claimNumber" class="form-control form-control-sm mb-2" maxlength="64" required />
+                            <button type="submit" class="btn btn-primary btn-sm w-100">File Claim</button>
+                        </form>
+                    }
+                </div>
+            }
         </div>
     </div>
 </div>
-

@@ -80,6 +80,14 @@ public sealed class AppointmentsController(IAppointmentService appointmentServic
         {
             return NotFound();
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [HttpDelete("{id:guid}")]
