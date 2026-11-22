@@ -118,4 +118,100 @@ public sealed class InsuranceServiceTests : IntegrationTestBase
         var result = await _service.GetProviderByIdAsync(Guid.NewGuid());
         Assert.Null(result);
     }
+
+    // ── Claims ───────────────────────────────────────────────────────────────
+
+    private async Task<(Guid InvoiceId, Guid PolicyId)> SeedInvoiceWithPolicyAsync(
+        string invoiceStatus = InvoiceStatus.Issued, Guid? policyPatientId = null, bool policyActive = true)
+    {
+        using var ctx = CreateContext();
+        var invoice = TestFixtures.CreateInvoice(patientId: _patientId, status: invoiceStatus, totalAmount: 500m);
+        var policy = new PatientInsurance
+        {
+            PatientId   = policyPatientId ?? _patientId,
+            ProviderId  = _providerId,
+            PolicyNumber = "POL-777",
+            IsActive    = policyActive
+        };
+        await ctx.Invoices.AddAsync(invoice);
+        await ctx.PatientInsurances.AddAsync(policy);
+        await ctx.SaveChangesAsync();
+        return (invoice.Id, policy.Id);
+    }
+
+    [Fact]
+    public async Task CreateClaimAsync_FilesPendingClaimForIssuedInvoice()
+    {
+        var (invoiceId, policyId) = await SeedInvoiceWithPolicyAsync();
+
+        var claim = await _service.CreateClaimAsync(new CreateInsuranceClaimRequest(invoiceId, policyId, "CLM-1"));
+
+        Assert.Equal(ClaimStatus.Pending, claim.Status);
+        Assert.Equal("POL-777", claim.PolicyNumber);
+        Assert.Equal("BlueCross Medical", claim.ProviderName);
+    }
+
+    [Fact]
+    public async Task CreateClaimAsync_RejectsDraftInvoice()
+    {
+        var (invoiceId, policyId) = await SeedInvoiceWithPolicyAsync(InvoiceStatus.Draft);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.CreateClaimAsync(new CreateInsuranceClaimRequest(invoiceId, policyId, "CLM-1")));
+    }
+
+    [Fact]
+    public async Task CreateClaimAsync_RejectsPolicyOfAnotherPatient()
+    {
+        var (invoiceId, policyId) = await SeedInvoiceWithPolicyAsync(policyPatientId: Guid.NewGuid());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.CreateClaimAsync(new CreateInsuranceClaimRequest(invoiceId, policyId, "CLM-1")));
+    }
+
+    [Fact]
+    public async Task CreateClaimAsync_RejectsInactivePolicy()
+    {
+        var (invoiceId, policyId) = await SeedInvoiceWithPolicyAsync(policyActive: false);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.CreateClaimAsync(new CreateInsuranceClaimRequest(invoiceId, policyId, "CLM-1")));
+    }
+
+    [Fact]
+    public async Task CreateClaimAsync_RequiresClaimNumber()
+    {
+        var (invoiceId, policyId) = await SeedInvoiceWithPolicyAsync();
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _service.CreateClaimAsync(new CreateInsuranceClaimRequest(invoiceId, policyId, "  ")));
+    }
+
+    [Fact]
+    public async Task UpdateClaimStatusAsync_ApproveSetsAmountAndResolvedDate()
+    {
+        var (invoiceId, policyId) = await SeedInvoiceWithPolicyAsync();
+        var claim = await _service.CreateClaimAsync(new CreateInsuranceClaimRequest(invoiceId, policyId, "CLM-1"));
+
+        var updated = await _service.UpdateClaimStatusAsync(claim.Id,
+            new UpdateClaimStatusRequest(ClaimStatus.Approved, ApprovedAmount: 450m));
+
+        Assert.Equal(ClaimStatus.Approved, updated.Status);
+        Assert.Equal(450m, updated.ApprovedAmount);
+        Assert.NotNull(updated.ResolvedAtUtc);
+    }
+
+    [Theory]
+    [InlineData("Lost", null, null)]                   // unknown status
+    [InlineData(ClaimStatus.Approved, null, null)]     // approval without amount
+    [InlineData(ClaimStatus.Paid, 0, null)]            // zero amount
+    [InlineData(ClaimStatus.Rejected, null, " ")]      // rejection without reason
+    public async Task UpdateClaimStatusAsync_RejectsInvalidRequests(string status, int? amount, string? reason)
+    {
+        var (invoiceId, policyId) = await SeedInvoiceWithPolicyAsync();
+        var claim = await _service.CreateClaimAsync(new CreateInsuranceClaimRequest(invoiceId, policyId, "CLM-1"));
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _service.UpdateClaimStatusAsync(claim.Id, new UpdateClaimStatusRequest(status, amount, reason)));
+    }
 }

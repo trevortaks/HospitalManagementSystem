@@ -111,6 +111,29 @@ public sealed class AppointmentsController(IHttpClientFactory f) : AppController
         return Redirect(string.IsNullOrEmpty(returnUrl) ? "/appointments" : returnUrl);
     }
 
+    [HttpPost("{id:guid}/status")]
+    public async Task<IActionResult> SetStatus(Guid id, string status, CancellationToken cancellationToken)
+    {
+        var client = Api();
+        var response = await client.PatchAsJsonAsync($"/api/appointments/{id}/status",
+            new PatchAppointmentStatusRequest(status), cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+            TempData["SuccessMessage"] = $"Appointment marked {StatusLabel(status)}.";
+        else
+            TempData["Error"] = await ApiErrorAsync(response, "Failed to update appointment status.", cancellationToken);
+
+        var returnUrl = Request.Form["returnUrl"].FirstOrDefault();
+        return Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl) : RedirectToAction("Index");
+    }
+
+    private static string StatusLabel(string status) => status switch
+    {
+        "InProgress" => "in progress",
+        "NoShow"     => "no-show",
+        _            => status.ToLowerInvariant()
+    };
+
     [HttpPost("{id:guid}/cancel")]
     public async Task<IActionResult> Cancel(Guid id, string? reason, CancellationToken cancellationToken)
     {

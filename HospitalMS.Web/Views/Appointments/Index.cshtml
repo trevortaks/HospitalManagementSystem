@@ -14,6 +14,23 @@
     };
 
     var statusFilter = ViewBag.StatusFilter as string;
+
+    // Mirrors the API: only admins and doctors may change appointment status.
+    var sessionRole = Context.Session.GetString("role") ?? "";
+    var canSetStatus = sessionRole is "Admin" or "Doctor";
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+
+    // Status transitions offered from each state: (target, label).
+    (string Target, string Label)[] NextStatuses(string current) => current switch
+    {
+        AppointmentStatus.Scheduled  => [(AppointmentStatus.Confirmed, "Confirm"), (AppointmentStatus.InProgress, "Mark In Progress"),
+                                         (AppointmentStatus.Completed, "Mark Completed"), (AppointmentStatus.NoShow, "Mark No-Show")],
+        AppointmentStatus.Confirmed  => [(AppointmentStatus.InProgress, "Mark In Progress"), (AppointmentStatus.Completed, "Mark Completed"),
+                                         (AppointmentStatus.NoShow, "Mark No-Show")],
+        AppointmentStatus.InProgress => [(AppointmentStatus.Completed, "Mark Completed")],
+        AppointmentStatus.NoShow     => [(AppointmentStatus.Scheduled, "Revert to Scheduled")],
+        _                            => []
+    };
 }
 
 <div class="page-header">
@@ -202,6 +219,20 @@
                                                 Open Encounter
                                             </a>
                                         </li>
+                                        @if (canSetStatus && NextStatuses(a.Status).Length > 0)
+                                        {
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            foreach (var (target, label) in NextStatuses(a.Status))
+                                            {
+                                                <li>
+                                                    <form asp-action="SetStatus" asp-route-id="@a.Id" method="post" class="m-0">
+                                                        <input type="hidden" name="status" value="@target" />
+                                                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                                        <button type="submit" class="dropdown-item pt-dropdown-item">@label</button>
+                                                    </form>
+                                                </li>
+                                            }
+                                        }
                                         @if (a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.Completed)
                                         {
                                             <li><hr class="dropdown-divider my-1"></li>

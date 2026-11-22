@@ -105,6 +105,16 @@ public sealed class AppointmentService(HospitalDbContext dbContext) : IAppointme
         var appointment = await dbContext.Appointments.FindAsync([id], cancellationToken)
             ?? throw new KeyNotFoundException($"Appointment '{id}' was not found.");
 
+        if (!AppointmentStatus.All.Contains(request.Status))
+            throw new ArgumentException($"'{request.Status}' is not a valid appointment status.", nameof(request));
+
+        // Cancellation goes through CancelAsync so the reason is captured.
+        if (request.Status == AppointmentStatus.Cancelled)
+            throw new InvalidOperationException("Use the cancel endpoint to cancel an appointment.");
+
+        if (appointment.Status == AppointmentStatus.Cancelled)
+            throw new InvalidOperationException("A cancelled appointment cannot change status.");
+
         appointment.Status = request.Status;
         appointment.UpdatedAtUtc = DateTime.UtcNow;
 

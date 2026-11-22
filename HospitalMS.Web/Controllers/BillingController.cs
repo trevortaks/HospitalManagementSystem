@@ -58,9 +58,21 @@ public sealed class BillingController(IHttpClientFactory f) : AppController(f)
         if (claimsResponse.IsSuccessStatusCode)
             claims = await claimsResponse.Content.ReadFromJsonAsync<IReadOnlyList<InsuranceClaimResponse>>(cancellationToken) ?? [];
 
+        // Active policies for this patient, used by the "File claim" form.
+        var policiesResponse = await client.GetAsync($"/api/insurance/patient/{invoice.PatientId}", cancellationToken);
+        IReadOnlyList<PatientInsuranceResponse> policies = [];
+        if (policiesResponse.IsSuccessStatusCode)
+        {
+            var all = await policiesResponse.Content.ReadFromJsonAsync<IReadOnlyList<PatientInsuranceResponse>>(cancellationToken) ?? [];
+            policies = [.. all.Where(p => p.IsActive).OrderByDescending(p => p.IsPrimary)];
+        }
+
         ViewBag.ChargeItems = chargeItems;
         ViewBag.AccountsStaff = accountsStaff;
         ViewBag.Claims = claims;
+        ViewBag.Policies = policies;
+        // Claims endpoints are restricted to these roles; a 403 on the lookups above means the same.
+        ViewBag.CanManageClaims = claimsResponse.IsSuccessStatusCode;
         ViewData["Title"] = $"Invoice {invoice.InvoiceNumber}";
         ViewData["ActivePage"] = "Billing";
         return View(invoice);
@@ -190,4 +202,44 @@ public sealed class BillingController(IHttpClientFactory f) : AppController(f)
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
+    [HttpPost("invoices/{id:guid}/claims")]
+    public async Task<IActionResult> FileClaim(Guid id, Guid patientInsuranceId, string? claimNumber, CancellationToken cancellationToken)
+    {
+        if (patientInsuranceId == Guid.Empty || string.IsNullOrWhiteSpace(claimNumber))
+        {
+            TempData["Error"] = "Choose a policy and enter the insurer's claim number.";
+            return RedirectToAction("InvoiceDetail", new { id });
+        }
+
+        var client = Api();
+        var response = await client.PostAsJsonAsync("/api/insurance/claims",
+            new CreateInsuranceClaimRequest(id, patientInsuranceId, claimNumber.Trim()), cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+            TempData["SuccessMessage"] = "Claim filed.";
+        else
+            TempData["Error"] = await ApiErrorAsync(response, "Failed to file claim.", cancellationToken);
+
+        return RedirectToAction("InvoiceDetail", new { id });
+    }
+
+    [HttpPost("invoices/{id:guid}/claims/{claimId:guid}/status")]
+    public async Task<IActionResult> UpdateClaimStatus(Guid id, Guid claimId, string status,
+        decimal? approvedAmount, string? rejectionReason, CancellationToken cancellationToken)
+    {
+        // Only send the field that matters for the chosen status.
+        var amount = status is "Approved" or "Paid" ? approvedAmount : null;
+        var reason = status == "Rejected" && !string.IsNullOrWhiteSpace(rejectionReason) ? rejectionReason.Trim() : null;
+
+        var client = Api();
+        var response = await client.PatchAsJsonAsync($"/api/insurance/claims/{claimId}/status",
+            new UpdateClaimStatusRequest(status, amount, reason), cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+            TempData["SuccessMessage"] = $"Claim marked {status.ToLowerInvariant()}.";
+        else
+            TempData["Error"] = await ApiErrorAsync(response, "Failed to update claim.", cancellationToken);
+
+        return RedirectToAction("InvoiceDetail", new { id });
+    }
 }

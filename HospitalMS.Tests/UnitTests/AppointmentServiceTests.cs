@@ -93,4 +93,55 @@ public sealed class AppointmentServiceTests : IntegrationTestBase
 
         Assert.All(result, a => Assert.Equal(_seededPatientId, a.PatientId));
     }
+
+    private async Task<Guid> SeedAppointmentAsync(string status = AppointmentStatus.Scheduled)
+    {
+        using var ctx = CreateContext();
+        var appt = TestFixtures.CreateAppointment(patientId: _seededPatientId, doctorUserId: _seededDoctorId);
+        appt.Status = status;
+        await ctx.Appointments.AddAsync(appt);
+        await ctx.SaveChangesAsync();
+        return appt.Id;
+    }
+
+    [Theory]
+    [InlineData(AppointmentStatus.Confirmed)]
+    [InlineData(AppointmentStatus.Completed)]
+    [InlineData(AppointmentStatus.NoShow)]
+    public async Task PatchStatusAsync_SetsValidStatus(string status)
+    {
+        var id = await SeedAppointmentAsync();
+
+        var result = await new AppointmentService(CreateContext())
+            .PatchStatusAsync(id, new PatchAppointmentStatusRequest(status));
+
+        Assert.Equal(status, result.Status);
+    }
+
+    [Fact]
+    public async Task PatchStatusAsync_RejectsUnknownStatus()
+    {
+        var id = await SeedAppointmentAsync();
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            new AppointmentService(CreateContext()).PatchStatusAsync(id, new PatchAppointmentStatusRequest("Finished")));
+    }
+
+    [Fact]
+    public async Task PatchStatusAsync_RejectsCancelled_SoReasonIsCapturedViaCancel()
+    {
+        var id = await SeedAppointmentAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new AppointmentService(CreateContext()).PatchStatusAsync(id, new PatchAppointmentStatusRequest(AppointmentStatus.Cancelled)));
+    }
+
+    [Fact]
+    public async Task PatchStatusAsync_CannotChangeCancelledAppointment()
+    {
+        var id = await SeedAppointmentAsync(AppointmentStatus.Cancelled);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new AppointmentService(CreateContext()).PatchStatusAsync(id, new PatchAppointmentStatusRequest(AppointmentStatus.Completed)));
+    }
 }

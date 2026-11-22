@@ -128,6 +128,18 @@ public sealed class InsuranceService(HospitalDbContext dbContext) : IInsuranceSe
         if (invoice.Status is InvoiceStatus.Draft or InvoiceStatus.Voided)
             throw new InvalidOperationException("Claims can only be submitted for issued invoices.");
 
+        if (string.IsNullOrWhiteSpace(request.ClaimNumber))
+            throw new ArgumentException("A claim number is required.", nameof(request));
+
+        var policy = await dbContext.PatientInsurances.FindAsync([request.PatientInsuranceId], cancellationToken)
+            ?? throw new KeyNotFoundException($"Patient insurance '{request.PatientInsuranceId}' not found.");
+
+        if (policy.PatientId != invoice.PatientId)
+            throw new InvalidOperationException("The insurance policy does not belong to the invoiced patient.");
+
+        if (!policy.IsActive)
+            throw new InvalidOperationException("The insurance policy is not active.");
+
         var claim = new InsuranceClaim
         {
             InvoiceId = request.InvoiceId,
@@ -148,6 +160,15 @@ public sealed class InsuranceService(HospitalDbContext dbContext) : IInsuranceSe
     {
         var claim = await dbContext.InsuranceClaims.FindAsync([claimId], cancellationToken)
             ?? throw new KeyNotFoundException($"Insurance claim '{claimId}' not found.");
+
+        if (!ClaimStatus.All.Contains(request.Status))
+            throw new ArgumentException($"'{request.Status}' is not a valid claim status.", nameof(request));
+
+        if ((request.Status is ClaimStatus.Approved or ClaimStatus.Paid) && request.ApprovedAmount is not > 0)
+            throw new ArgumentException("An approved amount greater than zero is required.", nameof(request));
+
+        if (request.Status == ClaimStatus.Rejected && string.IsNullOrWhiteSpace(request.RejectionReason))
+            throw new ArgumentException("A rejection reason is required.", nameof(request));
 
         claim.Status = request.Status;
         claim.ApprovedAmount = request.ApprovedAmount;

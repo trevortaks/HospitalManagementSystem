@@ -114,6 +114,63 @@ public sealed class EncountersController(IHttpClientFactory f) : AppController(f
         return RedirectToAction("Detail", new { id });
     }
 
+    [HttpPost("{id:guid}/diagnoses")]
+    public async Task<IActionResult> AddDiagnosis(Guid id, AddDiagnosisRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.IcdCode) || string.IsNullOrWhiteSpace(request.Description))
+        {
+            TempData["Error"] = "ICD code and description are both required.";
+            return RedirectToAction("Detail", new { id });
+        }
+
+        var client = Api();
+        var response = await client.PostAsJsonAsync($"/api/encounters/{id}/diagnoses",
+            request with { IcdCode = request.IcdCode.Trim().ToUpperInvariant(), Description = request.Description.Trim() },
+            cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+            TempData["SuccessMessage"] = "Diagnosis added.";
+        else
+            TempData["Error"] = await ApiErrorAsync(response, "Failed to add diagnosis.", cancellationToken);
+
+        return RedirectToAction("Detail", new { id });
+    }
+
+    [HttpPost("{id:guid}/diagnoses/{diagnosisId:guid}/delete")]
+    public async Task<IActionResult> RemoveDiagnosis(Guid id, Guid diagnosisId, CancellationToken cancellationToken)
+    {
+        var client = Api();
+        var response = await client.DeleteAsync($"/api/encounters/{id}/diagnoses/{diagnosisId}", cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+            TempData["SuccessMessage"] = "Diagnosis removed.";
+        else
+            TempData["Error"] = await ApiErrorAsync(response, "Failed to remove diagnosis.", cancellationToken);
+
+        return RedirectToAction("Detail", new { id });
+    }
+
+    [HttpPost("{id:guid}/vitals")]
+    public async Task<IActionResult> AddVitals(Guid id, [FromForm] AddVitalsRequest request, CancellationToken cancellationToken)
+    {
+        if (request is { HeightCm: null, WeightKg: null, TemperatureCelsius: null, BloodPressureSystolic: null,
+                         BloodPressureDiastolic: null, HeartRateBpm: null, RespiratoryRate: null, OxygenSaturationPct: null })
+        {
+            TempData["Error"] = "Enter at least one measurement.";
+            return RedirectToAction("Detail", new { id });
+        }
+
+        var client = Api();
+        var response = await client.PostAsJsonAsync($"/api/encounters/{id}/vitals", request, cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+            TempData["SuccessMessage"] = "Vitals recorded.";
+        else
+            TempData["Error"] = await ApiErrorAsync(response, "Failed to record vitals.", cancellationToken);
+
+        return RedirectToAction("Detail", new { id });
+    }
+
     [HttpPost("{id:guid}/close")]
     public async Task<IActionResult> Close(Guid id, CancellationToken cancellationToken)
     {

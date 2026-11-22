@@ -71,6 +71,8 @@ public sealed class InsuranceController(IInsuranceService insuranceService) : Co
     public async Task<IActionResult> CreateClaim([FromBody] CreateInsuranceClaimRequest request, CancellationToken cancellationToken)
     {
         try { return Ok(await insuranceService.CreateClaimAsync(request, cancellationToken)); }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (ArgumentException ex) { return BadRequest(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
     }
 
@@ -79,5 +81,6 @@ public sealed class InsuranceController(IInsuranceService insuranceService) : Co
     {
         try { return Ok(await insuranceService.UpdateClaimStatusAsync(id, request, cancellationToken)); }
         catch (KeyNotFoundException) { return NotFound(); }
+        catch (ArgumentException ex) { return BadRequest(ex.Message); }
     }
 }
