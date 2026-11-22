@@ -65,7 +65,7 @@
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="patientId" value="@patientId" />
                                                 <button type="submit" class="dropdown-item pt-dropdown-danger pf-back-btn" style="font-size:.75rem;padding:.2rem .5rem"
-                                                        onclick="return confirm('Remove this coverage?')">Remove</button>
+                                                        data-confirm="Remove this coverage?">Remove</button>
                                             </form>
                                         </div>
                                     </td>

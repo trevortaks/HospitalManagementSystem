@@ -105,7 +105,7 @@
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="patientId" value="@patientId" />
                                                     <button type="submit" class="dropdown-item pt-dropdown-item pt-dropdown-danger"
-                                                            onclick="return confirm('Cancel this lab order?')">Cancel</button>
+                                                            data-confirm="Cancel this lab order?">Cancel</button>
                                                 </form>
                                             </li>
                                         }

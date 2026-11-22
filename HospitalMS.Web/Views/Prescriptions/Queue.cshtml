@@ -140,15 +140,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        const dispenseModal = document.getElementById('dispenseModal');
-        dispenseModal?.addEventListener('show.bs.modal', e => {
-            const btn = e.relatedTarget;
-            document.getElementById('modalRxId').value      = btn.dataset.rxId;
-            document.getElementById('modalMedLabel').textContent = btn.dataset.rxLabel;
-            document.getElementById('modalPatient').textContent  = btn.dataset.patient;
-            document.getElementById('dispenseForm').action  =
-                '/Prescriptions/Dispense/' + btn.dataset.rxId;
-        });
-    </script>
+    <script src="~/js/pages/prescriptions-queue.js" asp-append-version="true"></script>
 }

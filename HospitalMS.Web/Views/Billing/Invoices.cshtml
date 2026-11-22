@@ -21,7 +21,7 @@
         <div class="page-header-subtitle">Total: <strong>@Model.Count</strong></div>
     </div>
     <div class="d-flex gap-2">
-        <select onchange="location='?status='+this.value" class="pf-input" style="width:auto;font-size:.85rem">
+        <select data-nav-param="status" class="pf-input" style="width:auto;font-size:.85rem">
             <option value="">All statuses</option>
             @foreach (var s in InvoiceStatus.All)
             {

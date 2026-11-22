@@ -167,12 +167,5 @@
 
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
-    <script>
-        const medSelect = document.getElementById('medSelect');
-        const alert     = document.getElementById('controlledAlert');
-        medSelect?.addEventListener('change', () => {
-            const opt = medSelect.selectedOptions[0];
-            alert.classList.toggle('d-none', opt?.dataset.controlled !== 'true');
-        });
-    </script>
+    <script src="~/js/pages/prescriptions-create.js" asp-append-version="true"></script>
 }

@@ -97,34 +97,6 @@
     </div>
 </form>
 
-<script>
-    const itemsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(items.Select(i => new { id = i.Id, code = i.Code, name = i.Name, unitCost = i.UnitCost })));
-
-    function buildItemOptions(selectedId) {
-        return '<option value="">Select item...</option>' +
-            itemsData.map(i => `<option value="${i.id}" data-cost="${i.unitCost}" ${i.id === selectedId ? 'selected' : ''}>${i.code} — ${i.name}</option>`).join('');
-    }
-
-    function addLineRow() {
-        const row = document.createElement('tr');
-        row.className = 'line-row';
-        row.innerHTML = `
-            <td><select name="ItemIds" class="form-select form-select-sm" required>${buildItemOptions(null)}</select></td>
-            <td><input name="Quantities" type="number" min="1" class="form-control form-control-sm" value="1" required /></td>
-            <td><input name="UnitCosts" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0" required /></td>
-            <td><button type="button" class="btn btn-sm btn-outline-danger remove-line">✕</button></td>`;
-        document.getElementById('linesBody').appendChild(row);
-        row.querySelector('select').addEventListener('change', syncCost);
-        row.querySelector('.remove-line').addEventListener('click', () => row.remove());
-    }
-
-    function syncCost(e) {
-        const opt = e.target.selectedOptions[0];
-        const costInput = e.target.closest('tr').querySelector('input[name="UnitCosts"]');
-        if (opt && opt.dataset.cost) costInput.value = opt.dataset.cost;
-    }
-
-    document.getElementById('addLineBtn').addEventListener('click', addLineRow);
-    document.querySelectorAll('.line-row select').forEach(s => s.addEventListener('change', syncCost));
-    document.querySelectorAll('.remove-line').forEach(b => b.addEventListener('click', () => b.closest('tr').remove()));
-</script>
+@section Scripts {
+    <script src="~/js/pages/purchase-order-create.js" asp-append-version="true"></script>
+}

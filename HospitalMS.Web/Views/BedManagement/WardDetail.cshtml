@@ -180,11 +180,6 @@ else
     </div>
 </div>
 
-<script>
-    document.getElementById('dischargeModal')?.addEventListener('show.bs.modal', function (e) {
-        const btn = e.relatedTarget;
-        document.getElementById('dischargeAllocationId').value = btn.dataset.allocationId;
-        document.getElementById('dischargePatientName').textContent = btn.dataset.patient;
-        document.getElementById('dischargeForm').action = '/beds/discharge/' + btn.dataset.allocationId;
-    });
-</script>
+@section Scripts {
+    <script src="~/js/pages/ward-detail.js" asp-append-version="true"></script>
+}

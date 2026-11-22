@@ -44,10 +44,10 @@
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/HospitalMS.Web.styles.css" asp-append-version="true" />
 </head>
-<body class="dash-body" id="dashBody">
+<body class="dash-body @ViewData["BodyClass"]" id="dashBody">
 
     <!-- Mobile overlay -->
-    <div class="dash-overlay" id="dashOverlay" onclick="closeSidebar()"></div>
+    <div class="dash-overlay" id="dashOverlay" data-action="close-sidebar"></div>
 
     <!-- ── Sidebar ── -->
     <aside class="dash-sidebar" id="sidebar">
@@ -443,7 +443,7 @@
         <!-- Topbar -->
         <header class="dash-topbar">
             <button class="topbar-toggle" id="sidebarToggle" aria-label="Toggle sidebar"
-                    onclick="toggleSidebar()">
+                    data-action="toggle-sidebar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
                 </svg>
@@ -509,27 +509,6 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
-        function toggleSidebar() {
-            const body = document.getElementById('dashBody');
-            const isMobile = window.innerWidth < 768;
-            if (isMobile) {
-                body.classList.toggle('sidebar-open');
-            } else {
-                body.classList.toggle('sidebar-collapsed');
-                localStorage.setItem('sidebarCollapsed', body.classList.contains('sidebar-collapsed'));
-            }
-        }
-
-        function closeSidebar() {
-            document.getElementById('dashBody').classList.remove('sidebar-open');
-        }
-
-        // Restore desktop collapse state
-        if (window.innerWidth >= 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
-            document.getElementById('dashBody').classList.add('sidebar-collapsed');
-        }
-    </script>
     @await RenderSectionAsync("Scripts", required: false)
 
     @{
@@ -558,11 +537,6 @@
                 </div>
             }
         </div>
-        <script>
-            document.querySelectorAll('.toast').forEach(function(el) {
-                bootstrap.Toast.getOrCreateInstance(el).show();
-            });
-        </script>
     }
 </body>
 </html>

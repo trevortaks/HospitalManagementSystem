@@ -207,7 +207,7 @@
                                             <li><hr class="dropdown-divider my-1"></li>
                                             <li>
                                                 <button type="button" class="dropdown-item pt-dropdown-item pt-dropdown-danger"
-                                                        onclick="confirmCancel('@a.Id', '@a.PatientName')">
+                                                        data-cancel-appt="@a.Id" data-patient-name="@a.PatientName">
                                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
                                                     </svg>
@@ -236,7 +236,7 @@
 </div>
 
 <!-- Vitals modal -->
-<div class="modal fade" id="vitalsModal" tabindex="-1">
+<div class="modal fade" id="vitalsModal" tabindex="-1" data-default-return-url="/appointments">
     <div class="modal-dialog modal-lg">
         <form id="vitalsForm" method="post">
             @Html.AntiForgeryToken()
@@ -331,76 +331,6 @@
 </div>
 
 @section Scripts {
-    <script>
-        const rows  = document.querySelectorAll('.appt-row');
-        const total = rows.length;
-        const searchInput = document.getElementById('apptSearch');
-        const searchClear = document.getElementById('searchClear');
-        const noResults   = document.getElementById('noResults');
-        const noResultsTerm = document.getElementById('noResultsTerm');
-        const footerCount = document.getElementById('footerCount');
-        const statusSel   = document.getElementById('statusFilter');
-
-        function filterTable() {
-            const q = (searchInput?.value ?? '').trim().toLowerCase();
-            const s = statusSel?.value.toLowerCase() ?? '';
-            if (searchClear) searchClear.classList.toggle('d-none', q === '');
-            let visible = 0;
-            rows.forEach(row => {
-                const matchQ = !q || row.dataset.patient.includes(q) || row.dataset.doctor.includes(q);
-                const matchS = !s || row.dataset.status === s;
-                const show = matchQ && matchS;
-                row.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
-            if (noResults) noResults.classList.toggle('d-none', visible > 0);
-            if (noResultsTerm) noResultsTerm.textContent = `"${searchInput?.value.trim()}"`;
-            if (footerCount) footerCount.innerHTML = `Showing <strong>${visible}</strong> appointment${visible === 1 ? '' : 's'}`;
-        }
-
-        searchInput?.addEventListener('input', filterTable);
-        searchClear?.addEventListener('click', () => { if (searchInput) { searchInput.value = ''; filterTable(); searchInput.focus(); } });
-        statusSel?.addEventListener('change', filterTable);
-
-        // Cancel modal
-        let pendingCancelId = null;
-        const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
-
-        function confirmCancel(id, name) {
-            pendingCancelId = id;
-            document.getElementById('cancelPatientName').textContent = name;
-            cancelModal.show();
-        }
-
-        // Vitals modal
-        document.getElementById('vitalsModal')?.addEventListener('show.bs.modal', function (e) {
-            var btn = e.relatedTarget;
-            document.getElementById('vitalsPatientName').textContent = btn.dataset.patientName;
-            document.getElementById('vitalsForm').action = '/appointments/' + btn.dataset.apptId + '/vitals';
-            document.querySelector('#vitalsForm input[name="returnUrl"]').value = btn.dataset.returnUrl || '/appointments';
-            document.getElementById('fHeight').value = btn.dataset.existingHeight || '';
-            document.getElementById('fWeight').value = btn.dataset.existingWeight || '';
-            document.getElementById('fTemp').value   = btn.dataset.existingTemp   || '';
-            document.getElementById('fSbp').value    = btn.dataset.existingSbp    || '';
-            document.getElementById('fDbp').value    = btn.dataset.existingDbp    || '';
-            document.getElementById('fHr').value     = btn.dataset.existingHr     || '';
-            document.getElementById('fRr').value     = btn.dataset.existingRr     || '';
-            document.getElementById('fSpo2').value   = btn.dataset.existingSpo2   || '';
-            document.getElementById('fNotes').value  = btn.dataset.existingNotes  || '';
-        });
-
-        document.getElementById('confirmCancelBtn')?.addEventListener('click', () => {
-            if (!pendingCancelId) return;
-            const form = document.getElementById('cancelForm');
-            const reason = document.getElementById('cancelReason').value;
-            form.action = `/appointments/${pendingCancelId}/cancel`;
-
-            const input = document.createElement('input');
-            input.type = 'hidden'; input.name = 'reason'; input.value = reason;
-            form.appendChild(input);
-
-            cancelModal.hide();
-            form.submit();
-        });
-    </script>
+    <script src="~/js/vitals-modal.js" asp-append-version="true"></script>
+    <script src="~/js/pages/appointments-index.js" asp-append-version="true"></script>
 }

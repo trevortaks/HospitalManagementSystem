@@ -1248,3 +1248,40 @@ textarea.pf-input {
 select.pf-input {
     appearance: auto;
 }
+
+
+/* ── Patient dashboard quick-access links ───────────────────────────── */
+.quick-access-link {
+    color: inherit;
+    transition: background-color .15s;
+}
+.quick-access-link:hover,
+.quick-access-link:focus-visible {
+    background-color: #f1f5f9;
+    color: inherit;
+}
+
+/* ── Invoice detail: print layout ───────────────────────────────────── */
+/* The print-only header is hidden on screen everywhere. */
+.print-header { display: none; }
+
+@media print {
+    .invoice-print-page .dash-sidebar,
+    .invoice-print-page .dash-topbar,
+    .invoice-print-page .no-print,
+    .invoice-print-page .pf-breadcrumb,
+    .invoice-print-page form[method="post"],
+    .invoice-print-page .add-line-item-form,
+    .invoice-print-page .record-payment-form { display: none !important; }
+    .invoice-print-page .dash-content { margin: 0 !important; padding: 0 !important; }
+    .invoice-print-page.dash-body { display: block !important; }
+    .invoice-print-page .print-header { display: block !important; }
+    .invoice-print-page .col-md-3 { width: 25% !important; float: left; }
+    .invoice-print-page .col-md-8 { width: 100% !important; }
+    .invoice-print-page .col-md-4 { display: none !important; }
+    body.invoice-print-page { background: white !important; }
+    .invoice-print-page .dash-card { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+    .invoice-print-page .page-header { border-bottom: 2px solid #111 !important; margin-bottom: 1rem !important; }
+    .invoice-print-page .page-header-title { font-size: 1.4rem !important; }
+    .invoice-print-page a[href] { text-decoration: none !important; color: inherit !important; }
+}

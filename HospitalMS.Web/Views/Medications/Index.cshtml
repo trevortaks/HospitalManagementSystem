@@ -158,29 +158,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        const rows = document.querySelectorAll('.med-row');
-        const searchInput = document.getElementById('medSearch');
-        const searchClear = document.getElementById('searchClear');
-        const noResults = document.getElementById('noResults');
-        const noResultsTerm = document.getElementById('noResultsTerm');
-        const footerCount = document.getElementById('footerCount');
-
-        function filter() {
-            const q = searchInput.value.trim().toLowerCase();
-            searchClear.classList.toggle('d-none', q === '');
-            let visible = 0;
-            rows.forEach(row => {
-                const match = !q || row.dataset.name.includes(q) || row.dataset.brand.includes(q) || row.dataset.form.includes(q);
-                row.style.display = match ? '' : 'none';
-                if (match) visible++;
-            });
-            noResults.classList.toggle('d-none', visible > 0);
-            if (noResultsTerm) noResultsTerm.textContent = `"${searchInput.value.trim()}"`;
-            if (footerCount) footerCount.innerHTML = `Showing <strong>${visible}</strong> medication${visible === 1 ? '' : 's'}`;
-        }
-
-        searchInput.addEventListener('input', filter);
-        searchClear.addEventListener('click', () => { searchInput.value = ''; filter(); searchInput.focus(); });
-    </script>
+    <script src="~/js/pages/medications-index.js" asp-append-version="true"></script>
 }

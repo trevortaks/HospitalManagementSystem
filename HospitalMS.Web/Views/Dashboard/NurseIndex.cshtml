@@ -184,7 +184,7 @@
 </div>
 
 <!-- Vitals Modal -->
-<div class="modal fade" id="vitalsModal" tabindex="-1">
+<div class="modal fade" id="vitalsModal" tabindex="-1" data-default-return-url="/dashboard">
     <div class="modal-dialog modal-lg">
         <form id="vitalsForm" method="post">
             @Html.AntiForgeryToken()
@@ -263,26 +263,5 @@
 </div>
 
 @section Scripts {
-<script>
-    document.getElementById('vitalsModal').addEventListener('show.bs.modal', function (e) {
-        var btn = e.relatedTarget;
-        var apptId   = btn.dataset.apptId;
-        var name     = btn.dataset.patientName;
-        var returnUrl = btn.dataset.returnUrl || '/dashboard';
-
-        document.getElementById('vitalsPatientName').textContent = name;
-        document.getElementById('vitalsForm').action = '/appointments/' + apptId + '/vitals';
-        document.querySelector('#vitalsForm input[name="returnUrl"]').value = returnUrl;
-
-        document.getElementById('fHeight').value  = btn.dataset.existingHeight  || '';
-        document.getElementById('fWeight').value  = btn.dataset.existingWeight  || '';
-        document.getElementById('fTemp').value    = btn.dataset.existingTemp    || '';
-        document.getElementById('fSbp').value     = btn.dataset.existingSbp     || '';
-        document.getElementById('fDbp').value     = btn.dataset.existingDbp     || '';
-        document.getElementById('fHr').value      = btn.dataset.existingHr      || '';
-        document.getElementById('fRr').value      = btn.dataset.existingRr      || '';
-        document.getElementById('fSpo2').value    = btn.dataset.existingSpo2    || '';
-        document.getElementById('fNotes').value   = btn.dataset.existingNotes   || '';
-    });
-</script>
+    <script src="~/js/vitals-modal.js" asp-append-version="true"></script>
 }

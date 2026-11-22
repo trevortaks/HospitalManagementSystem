@@ -258,7 +258,7 @@
                 </div>
                 <p class="pf-danger-text">Deleting a patient is permanent and cannot be undone.</p>
                 <button type="button" class="pf-btn-delete"
-                        onclick="confirmDelete('@patientId', '@(Model.FirstName) @(Model.LastName)')">
+                        data-delete-patient="@patientId" data-patient-name="@(Model.FirstName) @(Model.LastName)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -306,22 +306,5 @@
 
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
-    <script>
-        let pendingDeleteId = null;
-        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-
-        function confirmDelete(id, name) {
-            pendingDeleteId = id;
-            document.getElementById('deletePatientName').textContent = name;
-            deleteModal.show();
-        }
-
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-            if (!pendingDeleteId) return;
-            const form = document.getElementById('deleteForm');
-            form.action = `/patients/${pendingDeleteId}/delete`;
-            deleteModal.hide();
-            form.submit();
-        });
-    </script>
+    <script src="~/js/patient-delete.js" asp-append-version="true"></script>
 }

@@ -149,24 +149,5 @@
 </div>
 
 @section Scripts {
-<script>
-    document.getElementById('bookApptModal').addEventListener('show.bs.modal', function () {
-        var sel = document.getElementById('doctorSelect');
-        if (sel.options.length > 1) return; // already loaded
-        fetch('/portal/doctors')
-            .then(function(r) { return r.json(); })
-            .then(function(doctors) {
-                sel.innerHTML = '<option value="">Select a doctor…</option>';
-                doctors.forEach(function(d) {
-                    var opt = document.createElement('option');
-                    opt.value = d.id;
-                    opt.textContent = d.name;
-                    sel.appendChild(opt);
-                });
-            })
-            .catch(function() {
-                sel.innerHTML = '<option value="">Failed to load doctors</option>';
-            });
-    });
-</script>
+    <script src="~/js/pages/portal-appointments.js" asp-append-version="true"></script>
 }

@@ -154,7 +154,7 @@
                                         <li><hr class="dropdown-divider my-1"></li>
                                         <li>
                                             <button type="button" class="dropdown-item pt-dropdown-item pt-dropdown-danger"
-                                                    onclick="confirmDelete('@p.Id', '@p.FirstName @p.LastName')">
+                                                    data-delete-patient="@p.Id" data-patient-name="@p.FirstName @p.LastName">
                                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                                                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <polyline points="3 6 5 6 21 6"/>
@@ -223,65 +223,6 @@
 </div>
 
 @section Scripts {
-    <script>
-        // ── Search filtering ──────────────────────────────────────────────────
-        const searchInput   = document.getElementById('patientSearch');
-        const searchClear   = document.getElementById('searchClear');
-        const resultCount   = document.getElementById('searchResultCount');
-        const noResults     = document.getElementById('noResults');
-        const noResultsTerm = document.getElementById('noResultsTerm');
-        const footerCount   = document.getElementById('footerCount');
-        const rows          = document.querySelectorAll('.patient-row');
-        const total         = rows.length;
-
-        function filterTable() {
-            const q = searchInput.value.trim().toLowerCase();
-            searchClear.classList.toggle('d-none', q === '');
-
-            let visible = 0;
-            rows.forEach(row => {
-                const match = !q
-                    || row.dataset.name.includes(q)
-                    || row.dataset.mrn.includes(q)
-                    || row.dataset.email.includes(q);
-                row.style.display = match ? '' : 'none';
-                if (match) visible++;
-            });
-
-            const hasQuery = q !== '';
-            noResults.classList.toggle('d-none', !hasQuery || visible > 0);
-            resultCount.classList.toggle('d-none', !hasQuery);
-            if (hasQuery) {
-                noResultsTerm.textContent = `"${searchInput.value.trim()}"`;
-                resultCount.textContent = visible === 0
-                    ? 'No results'
-                    : `${visible} of ${total} patient${total === 1 ? '' : 's'}`;
-            }
-            if (footerCount) {
-                const shown = hasQuery ? visible : total;
-                footerCount.innerHTML = `Showing <strong>${shown}</strong> patient${shown === 1 ? '' : 's'}`;
-            }
-        }
-
-        searchInput.addEventListener('input', filterTable);
-        searchClear.addEventListener('click', () => { searchInput.value = ''; filterTable(); searchInput.focus(); });
-
-        // ── Delete modal ──────────────────────────────────────────────────────
-        let pendingDeleteId = null;
-        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-
-        function confirmDelete(id, name) {
-            pendingDeleteId = id;
-            document.getElementById('deletePatientName').textContent = name;
-            deleteModal.show();
-        }
-
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-            if (!pendingDeleteId) return;
-            const form = document.getElementById('deleteForm');
-            form.action = `/patients/${pendingDeleteId}/delete`;
-            deleteModal.hide();
-            form.submit();
-        });
-    </script>
+    <script src="~/js/pages/patients-index.js" asp-append-version="true"></script>
+    <script src="~/js/patient-delete.js" asp-append-version="true"></script>
 }

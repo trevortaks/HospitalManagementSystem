@@ -15,7 +15,7 @@
 
 <form method="get" class="row g-2 mb-4">
     <div class="col-md-4">
-        <select name="categoryId" class="form-select" onchange="this.form.submit()">
+        <select name="categoryId" class="form-select" data-autosubmit>
             <option value="">All Categories</option>
             @foreach (var cat in categories)
             {
@@ -25,7 +25,7 @@
     </div>
     <div class="col-auto d-flex align-items-center gap-2">
         <input type="checkbox" class="form-check-input" name="lowStockOnly" id="lowStockOnly"
-               value="true" checked="@(lowStockOnly == true)" onchange="this.form.submit()" />
+               value="true" checked="@(lowStockOnly == true)" data-autosubmit />
         <label class="form-check-label" for="lowStockOnly">Low stock only</label>
     </div>
 </form>
